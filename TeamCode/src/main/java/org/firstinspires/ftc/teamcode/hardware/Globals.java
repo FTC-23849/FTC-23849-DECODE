@@ -36,7 +36,7 @@ public class Globals {
 
     // Outtake
 
-    // Outtake Pviot
+    // Outtake Pivot
     public static double OUTTAKE_PIVOT_TRANSFER = 0;
     public static double OUTTAKE_PIVOT_SAMPLE_SCORE = 0.8;
     public static double OUTTAKE_PIVOT_SPECIMEN_PICKUP = 1;

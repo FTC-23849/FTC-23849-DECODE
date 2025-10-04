@@ -21,7 +21,7 @@ public class setOuttakePivot extends CommandBase {
 
     @Override
     public void initialize() {
-        robot.deposit.setPivot(Deposit.depositPivotState);
+        robot.deposit.setPivot(pivotState);
     }
 
     @Override
