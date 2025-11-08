@@ -12,9 +12,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.commandbase.Drive;
-import org.firstinspires.ftc.teamcode.commandbase.Deposit;
+import org.firstinspires.ftc.teamcode.commandbase.Shooter;
 import org.firstinspires.ftc.teamcode.commandbase.Intake;
-import org.w3c.dom.ls.LSException;
 
 public class Robot {
 
@@ -41,7 +40,7 @@ public class Robot {
     public Servo displayLight;
     public DistanceSensor alignerDistanceSensor;
 
-    public Deposit deposit;
+    public Shooter shooter;
     public Intake intake;
     public Drive drive;
 
@@ -106,7 +105,7 @@ public class Robot {
         alignerDistanceSensor = hardwareMap.get(DistanceSensor.class, "alignerDistanceSensor");
 
         intake = new Intake();
-        deposit = new Deposit();
+        shooter = new Shooter();
         drive = new Drive();
 
     }

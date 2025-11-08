@@ -5,7 +5,7 @@ import com.seattlesolvers.solverslib.command.CommandOpMode;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 
-import org.firstinspires.ftc.teamcode.commandbase.Deposit;
+import org.firstinspires.ftc.teamcode.commandbase.Shooter;
 import org.firstinspires.ftc.teamcode.commandbase.commands.setOuttakePivot;
 import org.firstinspires.ftc.teamcode.hardware.Robot;
 
@@ -25,10 +25,10 @@ public class basicCommandBaseTeleop extends CommandOpMode {
         super.reset();
 
         gamepad.getGamepadButton(GamepadKeys.Button.DPAD_DOWN)
-                .whenPressed(new setOuttakePivot(robot, Deposit.depositPivotState.TRANSFER));
+                .whenPressed(new setOuttakePivot(robot, Shooter.depositPivotState.TRANSFER));
 
         gamepad.getGamepadButton(GamepadKeys.Button.DPAD_UP)
-                .whenPressed(new setOuttakePivot(robot, Deposit.depositPivotState.SAMPLE_SCORE));
+                .whenPressed(new setOuttakePivot(robot, Shooter.depositPivotState.SAMPLE_SCORE));
 
         super.run();
 

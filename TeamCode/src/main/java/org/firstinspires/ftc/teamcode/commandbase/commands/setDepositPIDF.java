@@ -3,25 +3,25 @@ package org.firstinspires.ftc.teamcode.commandbase.commands;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.command.CommandBase;
 
-import org.firstinspires.ftc.teamcode.commandbase.Deposit;
+import org.firstinspires.ftc.teamcode.commandbase.Shooter;
 import org.firstinspires.ftc.teamcode.commandbase.Intake;
 import org.firstinspires.ftc.teamcode.hardware.Robot;
 
 public class setDepositPIDF extends CommandBase {
 
     private final Robot robot;
-    private final Deposit.DepositPivotState pivotState;
-    private final Deposit.DepositTurretState turretState;
-    private final Deposit.DepositWristState wristState;
-    private final Deposit.DepositClawState clawState;
+    private final Shooter.DepositPivotState pivotState;
+    private final Shooter.DepositTurretState turretState;
+    private final Shooter.DepositWristState wristState;
+    private final Shooter.DepositClawState clawState;
     private final double target;
 
     ElapsedTime timer;
 
     private double index;
 
-    public setDepositPIDF(Robot robot, Deposit.DepositPivotState pivotState, Deposit.DepositTurretState turretState,
-                          Deposit.DepositWristState wristState, Deposit.DepositClawState clawState, double target) {
+    public setDepositPIDF(Robot robot, Shooter.DepositPivotState pivotState, Shooter.DepositTurretState turretState,
+                          Shooter.DepositWristState wristState, Shooter.DepositClawState clawState, double target) {
         this.robot = robot;
         this.pivotState = pivotState;
         this.turretState = turretState;
@@ -29,27 +29,27 @@ public class setDepositPIDF extends CommandBase {
         this.clawState = clawState;
         this.target = target;
 
-        addRequirements(robot.deposit);
+        addRequirements(robot.shooter);
     }
 
     @Override
     public void initialize() {
-        if (Deposit.depositPivotState.equals(this.pivotState) && Deposit.depositTurretState.equals(this.turretState)
-                && Deposit.depositWristState.equals(this.wristState) && Deposit.depositClawState.equals(this.clawState)
-                && robot.deposit.targetPIDF == this.target) {
+        if (Shooter.depositPivotState.equals(this.pivotState) && Shooter.depositTurretState.equals(this.turretState)
+                && Shooter.depositWristState.equals(this.wristState) && Shooter.depositClawState.equals(this.clawState)
+                && robot.shooter.targetPIDF == this.target) {
             // Set index to 1 if input parameters is same as current state
             index = 1;
-        } else if (Deposit.depositPivotState.equals(Deposit.DepositPivotState.TRANSFER)) {
+        } else if (Shooter.depositPivotState.equals(Shooter.DepositPivotState.TRANSFER)) {
             // Move intake pivot so outtake does not hit intake while going up
             robot.intake.setPivot(Intake.IntakePivotState.OUTTAKE_AVOID);
             // Move slides
-            robot.deposit.setOuttakeTargetPIDF(target);
+            robot.shooter.setOuttakeTargetPIDF(target);
 
             index = 2;
 
             timer.reset();
         } else {
-            robot.deposit.setOuttakeTargetPIDF(target);
+            robot.shooter.setOuttakeTargetPIDF(target);
 
             index = 3;
         }
@@ -58,10 +58,10 @@ public class setDepositPIDF extends CommandBase {
     @Override
     public void execute() {
         if (index == 2) {
-            robot.deposit.setPivot(pivotState);
-            robot.deposit.setTurret(turretState);
-            robot.deposit.setWrist(wristState);
-            robot.deposit.setClaw(clawState);
+            robot.shooter.setPivot(pivotState);
+            robot.shooter.setTurret(turretState);
+            robot.shooter.setWrist(wristState);
+            robot.shooter.setClaw(clawState);
 
             if (timer.milliseconds() >= 300) {
                 robot.intake.setPivot(Intake.IntakePivotState.TRANSFER);
@@ -71,10 +71,10 @@ public class setDepositPIDF extends CommandBase {
         }
 
         if (index == 3) {
-            robot.deposit.setPivot(pivotState);
-            robot.deposit.setTurret(turretState);
-            robot.deposit.setWrist(wristState);
-            robot.deposit.setClaw(clawState);
+            robot.shooter.setPivot(pivotState);
+            robot.shooter.setTurret(turretState);
+            robot.shooter.setWrist(wristState);
+            robot.shooter.setClaw(clawState);
 
             index = 1;
         }
@@ -82,7 +82,7 @@ public class setDepositPIDF extends CommandBase {
 
     @Override
     public boolean isFinished() {
-        return robot.deposit.outtakeReached && index == 1;
+        return robot.shooter.outtakeReached && index == 1;
     }
 
 }

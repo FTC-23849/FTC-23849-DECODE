@@ -9,7 +9,7 @@ import com.seattlesolvers.solverslib.controller.PIDFController;
 
 import org.firstinspires.ftc.teamcode.hardware.Robot;
 
-public class Deposit extends SubsystemBase {
+public class Shooter extends SubsystemBase {
 
     private final Robot robot = Robot.getInstance();
 
