@@ -95,6 +95,8 @@ public class BasicTeleop extends OpMode {
         telemetry.addData("kicker location", kickerLocation);
         telemetry.addData("loop time", runTime.milliseconds() / loops);
         loops = loops + 1;
+        telemetry.addData("kicker rotations left", kickerRotationsLeft);
+        telemetry.addData("kicker in default position", kickerInDefaultPosition);
 
         if(kickerEncoder.getVoltage() > 1.65){
             kickerLocation = kickerEncoder.getVoltage() - 1.65;
@@ -173,22 +175,22 @@ public class BasicTeleop extends OpMode {
             rightBackRoller.setPower(0);
 //            leftKickerServo.setPower(0.05*(kickerEncoder.getVoltage()-Globals.defaultKickerLocation));
 //            rightKickerServo.setPower(0.05*(kickerEncoder.getVoltage()-Globals.defaultKickerLocation));
-            if(kickerShoot && kickerLocation < Globals.defaultKickerLocation - 0.1){
-                leftKickerServo.setPower(0.09 /* (kickerLocation - Globals.defaultKickerLocation)*/ /* *(Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
-                rightKickerServo.setPower(0.09);
-                telemetry.addLine("e");
-
-            }
-            else if(kickerShoot && kickerLocation > Globals.defaultKickerLocation + 0.1){
-                leftKickerServo.setPower(-0.09);
-                rightKickerServo.setPower(-0.09);
-                telemetry.addLine("ae");
-            }
-            else{
-                rightKickerServo.setPower(0);
-                leftKickerServo.setPower(0);
-
-            }
+//            if(kickerShoot && kickerLocation < Globals.defaultKickerLocation - 0.1){
+//                leftKickerServo.setPower(0.09 /* (kickerLocation - Globals.defaultKickerLocation)*/ /* *(Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
+//                rightKickerServo.setPower(0.09);
+//                telemetry.addLine("e");
+//
+//            }
+//            else if(kickerShoot && kickerLocation > Globals.defaultKickerLocation + 0.1){
+//                leftKickerServo.setPower(-0.09);
+//                rightKickerServo.setPower(-0.09);
+//                telemetry.addLine("ae");
+//            }
+//            else{
+//                rightKickerServo.setPower(0);
+//                leftKickerServo.setPower(0);
+//
+//            }
         }
         //close zone shoot
         if(gamepad1.left_bumper){
@@ -249,11 +251,12 @@ public class BasicTeleop extends OpMode {
 //            rightKickerServo.setPower(0.0);
 //        }
 
-        /*if(gamepad2.a){
+        if(gamepad2.a){
             kickerAction = 3;
-            kickerRotationsLeft = 1;
+            kickerRotationsLeft = 2;
             if(kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1){
                 kickerInDefaultPosition = true;
+                telemetry.addLine("eewewwe");
             }
             else{
                 kickerInDefaultPosition = false;
@@ -261,11 +264,11 @@ public class BasicTeleop extends OpMode {
             leftKickerServo.setPower(Globals.kickerRecycle);
             rightKickerServo.setPower(Globals.kickerRecycle);
 
-        }*/
-        /*if (gamepad2.b) {
+        }
+        if (gamepad2.b) {
             kickerAction = 2;
-            kickerRotationsLeft = 1;
-            if(kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1){
+            kickerRotationsLeft = 2;
+            if(kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.01){
                 kickerInDefaultPosition = true;
             }
             else{
@@ -286,7 +289,7 @@ public class BasicTeleop extends OpMode {
             rightKickerServo.setPower(0);
         }
 
-         */
+
 
 
 
