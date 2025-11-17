@@ -2,11 +2,14 @@ package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
+import com.qualcomm.robotcore.*;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
@@ -31,7 +34,16 @@ public class BasicTeleop extends OpMode {
     CRServoImplEx rightBackRoller;
     double totalCurrent;
     boolean tipped = false;
-
+    AnalogInput kickerEncoder;
+    boolean kickerShoot = false;
+    boolean kickerRecycle = false;
+    double kickerLocation;
+    ElapsedTime kickerTimer = new ElapsedTime();
+    int kickerAction;
+    int kickerRotationsLeft;
+    boolean kickerInDefaultPosition;
+    int loops = 1;
+    ElapsedTime runTime = new ElapsedTime();
     @Override
 
     public void init() {
@@ -62,6 +74,7 @@ public class BasicTeleop extends OpMode {
         leftBackRoller = hardwareMap.get(CRServoImplEx.class, "leftBackRoller");
         rightBackRoller = hardwareMap.get(CRServoImplEx.class, "rightBackRoller");
         rightBackRoller.setDirection(DcMotorSimple.Direction.REVERSE);
+        kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
     }
 
     @Override
@@ -76,6 +89,19 @@ public class BasicTeleop extends OpMode {
         telemetry.addData("frontIntake", frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
         totalCurrent =(leftFrontMotor.getCurrent(CurrentUnit.AMPS)+rightFrontMotor.getCurrent(CurrentUnit.AMPS)+leftBackMotor.getCurrent(CurrentUnit.AMPS)+rightBackMotor.getCurrent(CurrentUnit.AMPS)+leftShooterMotor.getCurrent(CurrentUnit.AMPS)+rightShooterMotor.getCurrent(CurrentUnit.AMPS)+frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("totalcurrent", totalCurrent);
+        telemetry.addData("KickerEncoder", kickerEncoder.getVoltage());
+        telemetry.addData("kickerSHoot", kickerShoot);
+        telemetry.addData("kicker power", ((kickerEncoder.getVoltage()-Globals.defaultKickerLocation)));
+        telemetry.addData("kicker location", kickerLocation);
+        telemetry.addData("loop time", runTime.milliseconds() / loops);
+        loops = loops + 1;
+
+        if(kickerEncoder.getVoltage() > 1.65){
+            kickerLocation = kickerEncoder.getVoltage() - 1.65;
+        }
+        else{
+            kickerLocation = kickerEncoder.getVoltage();
+        }
 
 
 
@@ -117,6 +143,8 @@ public class BasicTeleop extends OpMode {
             leftBackRoller.setPower(Globals.backRollersMaxPower);
             rightBackRoller.setPower(Globals.backRollersMaxPower);
             backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
+            kickerShoot = true;
+            kickerRecycle = false;
         }
         else if(gamepad1.dpad_up){
             rightKickerServo.setPower(Globals.kickerShoot);
@@ -127,6 +155,8 @@ public class BasicTeleop extends OpMode {
             leftKickerServo.setPower(Globals.kickerRecycle);
             frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
             backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
+            kickerRecycle = true;
+            kickerShoot = false;
         }
         else if(gamepad1.dpad_left){
             rightKickerServo.setPower(Globals.kickerShoot);
@@ -139,10 +169,26 @@ public class BasicTeleop extends OpMode {
         else{
             frontIntakeMotor.setPower(0);
             backIntakeMotor.setPower(0);
-            rightKickerServo.setPower(0);
-            leftKickerServo.setPower(0);
             leftBackRoller.setPower(0);
             rightBackRoller.setPower(0);
+//            leftKickerServo.setPower(0.05*(kickerEncoder.getVoltage()-Globals.defaultKickerLocation));
+//            rightKickerServo.setPower(0.05*(kickerEncoder.getVoltage()-Globals.defaultKickerLocation));
+            if(kickerShoot && kickerLocation < Globals.defaultKickerLocation - 0.1){
+                leftKickerServo.setPower(0.09 /* (kickerLocation - Globals.defaultKickerLocation)*/ /* *(Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
+                rightKickerServo.setPower(0.09);
+                telemetry.addLine("e");
+
+            }
+            else if(kickerShoot && kickerLocation > Globals.defaultKickerLocation + 0.1){
+                leftKickerServo.setPower(-0.09);
+                rightKickerServo.setPower(-0.09);
+                telemetry.addLine("ae");
+            }
+            else{
+                rightKickerServo.setPower(0);
+                leftKickerServo.setPower(0);
+
+            }
         }
         //close zone shoot
         if(gamepad1.left_bumper){
@@ -166,9 +212,86 @@ public class BasicTeleop extends OpMode {
                 tipped = false;
             }
         }
+//        // shoot 1 ball
+//        if(gamepad2.b){
+//            kickerTimer.reset();
+//            kickerAction = 2;
+//            leftKickerServo.setPower(-0.09);
+//            rightKickerServo.setPower(-0.09);
+//        }
+//        //recycle 1 ball
+//        if(gamepad2.a){
+//            kickerTimer.reset();
+//            kickerAction = 3;
+//            leftKickerServo.setPower(0.09);
+//            rightKickerServo.setPower(0.09);
+//
+//        }
+//        if(kickerAction == 2 && kickerTimer.milliseconds() > 50){
+//            if(kickerLocation < Globals.defaultKickerLocation) {
+//
+//            }
+//            else{
+//                if(kickerRotationsLeft != 0)
+//                kickerAction = 1;
+//            }
+//
+//        }
+//        else if(kickerAction == 3 && kickerTimer.milliseconds() > 50) {
+//            if(kickerLocation < Globals.defaultKickerLocation){
+//
+//            }
+//            kickerAction = 1;
+//
+//        }
+//        else if(kickerAction == 1){
+//            leftKickerServo.setPower(0.0);
+//            rightKickerServo.setPower(0.0);
+//        }
+
+        /*if(gamepad2.a){
+            kickerAction = 3;
+            kickerRotationsLeft = 1;
+            if(kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1){
+                kickerInDefaultPosition = true;
+            }
+            else{
+                kickerInDefaultPosition = false;
+            }
+            leftKickerServo.setPower(Globals.kickerRecycle);
+            rightKickerServo.setPower(Globals.kickerRecycle);
+
+        }*/
+        /*if (gamepad2.b) {
+            kickerAction = 2;
+            kickerRotationsLeft = 1;
+            if(kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1){
+                kickerInDefaultPosition = true;
+            }
+            else{
+                kickerInDefaultPosition = false;
+            }
+            leftKickerServo.setPower(Globals.kickerShoot);
+            rightKickerServo.setPower(Globals.kickerShoot);
+        }
+        if(kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1 && kickerInDefaultPosition == false && kickerRotationsLeft != 0){
+            kickerRotationsLeft = kickerRotationsLeft - 1;
+            kickerInDefaultPosition = true;
+        }
+        if(kickerLocation < Globals.defaultKickerLocation - 0.1 || kickerLocation > Globals.defaultKickerLocation + 0.1){
+            kickerInDefaultPosition = false;
+        }
+        if(kickerRotationsLeft == 0){
+            leftKickerServo.setPower(0);
+            rightKickerServo.setPower(0);
+        }
+
+         */
+
 
 
     }
+
 
 }
 

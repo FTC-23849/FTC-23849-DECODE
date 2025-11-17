@@ -93,10 +93,11 @@ public class Globals {
     public static double kickerShoot = -1;
     public static double kickerRecycle = 0.4;
     public static double defaultCloseZonePower = -0.9;
-    public static double tipperRetracted = 0.3;
+    public static double tipperRetracted = 0.2;
     public static double tipperExtended = 0.5;
     public static double backRollersMaxPower = 1;
     public static double backRollersReverse = -1;
+    public static double defaultKickerLocation = 1.2;
 
 
 }
