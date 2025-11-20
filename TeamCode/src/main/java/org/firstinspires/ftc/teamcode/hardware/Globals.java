@@ -97,6 +97,7 @@ public class Globals {
     public static double tipperExtended = 0.5;
     public static double backRollersMaxPower = 1;
     public static double backRollersReverse = -1;
+    public static double defaultKickerLocation = 1.2;
 
 
 }

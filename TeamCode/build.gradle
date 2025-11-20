@@ -25,9 +25,10 @@ android {
 
 dependencies {
     implementation project(':FtcRobotController')
-
+    //implementation "dev.nullftc:Profiler:1.0.0"
     // implementation "org.ftclib.ftclib:core:2.1.1" remove FTCLib core
     // FTCLib's vision is no longer supported in SolversLib
+    //
     implementation "org.solverslib:core:0.3.1" // core
     implementation "org.solverslib:pedroPathing:0.3.1" // pedroPathing
 }
@@ -35,5 +36,9 @@ dependencies {
 repositories {
     maven {
         url "https://repo.dairy.foundation/releases"
+    }
+    maven {
+        name "nullftcReleases"
+        url "https://maven.nullftc.dev/releases"
     }
 }
