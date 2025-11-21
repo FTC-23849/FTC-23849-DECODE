@@ -49,8 +49,11 @@ public class BasicTeleop extends OpMode {
     int kickerAction;
     double kickerRotationsLeft;
     boolean kickerInDefaultPosition;
+    boolean dpadDownPressed = false;
+    boolean recycleIntakeTimerStarted = false;
 
     ElapsedTime timer = new ElapsedTime();
+    ElapsedTime recycleIntakeTimer = new ElapsedTime();
     AnalogInput turretEncoder;
     NormalizedColorSensor leftIntakeColorSensor;
     NormalizedColorSensor rightIntakeColorSensor;
@@ -116,19 +119,22 @@ public class BasicTeleop extends OpMode {
         telemetry.addData("leftshooter", leftShooterMotor.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("rightSHooter", rightShooterMotor.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("frontIntake", frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
-        telemetry.addData("Kp",Kp);
-        telemetry.addData("Ki",Ki);
-        telemetry.addData("Kd",Kd);
+        telemetry.addData("Kp", Kp);
+        telemetry.addData("Ki", Ki);
+        telemetry.addData("Kd", Kd);
         telemetry.addData("# of balls: ", vision.ballsInRamp(limelight));
-        totalCurrent =(leftFrontMotor.getCurrent(CurrentUnit.AMPS)+rightFrontMotor.getCurrent(CurrentUnit.AMPS)+leftBackMotor.getCurrent(CurrentUnit.AMPS)+rightBackMotor.getCurrent(CurrentUnit.AMPS)+leftShooterMotor.getCurrent(CurrentUnit.AMPS)+rightShooterMotor.getCurrent(CurrentUnit.AMPS)+frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
+        totalCurrent = (leftFrontMotor.getCurrent(CurrentUnit.AMPS) + rightFrontMotor.getCurrent(CurrentUnit.AMPS) + leftBackMotor.getCurrent(CurrentUnit.AMPS) + rightBackMotor.getCurrent(CurrentUnit.AMPS) + leftShooterMotor.getCurrent(CurrentUnit.AMPS) + rightShooterMotor.getCurrent(CurrentUnit.AMPS) + frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("totalcurrent", totalCurrent);
-        if(kickerEncoder.getVoltage() > 1.65){
+        if (kickerEncoder.getVoltage() > 1.65) {
             kickerLocation = kickerEncoder.getVoltage() - 1.65;
-        }
-        else{
+        } else {
             kickerLocation = kickerEncoder.getVoltage();
         }
-
+        if (kickerLocation > 0.7) {
+            kickerLocation = kickerLocation - 0.7;
+        } else {
+            kickerLocation = 1.65 - (kickerLocation - 0.7);
+        }
 
 
         double y = -gamepad1.left_stick_y; // Remember,    Y stick value is reversed
@@ -149,126 +155,150 @@ public class BasicTeleop extends OpMode {
         rightFrontMotor.setPower(frontRightPower);
         rightBackMotor.setPower(backRightPower);
 
-        if(gamepad1.right_trigger > 0.1){
+        if (gamepad1.right_trigger > 0.1) {
             frontIntakeMotor.setPower(Globals.frontIntakeIntakeSpeed);
             backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
             leftBackRoller.setPower(Globals.backRollersMaxPower);
             rightBackRoller.setPower(Globals.backRollersMaxPower);
-        }
-        else if(gamepad1.a){
+        } else if (gamepad1.a) {
             frontIntakeMotor.setPower(Globals.frontIntakeReverseSpeed);
             backIntakeMotor.setPower(Globals.backIntakeReverseSpeed);
             leftBackRoller.setPower(Globals.backRollersReverse);
             rightBackRoller.setPower(Globals.backRollersReverse);
 
-        }
-        else if(gamepad1.left_trigger > 0.1){
+        } else if (gamepad1.left_trigger > 0.1) {
             rightKickerServo.setPower(Globals.kickerShoot);
             leftKickerServo.setPower(Globals.kickerShoot);
             frontIntakeMotor.setPower(Globals.frontIntakeShootSpeed);
             leftBackRoller.setPower(Globals.backRollersMaxPower);
             rightBackRoller.setPower(Globals.backRollersMaxPower);
             backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
-        }
-        else if(gamepad2.dpad_up){
+        } else if (gamepad1.dpad_up) {
             rightKickerServo.setPower(Globals.kickerShoot);
             leftKickerServo.setPower(Globals.kickerShoot);
-        }
-        else if(gamepad2.dpad_down){
-            rightKickerServo.setPower(Globals.kickerRecycle);
+        } else if (gamepad1.dpad_down && !dpadDownPressed) {
+            dpadDownPressed = true;
+            //recycleintaketimer is for turning intake after kicker reaches position so next ball is in right position
+            //recycleintaketimerstarted is for only starting it once
+            recycleIntakeTimerStarted = false;
+            //kickerrotationsleft is how many balls to recycle, code at bottom for decreasing that number
+            kickerAction = 3;
+            kickerRotationsLeft = 1 + kickerRotationsLeft;
+            //checks if in default position; rotationsleft is decrased by one when kicker is in this position, dont want to double count
+            if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1) {
+                kickerInDefaultPosition = true;
+                telemetry.addLine("eewewwe");
+            } else {
+                kickerInDefaultPosition = false;
+            }
             leftKickerServo.setPower(Globals.kickerRecycle);
+            rightKickerServo.setPower(Globals.kickerRecycle);
             frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
             backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
-        }
-        else if(gamepad1.dpad_left){
+        } else if (gamepad1.dpad_left) {
             rightKickerServo.setPower(Globals.kickerShoot);
             leftKickerServo.setPower(Globals.kickerShoot);
-        }
-        else if(gamepad1.dpad_right){
+        } else if (gamepad1.dpad_right) {
             rightKickerServo.setPower(Globals.kickerRecycle);
             leftKickerServo.setPower(Globals.kickerRecycle);
-        }
-        else{
+        } else {
             frontIntakeMotor.setPower(0);
             backIntakeMotor.setPower(0);
-//            rightKickerServo.setPower(0);
-//            leftKickerServo.setPower(0);
-            leftBackRoller.setPower(0);
-            rightBackRoller.setPower(0);
-            if(kickerRotationsLeft == 0){
-                leftKickerServo.setPower(0);
-                rightKickerServo.setPower(0);
-            }
-        }
+            if (kickerRotationsLeft == 0) {
+                if (recycleIntakeTimerStarted == false) {
+                    recycleIntakeTimer.reset();
+                    recycleIntakeTimerStarted = true;
+                }
+                if (recycleIntakeTimerStarted == true && recycleIntakeTimer.milliseconds() > 1000) {
+                    frontIntakeMotor.setPower(0);
+                    backIntakeMotor.setPower(0);
+                }
+                if (kickerLocation < Globals.defaultKickerLocation - 0.05) {
+                    leftKickerServo.setPower(0.09 /* (kickerLocation - Globals.defaultKickerLocation)/ / (Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
+                    rightKickerServo.setPower(0.09);
+                    telemetry.addLine("e");
 
-        if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1 && kickerInDefaultPosition == false && kickerRotationsLeft != 0) {
-            kickerRotationsLeft = kickerRotationsLeft - 1;
-            kickerInDefaultPosition = true;
-        }
-        if(kickerLocation < Globals.defaultKickerLocation - 0.1 || kickerLocation > Globals.defaultKickerLocation + 0.1){
-            kickerInDefaultPosition = false;
-        }
-        LLResult results = limelight.getLatestResult();
-        if (results.isValid() && (results != null)){
-            double errorMargin = 0.5;
-            leftTurretServo.setPower(vision.TurretPowerPID(limelight,errorMargin,Kp,Ki,Kd));
-            rightTurretServo.setPower(vision.TurretPowerPID(limelight,errorMargin,Kp,Ki,Kd));
-        }
-        //close zone shoot
-        if(gamepad1.leftBumperWasPressed()){
-            if (leftBumperTrue){
-                leftBumperTrue = false;
-            }else{
-                leftBumperTrue = false;
-            }
-        }
-        if(leftBumperTrue){
-            double errorMargin =0;
-            double position = turretEncoder.getVoltage() / 3.2 * 360;
-            LLResult result = limelight.getLatestResult();
-            double txForTelemetry = result.getTx();
-            double txForTurretPower = vision.TurretPowerTxDebug;
-            telemetry.addData("TelemetryTx", txForTelemetry);
-            telemetry.addData("TurretPowerTx", txForTurretPower);
-            telemetry.addData("Power", vision.TurretPower(limelight,errorMargin));
-            telemetry.update();
-            leftTurretServo.setPower( -1*result.getTx()/96);
-            rightTurretServo.setPower(-1*result.getTx()/96);
-            leftShooterMotor.setPower(Globals.defaultCloseZonePower);
-            rightShooterMotor.setPower(Globals.defaultCloseZonePower);
-        }
-        else{
-            leftShooterMotor.setPower(0);
-            rightShooterMotor.setPower(0);
-        }
-        //far zone shoot
-        if(gamepad1.rightBumperWasPressed()){
-            if (rightBumperTrue){
-                rightBumperTrue = false;
-            }else{
-                rightBumperTrue = false;
-            }
-        }
-        if(rightBumperTrue){
-            double errorMargin = 0.5;
-            double position = turretEncoder.getVoltage() / 3.2 * 360;
+                } else if (kickerLocation > Globals.defaultKickerLocation + 0.05) {
+                    leftKickerServo.setPower(-0.09);
+                    rightKickerServo.setPower(-0.09);
+                    telemetry.addLine("ae");
+                } else {
+                    rightKickerServo.setPower(0);
+                    leftKickerServo.setPower(0);
 
-            telemetry.addData("Power", vision.TurretPower(limelight,errorMargin));
-            telemetry.update();
-            leftTurretServo.setPower(vision.TurretPowerPID(limelight,errorMargin,Kp,Ki,Kd));
-            rightTurretServo.setPower(vision.TurretPowerPID(limelight,errorMargin,Kp,Ki,Kd));
-            //leftTurretServo.setPower(0.5);
-            leftShooterMotor.setPower(Globals.defaultCloseZonePower);
-            rightShooterMotor.setPower(Globals.defaultCloseZonePower);
-        }
-        else{
-            leftShooterMotor.setPower(0);
-            rightShooterMotor.setPower(0);
-        }
-        //manual sort
-        if(gamepad1.left_stick_button){
-            vision.recycleToColor(1,leftKickerServo,rightKickerServo,frontIntakeMotor,backIntakeMotor,leftBackRoller,
-                    rightBackRoller,leftIntakeColorSensor,rightIntakeColorSensor);
+                }
+
+            }
+            if (!gamepad1.dpad_down) {
+                dpadDownPressed = false;
+            }
+
+            if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1 && kickerInDefaultPosition == false && kickerRotationsLeft != 0) {
+                kickerRotationsLeft = kickerRotationsLeft - 1;
+                kickerInDefaultPosition = true;
+            }
+            if (kickerLocation < Globals.defaultKickerLocation - 0.1 || kickerLocation > Globals.defaultKickerLocation + 0.1) {
+                kickerInDefaultPosition = false;
+            }
+            LLResult results = limelight.getLatestResult();
+            if (results.isValid() && (results != null)) {
+                double errorMargin = 0.5;
+                leftTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
+                rightTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
+            }
+            //close zone shoot
+            if (gamepad1.leftBumperWasPressed()) {
+                if (leftBumperTrue) {
+                    leftBumperTrue = false;
+                } else {
+                    leftBumperTrue = false;
+                }
+            }
+            if (leftBumperTrue) {
+                double errorMargin = 0;
+                double position = turretEncoder.getVoltage() / 3.2 * 360;
+                LLResult result = limelight.getLatestResult();
+                double txForTelemetry = result.getTx();
+                double txForTurretPower = vision.TurretPowerTxDebug;
+                telemetry.addData("TelemetryTx", txForTelemetry);
+                telemetry.addData("TurretPowerTx", txForTurretPower);
+                telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
+                telemetry.update();
+                leftTurretServo.setPower(-1 * result.getTx() / 96);
+                rightTurretServo.setPower(-1 * result.getTx() / 96);
+                leftShooterMotor.setPower(Globals.defaultCloseZonePower);
+                rightShooterMotor.setPower(Globals.defaultCloseZonePower);
+            } else {
+                leftShooterMotor.setPower(0);
+                rightShooterMotor.setPower(0);
+            }
+            //far zone shoot
+            if (gamepad1.rightBumperWasPressed()) {
+                if (rightBumperTrue) {
+                    rightBumperTrue = false;
+                } else {
+                    rightBumperTrue = false;
+                }
+            }
+            if (rightBumperTrue) {
+                double errorMargin = 0.5;
+                double position = turretEncoder.getVoltage() / 3.2 * 360;
+
+                telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
+                telemetry.update();
+                leftTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
+                rightTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
+                //leftTurretServo.setPower(0.5);
+                leftShooterMotor.setPower(Globals.defaultFarZonePower);
+                rightShooterMotor.setPower(Globals.defaultFarZonePower);
+            } else {
+                leftShooterMotor.setPower(0);
+                rightShooterMotor.setPower(0);
+            }
+            //manual sort
+            if (gamepad1.left_stick_button) {
+                vision.recycleToColor(1, leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor, leftBackRoller,
+                        rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
                    /* String color = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
                     telemetry.addData("color",color);
                     telemetry.update();
@@ -290,10 +320,10 @@ public class BasicTeleop extends OpMode {
                         backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
                     }*/
 
-        }
-        if(gamepad1.right_stick_button){
-            vision.recycleToColor(0,leftKickerServo,rightKickerServo,frontIntakeMotor,backIntakeMotor,leftBackRoller,
-                    rightBackRoller,leftIntakeColorSensor,rightIntakeColorSensor);
+            }
+            if (gamepad1.right_stick_button) {
+                vision.recycleToColor(0, leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor, leftBackRoller,
+                        rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
                 /*timer.reset();
                 String color = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
                 telemetry.addData("color",color);
@@ -319,23 +349,29 @@ public class BasicTeleop extends OpMode {
                     backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
                 }}*/
 
-        }
-        // tipping
-        if(!gamepad1.yWasPressed()&&gamepad1.y){
-            if(!tipped){
-                leftTipper.setPosition(Globals.tipperExtended);
-                rightTipper.setPosition(Globals.tipperExtended);
-                tipped = true;
             }
-            else {
-                leftTipper.setPosition(Globals.tipperRetracted);
-                rightTipper.setPosition(Globals.tipperRetracted);
-                tipped = false;
+            // tipping
+            if (!gamepad1.yWasPressed() && gamepad1.y) {
+                if (!tipped) {
+                    leftTipper.setPosition(Globals.tipperExtended);
+                    rightTipper.setPosition(Globals.tipperExtended);
+                    tipped = true;
+                } else {
+                    leftTipper.setPosition(Globals.tipperRetracted);
+                    rightTipper.setPosition(Globals.tipperRetracted);
+                    tipped = false;
 
+                }
+            }
+            telemetry.addData("Looptime in ms:   ", timer.milliseconds());
+            telemetry.update();
+            if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1 && kickerInDefaultPosition == false && kickerRotationsLeft != 0) {
+                kickerRotationsLeft = kickerRotationsLeft - 1;
+                kickerInDefaultPosition = true;
+            }
+            if (kickerLocation < Globals.defaultKickerLocation - 0.1 || kickerLocation > Globals.defaultKickerLocation + 0.1) {
+                kickerInDefaultPosition = false;
             }
         }
-        telemetry.addData("Looptime in ms:   ", timer.milliseconds());
-        telemetry.update();
     }
-
 }
