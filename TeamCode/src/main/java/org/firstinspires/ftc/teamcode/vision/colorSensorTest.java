@@ -45,5 +45,5 @@ public class colorSensorTest extends OpMode {
         telemetry.addData("leftHue", JavaUtil.colorToHue(leftColor.toColor()));
         telemetry.addData("leftSaturation", "%.3f", JavaUtil.colorToSaturation(leftColor.toColor()));
         telemetry.addData("leftValue", "%.3f", JavaUtil.colorToValue(leftColor.toColor()));
-        }
     }
+}

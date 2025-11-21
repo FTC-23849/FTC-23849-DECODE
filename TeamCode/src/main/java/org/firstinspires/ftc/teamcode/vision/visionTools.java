@@ -40,7 +40,7 @@ public class visionTools {
         double tx = result.getTx();
         double direction;
         if (tx > 0){
-             direction = 1;
+            direction = 1;
         }else{
             direction = -1;
         }
