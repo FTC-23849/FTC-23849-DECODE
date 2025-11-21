@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 
-import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -9,27 +7,13 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
-import com.qualcomm.robotcore.util.RobotLog;
-
-import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
-
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.util.RobotLog;
-
-import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
-
-import java.io.File;
-
-import java.util.List;
 
 
 @TeleOp
-public class BasicTeleOp1 extends OpMode {
+public class SuperBasicTeleop extends OpMode {
 
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;
@@ -47,11 +31,10 @@ public class BasicTeleOp1 extends OpMode {
     CRServoImplEx rightBackRoller;
     double totalCurrent;
     boolean tipped = false;
-    ElapsedTime timer = new ElapsedTime();
+
     @Override
 
     public void init() {
-        List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
         leftFrontMotor  = hardwareMap.get(DcMotorEx.class,"LF");
         rightFrontMotor = hardwareMap.get(DcMotorEx.class, "RF");
         leftBackMotor = hardwareMap.get(DcMotorEx.class,"LB");
@@ -78,21 +61,11 @@ public class BasicTeleOp1 extends OpMode {
         rightTipper = hardwareMap.get(ServoImplEx.class, "rightTipper");
         leftBackRoller = hardwareMap.get(CRServoImplEx.class, "leftBackRoller");
         rightBackRoller = hardwareMap.get(CRServoImplEx.class, "rightBackRoller");
-
         rightBackRoller.setDirection(DcMotorSimple.Direction.REVERSE);
-        for (LynxModule hub : allHubs) {
-            hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
-        }
     }
 
     @Override
     public void loop() {
-
-        List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
-        for (LynxModule hub : allHubs) {
-            hub.clearBulkCache();
-        }
-        timer.reset();
         telemetry.addData("tipped", tipped);
         telemetry.addData("lf", leftFrontMotor.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("rf", rightFrontMotor.getCurrent(CurrentUnit.AMPS));
@@ -123,45 +96,45 @@ public class BasicTeleOp1 extends OpMode {
         leftBackMotor.setPower(backLeftPower);
         rightFrontMotor.setPower(frontRightPower);
         rightBackMotor.setPower(backRightPower);
-
+/*
         if(gamepad1.right_trigger > 0.1){
-            frontIntakeMotor.setPower(Globals.frontIntakeIntakeSpeed);
-            backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
-            leftBackRoller.setPower(Globals.backRollersMaxPower);
-            rightBackRoller.setPower(Globals.backRollersMaxPower);
+            frontIntakeMotor.setPower(Globals.FRONT_INTAKING_SPEED);
+            backIntakeMotor.setPower(Globals.BACK_INTAKING_SPEED);
+            leftBackRoller.setPower(Globals.BACK_ROLLERS_MAX_POWER);
+            rightBackRoller.setPower(Globals.BACK_ROLLERS_MAX_POWER);
         }
         else if(gamepad1.a){
-            frontIntakeMotor.setPower(Globals.frontIntakeReverseSpeed);
-            backIntakeMotor.setPower(Globals.backIntakeReverseSpeed);
-            leftBackRoller.setPower(Globals.backRollersReverse);
-            rightBackRoller.setPower(Globals.backRollersReverse);
+            frontIntakeMotor.setPower(Globals.FRONT_INTAKE_REVERSE_SPEED);
+            backIntakeMotor.setPower(Globals.BACK_INTAKE_REVERSE_SPEED);
+            leftBackRoller.setPower(Globals.BACK_ROLLERS_REVERSE);
+            rightBackRoller.setPower(Globals.BACK_ROLLERS_REVERSE);
 
         }
         else if(gamepad1.left_trigger > 0.1){
-            rightKickerServo.setPower(Globals.kickerShoot);
-            leftKickerServo.setPower(Globals.kickerShoot);
-            frontIntakeMotor.setPower(Globals.frontIntakeShootSpeed);
-            leftBackRoller.setPower(Globals.backRollersMaxPower);
-            rightBackRoller.setPower(Globals.backRollersMaxPower);
-            backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
+            rightKickerServo.setPower(Globals.KICKER_SHOOT);
+            leftKickerServo.setPower(Globals.KICKER_SHOOT);
+            frontIntakeMotor.setPower(Globals.FRONT_INTAKE_SHOOT_SPEED);
+            leftBackRoller.setPower(Globals.BACK_ROLLERS_MAX_POWER);
+            rightBackRoller.setPower(Globals.BACK_ROLLERS_MAX_POWER);
+            backIntakeMotor.setPower(Globals.BACK_INTAKE_SHOOT_SPEED);
         }
         else if(gamepad1.dpad_up){
-            rightKickerServo.setPower(Globals.kickerShoot);
-            leftKickerServo.setPower(Globals.kickerShoot);
+            rightKickerServo.setPower(Globals.KICKER_SHOOT);
+            leftKickerServo.setPower(Globals.KICKER_SHOOT);
         }
         else if(gamepad1.dpad_down){
-            rightKickerServo.setPower(Globals.kickerRecycle);
-            leftKickerServo.setPower(Globals.kickerRecycle);
-            frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
-            backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
+            rightKickerServo.setPower(Globals.KICKER_RECYCLE);
+            leftKickerServo.setPower(Globals.KICKER_RECYCLE);
+            frontIntakeMotor.setPower(Globals.FRONT_INTAKE_RECYCLE_SPEED);
+            backIntakeMotor.setPower(Globals.BACK_INTAKE_RECYCLE_SPEED);
         }
         else if(gamepad1.dpad_left){
-            rightKickerServo.setPower(Globals.kickerShoot);
-            leftKickerServo.setPower(Globals.kickerShoot);
+            rightKickerServo.setPower(Globals.KICKER_SHOOT);
+            leftKickerServo.setPower(Globals.KICKER_SHOOT);
         }
         else if(gamepad1.dpad_right){
-            rightKickerServo.setPower(Globals.kickerRecycle);
-            leftKickerServo.setPower(Globals.kickerRecycle);
+            rightKickerServo.setPower(Globals.KICKER_RECYCLE);
+            leftKickerServo.setPower(Globals.KICKER_RECYCLE);
         }
         else{
             frontIntakeMotor.setPower(0);
@@ -173,8 +146,8 @@ public class BasicTeleOp1 extends OpMode {
         }
         //close zone shoot
         if(gamepad1.left_bumper){
-            leftShooterMotor.setPower(Globals.defaultCloseZonePower);
-            rightShooterMotor.setPower(Globals.defaultCloseZonePower);
+            leftShooterMotor.setPower(Globals.DEFAULT_CLOSE_ZONE_POWER);
+            rightShooterMotor.setPower(Globals.DEFAULT_CLOSE_ZONE_POWER);
         }
         else{
             leftShooterMotor.setPower(0);
@@ -183,19 +156,18 @@ public class BasicTeleOp1 extends OpMode {
         // tipping
         if(!gamepad1.yWasPressed()&&gamepad1.y){
             if(!tipped){
-                leftTipper.setPosition(Globals.tipperExtended);
-                rightTipper.setPosition(Globals.tipperExtended);
+                leftTipper.setPosition(Globals.TIPPER_EXTENDED);
+                rightTipper.setPosition(Globals.TIPPER_EXTENDED);
                 tipped = true;
             }
             else {
-                leftTipper.setPosition(Globals.tipperRetracted);
-                rightTipper.setPosition(Globals.tipperRetracted);
+                leftTipper.setPosition(Globals.TIPPER_RETRACTED);
+                rightTipper.setPosition(Globals.TIPPER_RETRACTED);
                 tipped = false;
             }
         }
-        telemetry.addData("timer",timer.milliseconds());
 
-
+*/
     }
 
 }

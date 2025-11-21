@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.pedroPathing.examples;
+package org.firstinspires.ftc.teamcode.opmode.Auto.Pathing.pedroPathing.examples;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
