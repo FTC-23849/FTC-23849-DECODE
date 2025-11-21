@@ -38,13 +38,15 @@ public class BasicTeleop extends OpMode {
     boolean kickerShoot = false;
     boolean kickerRecycle = false;
     double kickerLocation;
-    ElapsedTime kickerTimer = new ElapsedTime();
+    ElapsedTime recycleIntakeTimer = new ElapsedTime();
+    boolean recycleIntakeTimerStarted = false;
     int kickerAction;
     int kickerRotationsLeft;
     boolean kickerInDefaultPosition;
     int loops = 1;
     double closeZonePower;
     double farZonePower;
+    boolean dpadDownPressed = false;
     ElapsedTime runTime = new ElapsedTime();
     @Override
 
@@ -103,12 +105,20 @@ public class BasicTeleop extends OpMode {
         loops = loops + 1;
         telemetry.addData("kicker rotations left", kickerRotationsLeft);
         telemetry.addData("kicker in default position", kickerInDefaultPosition);
+        telemetry.addData(("dapaddownpressed"), dpadDownPressed);
+        telemetry.addData("dumb dpad down pressed", gamepad1.dpadDownWasPressed());
 
         if(kickerEncoder.getVoltage() > 1.65){
             kickerLocation = kickerEncoder.getVoltage() - 1.65;
         }
         else{
             kickerLocation = kickerEncoder.getVoltage();
+        }
+        if(kickerLocation > 0.7){
+            kickerLocation = kickerLocation - 0.7;
+        }
+        else{
+            kickerLocation = 1.65 - (kickerLocation - 0.7);
         }
 
 
@@ -167,10 +177,14 @@ public class BasicTeleop extends OpMode {
             kickerRecycle = true;
             kickerShoot = false;
         }*/
-        else if(gamepad1.dpad_down && !gamepad1.dpadDownWasPressed()){
+        else if(gamepad1.dpad_down && !dpadDownPressed){
+            dpadDownPressed = true;
+            //recycleintaketimer is for turning intake after kicker reaches position so next ball is in right position
+            //recycleintaketimerstarted is for only starting it once
+            recycleIntakeTimerStarted = false;
             //kickerrotationsleft is how many balls to recycle, code at bottom for decreasing that number
             kickerAction = 3;
-            kickerRotationsLeft = 1 ;
+            kickerRotationsLeft = 1 + kickerRotationsLeft ;
             //checks if in default position; rotationsleft is decrased by one when kicker is in this position, dont want to double count
             if(kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1){
                 kickerInDefaultPosition = true;
@@ -199,15 +213,21 @@ public class BasicTeleop extends OpMode {
 
             // going to default position
             if(kickerRotationsLeft == 0){
-                frontIntakeMotor.setPower(0);
-                backIntakeMotor.setPower(0);
-                if(kickerLocation < Globals.defaultKickerLocation - 0.1){
+                if(recycleIntakeTimerStarted == false){
+                    recycleIntakeTimer.reset();
+                    recycleIntakeTimerStarted = true;
+                }
+                if(recycleIntakeTimerStarted == true && recycleIntakeTimer.milliseconds() > 1000){
+                    frontIntakeMotor.setPower(0);
+                    backIntakeMotor.setPower(0);
+                }
+                if(kickerLocation < Globals.defaultKickerLocation - 0.05){
                     leftKickerServo.setPower(0.09 /* (kickerLocation - Globals.defaultKickerLocation)*/ /* *(Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
                     rightKickerServo.setPower(0.09);
                     telemetry.addLine("e");
 
                 }
-                else if(kickerLocation > Globals.defaultKickerLocation + 0.1){
+                else if(kickerLocation > Globals.defaultKickerLocation + 0.05){
                     leftKickerServo.setPower(-0.09);
                     rightKickerServo.setPower(-0.09);
                     telemetry.addLine("ae");
@@ -217,6 +237,9 @@ public class BasicTeleop extends OpMode {
                     leftKickerServo.setPower(0);
 
                 }
+            }
+            if(!gamepad1.dpad_down){
+                dpadDownPressed = false;
             }
 //            leftKickerServo.setPower(0.05*(kickerEncoder.getVoltage()-Globals.defaultKickerLocation));
 //            rightKickerServo.setPower(0.05*(kickerEncoder.getVoltage()-Globals.defaultKickerLocation));
