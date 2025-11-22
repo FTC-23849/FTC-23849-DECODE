@@ -18,15 +18,33 @@ public class visionTools {
     double hueThresholdPurple = 200;
     double hueThresholdGreen = 100;
     public double TurretPowerTxDebug;
+    private double smoothTx = 0;
+
     public double adjustedTurretAngle(double currentAngle, Limelight3A limelight) {
+        double errorMargin = 0.5;
+        double smoothingRange = 0.25;
+
         LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid()) {
-            double Offset = result.getTx();
-            double correction = (Offset / 48) * 54.5;
-            return correction + currentAngle;
+            double tx = result.getTx();
+            if (Math.abs(tx - smoothTx) > smoothingRange) {
+                smoothTx = tx;
+            }
+            if (Math.abs(smoothTx) <= errorMargin) {
+                return currentAngle;
+            }
+            double direction;
+            if (tx < 0){
+                direction = -1;
+            }else{
+                direction = 1;
+            }
+            double correction = (smoothTx * (13/33.0))+direction*0.008;
+            return -(correction / 1800.0) + currentAngle;
         } else {
-            return 0;
+            return currentAngle;
         }
+
     }
 
     private double filteredTx = 0;

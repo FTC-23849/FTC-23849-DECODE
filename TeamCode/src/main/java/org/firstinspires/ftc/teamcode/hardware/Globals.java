@@ -7,7 +7,7 @@ public class Globals {
     public static double frontIntakeRecycleSpeed = -1;
     public static double frontIntakeReverseSpeed = 1;
     public static double backIntakeIntakeSpeed = -1;
-    public static double backIntakeReverseSpeed = -1;
+    public static double backIntakeReverseSpeed = 1;
     public static double backIntakeShootSpeed = -1;
     public static double backIntakeRecycleSpeed = -1;
     public static double kickerShoot = -1;
