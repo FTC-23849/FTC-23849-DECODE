@@ -3,7 +3,9 @@ package org.firstinspires.ftc.teamcode.vision;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -32,28 +34,79 @@ public class visionTools {
     private double integral = 0;
     private long lastTime = System.nanoTime();
     public double TurretPower(Limelight3A limelight, double errorMargin) {
+        limelight.pipelineSwitch(9);
         double alpha = 0.25;
 
         LLResult result = limelight.getLatestResult();
-        if (result == null || !result.isValid()) return 0;
+        if (result == null || !result.isValid()) {
+            lastError = 0;
+            integral = 0;
+            return 0;
+        }
 
         double tx = result.getTx();
         double direction;
         if (tx > 0){
-            direction = 1;
-        }else{
             direction = -1;
+        }else{
+            direction = 1;
         }
-        if (tx == 0){
+        if (tx == errorMargin){
             return 0;
         }else {
-            return 0.05*direction + 0.15 * direction * tx/24;
+            return 0.05*direction + 0.15 * tx/24;
         }
     }
+    public boolean AprilTagTrackerDriveTrain(DcMotorEx lf, DcMotorEx lb, DcMotorEx rf, DcMotorEx rb, Limelight3A limelight,double mode) {
+        limelight.pipelineSwitch(9);
+        LLResult result = limelight.getLatestResult();
+        if (result == null || !result.isValid()) {
+            lf.setPower(0);
+            lb.setPower(0);
+            rf.setPower(0);
+            rb.setPower(0);
+            return false;
+        }
+
+        double tx = result.getTx();
+        double ta = result.getTa();
+
+        double targetTa = 2.1;
+        double sizeError = targetTa - ta;
+        double turnError = tx;
+
+        double forward = 0;
+        double turn = 0;
+
+        if (Math.abs(sizeError) > 0.2 && mode == 1) {
+            double s = Math.abs(sizeError) < 0.3 ? 0.3 : Math.abs(sizeError);
+            forward = sizeError > 0 ?  s : -s;
+        }
+
+        if (Math.abs(turnError) > 2) {
+            turn = (turnError / 24.0) * 0.5;
+        }
+
+        double lfPow = forward + turn;
+        double lbPow = forward + turn;
+        double rfPow = forward - turn;
+        double rbPow = forward - turn;
+
+        double max = Math.max(1.0, Math.max(Math.abs(lfPow), Math.abs(rfPow)));
+
+        lf.setPower(lfPow / max);
+        lb.setPower(lbPow / max);
+        rf.setPower(rfPow / max);
+        rb.setPower(rbPow / max);
+
+        return Math.abs(sizeError) <= 0.2 && Math.abs(turnError) <= 2;
+    }
+
     public double TurretPowerPID(Limelight3A limelight, double errorMargin, double kP, double kI, double kD) {
+        limelight.pipelineSwitch(9);
         double alpha = 0.25;
         LLResult result = limelight.getLatestResult();
-        if (!result.isValid()) return 0;
+        if (!result.isValid() || result == null ) return 0;
         double tx = result.getTx();
         filteredTx = alpha * tx + (1 - alpha) * filteredTx;
         double error = filteredTx;
@@ -71,12 +124,12 @@ public class visionTools {
         double derivative = (error - lastError) / dt;
         lastError = error;
         double pid = (kP * error) + (kI * integral) + (kD * derivative);
-        double scale = Math.min(1.0, Math.abs(error) / 15.0);
+        double scale = 1;
         pid *= scale;
         if (pid > 0) pid += 0.05;
         else if (pid < 0) pid -= 0.05;
-        pid = Math.max(-1, Math.min(1, pid));
-        return pid;
+        //pid = Math.max(-1, Math.min(1, pid));
+        return -pid;
     }
 
 
@@ -101,6 +154,7 @@ public class visionTools {
         return "none";
     }
     public double ballsInRamp (Limelight3A limelight){
+        limelight.pipelineSwitch(0);
         LLResult results = limelight.getLatestResult();
         return results.getPythonOutput()[3];
     }

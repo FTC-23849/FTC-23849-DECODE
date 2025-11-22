@@ -21,7 +21,7 @@ public class LimelightTest extends OpMode {
     public void init() {
 
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
-        limelight.pipelineSwitch(8);
+        limelight.pipelineSwitch(9);
         imu = hardwareMap.get(IMU.class, "imu");
         RevHubOrientationOnRobot revHubOrientationOnRobot = new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.UP,
                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD);

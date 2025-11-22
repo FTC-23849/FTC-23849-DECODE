@@ -61,8 +61,8 @@ public class BasicTeleop extends OpMode {
     boolean tipped = false;
     visionTools vision = new visionTools();
     List currentBalls ;
-    public static double Kp = 0.00035;
-    public static double Ki = 0.00005;
+    public static double Kp = 0.007;
+    public static double Ki = 0.0000;
     public static double Kd = 0.00;
     boolean rightBumperTrue = false;
     boolean leftBumperTrue = false;
@@ -70,7 +70,7 @@ public class BasicTeleop extends OpMode {
 
     public void init() {
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
-        limelight.pipelineSwitch(8);
+        limelight.pipelineSwitch(9);
         leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"leftIntakeColorSensor");
         rightIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"rightIntakeColorSensor");
         turretEncoder = hardwareMap.get(AnalogInput.class, "turretEncoder");
@@ -123,6 +123,8 @@ public class BasicTeleop extends OpMode {
         telemetry.addData("Ki", Ki);
         telemetry.addData("Kd", Kd);
         telemetry.addData("# of balls: ", vision.ballsInRamp(limelight));
+        telemetry.addData("flywheel",leftShooterMotor.getVelocity());
+        telemetry.update();
         totalCurrent = (leftFrontMotor.getCurrent(CurrentUnit.AMPS) + rightFrontMotor.getCurrent(CurrentUnit.AMPS) + leftBackMotor.getCurrent(CurrentUnit.AMPS) + rightBackMotor.getCurrent(CurrentUnit.AMPS) + leftShooterMotor.getCurrent(CurrentUnit.AMPS) + rightShooterMotor.getCurrent(CurrentUnit.AMPS) + frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("totalcurrent", totalCurrent);
         if (kickerEncoder.getVoltage() > 1.65) {
@@ -241,44 +243,32 @@ public class BasicTeleop extends OpMode {
                 kickerInDefaultPosition = false;
             }
             LLResult results = limelight.getLatestResult();
-            if (results.isValid() && (results != null)) {
+            /*if (results.isValid() && (results != null)) {
                 double errorMargin = 0.5;
                 leftTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
                 rightTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
-            }
+            }*/
             //close zone shoot
-            if (gamepad1.leftBumperWasPressed()) {
-                if (leftBumperTrue) {
-                    leftBumperTrue = false;
-                } else {
-                    leftBumperTrue = false;
-                }
-            }
-            if (leftBumperTrue) {
-                double errorMargin = 0;
-                double position = turretEncoder.getVoltage() / 3.2 * 360;
-                LLResult result = limelight.getLatestResult();
-                double txForTelemetry = result.getTx();
-                double txForTurretPower = vision.TurretPowerTxDebug;
-                telemetry.addData("TelemetryTx", txForTelemetry);
-                telemetry.addData("TurretPowerTx", txForTurretPower);
-                telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
-                telemetry.update();
-                leftTurretServo.setPower(-1 * result.getTx() / 96);
-                rightTurretServo.setPower(-1 * result.getTx() / 96);
-                leftShooterMotor.setPower(Globals.defaultCloseZonePower);
-                rightShooterMotor.setPower(Globals.defaultCloseZonePower);
-            } else {
-                leftShooterMotor.setPower(0);
-                rightShooterMotor.setPower(0);
-            }
-            //far zone shoot
-            if (gamepad1.rightBumperWasPressed()) {
+
+            telemetry.addData("left",leftBumperTrue);
+            telemetry.addData("right",rightBumperTrue);
+            if (gamepad1.rightBumperWasReleased()) {
                 if (rightBumperTrue) {
                     rightBumperTrue = false;
                 } else {
-                    rightBumperTrue = false;
+                    rightBumperTrue = true;
                 }
+            }
+            if(rightBumperTrue){
+                leftShooterMotor.setPower(Globals.defaultFarZonePower);
+            rightShooterMotor.setPower(Globals.defaultFarZonePower);
+            telemetry.addData("flywheel",leftShooterMotor.getVelocity());
+            telemetry.update();
+            } else {
+            telemetry.addData("slowing down far zone",0);
+            telemetry.update();
+            leftShooterMotor.setPower(0);
+            rightShooterMotor.setPower(0);
             }
             if (rightBumperTrue) {
                 double errorMargin = 0.5;
@@ -289,11 +279,36 @@ public class BasicTeleop extends OpMode {
                 leftTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
                 rightTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
                 //leftTurretServo.setPower(0.5);
-                leftShooterMotor.setPower(Globals.defaultFarZonePower);
-                rightShooterMotor.setPower(Globals.defaultFarZonePower);
+            }
+            //far zone shoot
+            if (gamepad1.leftBumperWasReleased()) {
+                if (leftBumperTrue) {
+                    leftBumperTrue = false;
+                } else {
+                    leftBumperTrue = true;
+                }
+            }
+            if(leftBumperTrue) {
+            leftShooterMotor.setPower(Globals.defaultCloseZonePower);
+            rightShooterMotor.setPower(Globals.defaultCloseZonePower);
+            telemetry.addData("flywheel",leftShooterMotor.getVelocity());
+            telemetry.update();
             } else {
-                leftShooterMotor.setPower(0);
-                rightShooterMotor.setPower(0);
+            telemetry.addData("slowing down far zone",0);
+            telemetry.update();
+            leftShooterMotor.setPower(0);
+            rightShooterMotor.setPower(0);
+
+            }
+            if (leftBumperTrue) {
+                double errorMargin = 0.5;
+                double position = turretEncoder.getVoltage() / 3.2 * 360;
+
+                telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
+                telemetry.update();
+                leftTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
+                rightTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
+                //leftTurretServo.setPower(0.5);
             }
             //manual sort
             if (gamepad1.left_stick_button) {
@@ -363,8 +378,6 @@ public class BasicTeleop extends OpMode {
 
                 }
             }
-            telemetry.addData("Looptime in ms:   ", timer.milliseconds());
-            telemetry.update();
             if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1 && kickerInDefaultPosition == false && kickerRotationsLeft != 0) {
                 kickerRotationsLeft = kickerRotationsLeft - 1;
                 kickerInDefaultPosition = true;
