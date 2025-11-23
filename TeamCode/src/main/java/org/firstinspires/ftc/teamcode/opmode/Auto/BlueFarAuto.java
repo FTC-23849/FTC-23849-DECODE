@@ -29,7 +29,7 @@ import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class BlueCloseAuto extends LinearOpMode {
+public class BlueFarAuto extends LinearOpMode {
 
     Limelight3A limelight;
     DcMotorEx leftFrontMotor;
@@ -71,12 +71,18 @@ public class BlueCloseAuto extends LinearOpMode {
 
     double intakeStopDelay = 0.1;
 
+    double shootingSpeed = -0.98;
+
+    double initialDelay = 0.0;
+    boolean pickupHP = false;
+    boolean pickupLastSpike = false;
+
     @Override
     public void runOpMode() {
 
         // Create Roadrunner Trajectories
 
-        Pose2d startPose = new Pose2d(-54.5, -45, Math.toRadians(225));
+        Pose2d startPose = new Pose2d(63, -14.5, Math.toRadians(90));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
 
         //map motors and servos
@@ -124,191 +130,71 @@ public class BlueCloseAuto extends LinearOpMode {
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
         rightHood.setDirection(ServoImplEx.Direction.REVERSE);
 
-        leftHood.setPosition(0.3);
-        rightHood.setPosition(0.3);
+        leftHood.setPosition(0.4);
+        rightHood.setPosition(0.4);
 
-        leftTurretServo.setPosition(0.43);
-        rightTurretServo.setPosition(0.43);
+        leftTurretServo.setPosition(0.39);
+        rightTurretServo.setPosition(0.39);
 
         waitForStart();
+
+        while(!isStarted()) {
+
+            if (gamepad1.dpad_up) {
+                if (initialDelay < 30) {
+                    initialDelay ++;
+                }
+            } else if (gamepad1.dpad_down) {
+                if (initialDelay > 0) {
+                    initialDelay --;
+                }
+            }
+
+            if (gamepad1.a) {
+                pickupLastSpike = true;
+            }
+
+            if (gamepad1.b) {
+                pickupHP = true;
+            }
+
+            telemetry.addData("Initial Delay (Seconds): ", initialDelay);
+            telemetry.addData("Picking up last spike mark?: ", pickupLastSpike);
+            telemetry.addData("Picking up HP?: ", pickupHP);
+
+            telemetry.update();
+
+        }
 
         if (isStopRequested()) return;
 
         sleep(4);
 
-        //score preload
-        TrajectoryActionBuilder scorePreloads = drive.actionBuilder(startPose)
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
-
         Actions.runBlocking(new SequentialAction(
-                new ParallelAction(
-                        scorePreloads.build(),
-                        new setShooter(leftShooterMotor, rightShooterMotor, Globals.defaultCloseZonePowerAuto)
-                ),
-                new startKicker(leftKickerServo, rightKickerServo, frontIntakeMotor),
-                new SleepAction(shootingDelay)
-                //new stopFeed(transferMotor, intakeMotor, transferServoLeft, transferServoRight, true)
+                new setShooter(leftShooterMotor, rightShooterMotor, Globals.defaultFarZonePowerAuto),
+                new SleepAction(initialDelay),
+                new startKicker(leftKickerServo, rightKickerServo, frontIntakeMotor)
         ));
 
-        drive.updatePoseEstimate();
-        drive.localizer.update();
+        if (pickupLastSpike) {
 
+        } else if (pickupHP) {
 
-        //Collect 1st spike mark
-        TrajectoryActionBuilder intakeSpike1 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(-11, -60), Math.toRadians(270), new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking));
+        } else {
 
-        Actions.runBlocking(new ParallelAction(
-                intakeSpike1.build(),
-                new stopKickerPlain(leftKickerServo, rightKickerServo, frontIntakeMotor, false),
-                //new stopFeed(transferMotor, intakeMotor, transferServoLeft, transferServoRight, true),
-                new setIntake(frontIntakeMotor, backIntakeMotor, 1.0)
-        ));
+            drive.updatePoseEstimate();
+            drive.localizer.update();
 
-        drive.updatePoseEstimate();
-        drive.localizer.update();
+            TrajectoryActionBuilder plainPark = drive.actionBuilder(drive.localizer.getPose())
+                    .lineToY(-35,
+                            new TranslationalVelConstraint(minVelDrive),
+                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
 
-        //shoot 1st spike mark
-        TrajectoryActionBuilder scoreSpike1 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
+            Actions.runBlocking(new SequentialAction(
+                    plainPark.build()
+            ));
 
-        Actions.runBlocking(new SequentialAction(
-                new ParallelAction(
-                        scoreSpike1.build(),
-                        new SequentialAction(
-                                new SleepAction(intakeStopDelay),
-                                new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
-                        )
-                ),
-                new SleepAction(shooterStartDelay),
-                new startKicker(leftKickerServo, rightKickerServo, frontIntakeMotor),
-                new SleepAction(shootingDelay)
-                //new stopFeed(transferMotor, intakeMotor, transferServoLeft, transferServoRight, true)
-        ));
-
-        drive.updatePoseEstimate();
-        drive.localizer.update();
-
-
-
-        //Collect 2nd spike mark
-        TrajectoryActionBuilder goToIntakeSpike2 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(12.5, -25), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
-
-        Actions.runBlocking(new ParallelAction(
-                goToIntakeSpike2.build(),
-                new stopKickerPlain(leftKickerServo, rightKickerServo, frontIntakeMotor, false),
-                //new stopFeed(transferMotor, intakeMotor, transferServoLeft, transferServoRight, true),
-                new setIntake(frontIntakeMotor, backIntakeMotor, 1.0)
-        ));
-
-        drive.updatePoseEstimate();
-        drive.localizer.update();
-
-
-
-        TrajectoryActionBuilder intakeSpike2 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(12.5, -66), Math.toRadians(270), new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking));
-
-        Actions.runBlocking(new SequentialAction(
-                intakeSpike2.build()
-                //new setIntake(intakeMotor, transferMotor, 0.0)
-        ));
-
-        drive.updatePoseEstimate();
-        drive.localizer.update();
-
-
-
-        //shoot 2nd spike mark
-        TrajectoryActionBuilder scoreSpike2 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(11.5, -52), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive))
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
-
-        Actions.runBlocking(new SequentialAction(
-                new ParallelAction(
-                        scoreSpike2.build(),
-                        new SequentialAction(
-                                new SleepAction(intakeStopDelay),
-                                new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
-                        )
-                ),
-                new SleepAction(shooterStartDelay = 0.2),
-                new startKicker(leftKickerServo, rightKickerServo, frontIntakeMotor),
-                new SleepAction(shootingDelay)
-                //new stopFeed(transferMotor, intakeMotor, transferServoLeft, transferServoRight, true)
-        ));
-
-        drive.updatePoseEstimate();
-        drive.localizer.update();
-
-
-
-
-        //Collect 3rd spike mark
-        TrajectoryActionBuilder goToIntakeSpike3 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(36, -25), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
-
-        Actions.runBlocking(new ParallelAction(
-                goToIntakeSpike3.build(),
-                new stopKickerPlain(leftKickerServo, rightKickerServo, frontIntakeMotor, false),
-                //new stopFeed(transferMotor, intakeMotor, transferServoLeft, transferServoRight, true),
-                new setIntake(frontIntakeMotor, backIntakeMotor, 1.0)
-        ));
-
-        drive.updatePoseEstimate();
-        drive.localizer.update();
-
-
-
-        TrajectoryActionBuilder intakeSpike3 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(36, -66), Math.toRadians(270), new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking));
-
-        Actions.runBlocking(new SequentialAction(
-                intakeSpike3.build()
-                //new setIntake(intakeMotor, transferMotor, 0.0)
-        ));
-
-        drive.updatePoseEstimate();
-        drive.localizer.update();
-
-
-
-        //shoot 3rd spike mark
-        TrajectoryActionBuilder scoreSpike3 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
-
-        Actions.runBlocking(new SequentialAction(
-                new ParallelAction(
-                        scoreSpike3.build(),
-                        new SequentialAction(
-                                new SleepAction(intakeStopDelay),
-                                new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
-                        )
-                ),
-                new SleepAction(shooterStartDelay + 0.5),
-                new startKicker(leftKickerServo, rightKickerServo, frontIntakeMotor),
-                new SleepAction(shootingDelay)
-                //new stopFeed(transferMotor, intakeMotor, transferServoLeft, transferServoRight, true)
-        ));
-
-        drive.updatePoseEstimate();
-        drive.localizer.update();
-
-        //park
-        TrajectoryActionBuilder park = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(-22, -58), Math.toRadians(270), new TranslationalVelConstraint(200), new ProfileAccelConstraint(-200, 200));
-
-        Actions.runBlocking(new SequentialAction(
-                new ParallelAction(
-                        park.build(),
-                        new setShooter(leftShooterMotor, rightShooterMotor, 0.0),
-                        new stopKickerPlain(leftKickerServo, rightKickerServo, frontIntakeMotor, true)
-                )
-        ));
-
-        drive.updatePoseEstimate();
-        drive.localizer.update();
+        }
 
         sleep(1000);
 

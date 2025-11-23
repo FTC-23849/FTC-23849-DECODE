@@ -32,6 +32,8 @@ public class SuperBasicTeleop extends OpMode {
     ServoImplEx rightTipper;
     CRServoImplEx leftBackRoller;
     CRServoImplEx rightBackRoller;
+
+
     double totalCurrent;
     boolean tipped = false;
     AnalogInput kickerEncoder;
