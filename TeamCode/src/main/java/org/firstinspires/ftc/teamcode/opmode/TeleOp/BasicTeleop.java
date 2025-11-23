@@ -52,7 +52,9 @@ public class BasicTeleop extends OpMode {
     boolean dpadDownPressed = false;
     boolean recycleIntakeTimerStarted = false;
     boolean shooting;
-
+    boolean yPressed = false;
+    boolean purpleSortingEnabled = false;
+    boolean greenSortingEnabled = false;
     ElapsedTime timer = new ElapsedTime();
     ElapsedTime recycleIntakeTimer = new ElapsedTime();
     AnalogInput turretEncoder;
@@ -67,6 +69,7 @@ public class BasicTeleop extends OpMode {
     public static double Kd = 0.00;
     boolean rightBumperTrue = false;
     boolean leftBumperTrue = false;
+    int attempts = 0;
     @Override
 
     public void init() {
@@ -135,10 +138,10 @@ public class BasicTeleop extends OpMode {
         } else {
             kickerLocation = kickerEncoder.getVoltage();
         }
-        if (kickerLocation > 0.7) {
-            kickerLocation = kickerLocation - 0.7;
+        if (kickerLocation > 0.6) {
+            kickerLocation = kickerLocation - 0.6;
         } else {
-            kickerLocation = 1.65 - (kickerLocation - 0.7);
+            kickerLocation = 1.65 - (kickerLocation - 0.6);
         }
 
 
@@ -266,9 +269,9 @@ public class BasicTeleop extends OpMode {
             }
             if(rightBumperTrue && !leftBumperTrue){
                 leftShooterMotor.setPower(Globals.defaultFarZonePower);
-            rightShooterMotor.setPower(Globals.defaultFarZonePower);
-            telemetry.addData("flywheel",leftShooterMotor.getVelocity());
-            telemetry.update();
+                rightShooterMotor.setPower(Globals.defaultFarZonePower);
+                telemetry.addData("flywheel",leftShooterMotor.getVelocity());
+                telemetry.update();
             }
             if (rightBumperTrue && !leftBumperTrue) {
                 double errorMargin = 0.5;
@@ -289,16 +292,18 @@ public class BasicTeleop extends OpMode {
                 }
             }
             if(leftBumperTrue && !rightBumperTrue) {
-            leftShooterMotor.setPower(Globals.defaultCloseZonePower);
-            rightShooterMotor.setPower(Globals.defaultCloseZonePower);
-            telemetry.addData("flywheel",leftShooterMotor.getVelocity());
-            telemetry.update();
+                leftShooterMotor.setPower(Globals.defaultCloseZonePower);
+                rightShooterMotor.setPower(Globals.defaultCloseZonePower);
+                telemetry.addData("flywheel",leftShooterMotor.getVelocity());
+                telemetry.update();
             }
             if (!rightBumperTrue && !leftBumperTrue) {
-            telemetry.addData("slowing down flywheel",0);
-            telemetry.update();
-            leftShooterMotor.setPower(0);
-            rightShooterMotor.setPower(0);
+                telemetry.addData("slowing down flywheel",0);
+                leftTurretServo.setPosition(0.5);
+                rightTurretServo.setPosition(0.5);
+                telemetry.update();
+                leftShooterMotor.setPower(0);
+                rightShooterMotor.setPower(0);
 
             }
             if (leftBumperTrue && !rightBumperTrue) {
@@ -312,8 +317,14 @@ public class BasicTeleop extends OpMode {
             }
             //manual sort
             if (gamepad1.left_stick_button) {
-                vision.recycleToColor(1, leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor, leftBackRoller,
-                        rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
+                purpleSortingEnabled = true;
+
+            }
+            if(purpleSortingEnabled){
+                // Set a timer to handle the cycling process.
+                purpleSortingEnabled = vision.recycleToColor("Purple", leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor,
+                        leftBackRoller, rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
+
                    /* String color = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
                     telemetry.addData("color",color);
                     telemetry.update();
@@ -334,11 +345,18 @@ public class BasicTeleop extends OpMode {
                         rightBackRoller.setPower(Globals.backRollersMaxPower);
                         backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
                     }*/
-
             }
             if (gamepad1.right_stick_button) {
-                vision.recycleToColor(0, leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor, leftBackRoller,
-                        rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
+                greenSortingEnabled = true;
+                attempts = 0;
+            }
+            if (greenSortingEnabled) {
+            //green
+                greenSortingEnabled = vision.recycleToColor("Green", leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor,
+                        leftBackRoller, rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
+
+                greenSortingEnabled = false;
+
                 /*timer.reset();
                 String color = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
                 telemetry.addData("color",color);
@@ -364,9 +382,10 @@ public class BasicTeleop extends OpMode {
                     backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
                 }}*/
 
-            }
+                    }
             // tipping
-            if (!gamepad1.yWasPressed() && gamepad1.y) {
+            if (!yPressed && gamepad1.y) {
+                yPressed = true;
                 if (!tipped) {
                     leftTipper.setPosition(Globals.tipperExtended);
                     rightTipper.setPosition(Globals.tipperExtended);
@@ -377,6 +396,9 @@ public class BasicTeleop extends OpMode {
                     tipped = false;
 
                 }
+            }
+            else{
+                yPressed = false;
             }
             if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1 && kickerInDefaultPosition == false && kickerRotationsLeft != 0) {
                 kickerRotationsLeft = kickerRotationsLeft - 1;

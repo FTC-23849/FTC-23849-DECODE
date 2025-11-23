@@ -293,8 +293,8 @@ public class BasicTeleOpCopyingV1 extends OpMode {
             }
             //manual sort
             if (gamepad1.left_stick_button) {
-                vision.recycleToColor(1, leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor, leftBackRoller,
-                        rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
+                //vision.recycleToColor(1, leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor, leftBackRoller,
+                //        rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
                    /* String color = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
                     telemetry.addData("color",color);
                     telemetry.update();
@@ -318,8 +318,8 @@ public class BasicTeleOpCopyingV1 extends OpMode {
 
             }
             if (gamepad1.right_stick_button) {
-                vision.recycleToColor(0, leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor, leftBackRoller,
-                        rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
+                //vision.recycleToColor(0, leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor, leftBackRoller,
+                //        rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
                 /*timer.reset();
                 String color = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
                 telemetry.addData("color",color);

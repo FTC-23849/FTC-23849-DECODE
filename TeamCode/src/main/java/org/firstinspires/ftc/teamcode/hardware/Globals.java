@@ -21,7 +21,7 @@ public class Globals {
     public static double backRollersMaxPower = 1;
     public static double backRollersReverse = -1;
     public static double defaultKickerLocation = 0.8;
-    public static double defaultKickerLocationAuto = 0.76;
+    public static double defaultKickerLocationAuto = 0.7;
 
 
 
