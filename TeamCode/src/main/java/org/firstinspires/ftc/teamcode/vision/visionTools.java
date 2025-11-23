@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.vision;
 import static java.lang.Thread.sleep;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -22,11 +23,22 @@ public class visionTools {
     public double TurretPowerTxDebug;
     private double smoothTx = 0;
 
-    public double adjustedTurretAngle(double currentAngle, Limelight3A limelight) {
+    public double adjustedTurretAngle(double currentAngle, Limelight3A limelight,int zone) {
+        limelight.pipelineSwitch(9);
         double errorMargin = 2;
         double smoothingRange = 0.25;
-
+        double offset;
         LLResult result = limelight.getLatestResult();
+        LLResultTypes.FiducialResult fiducial = null;
+        double tagID = fiducial.getFiducialId();
+        if (zone == 1){
+            offset = 0;
+        }else{
+            offset = 9.2;
+        }
+        if (tagID == 24){
+            offset = -offset;
+        }
         if (result != null && result.isValid()) {
             double tx = result.getTx();
             if (Math.abs(tx - smoothTx) > smoothingRange) {
@@ -36,12 +48,12 @@ public class visionTools {
                 return currentAngle;
             }
             double direction;
-            if (tx < 0){
+            if (tx < offset){
                 direction = -1;
             }else{
                 direction = 1;
             }
-            double correction = (smoothTx * (13/33.0))+0*(direction*0.004);
+            double correction = ((smoothTx - offset) * (13/33.0))+0*(direction*0.004);
             return -(correction / 1800.0) + currentAngle;
         } else {
             return currentAngle;
