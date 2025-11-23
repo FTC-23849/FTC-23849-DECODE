@@ -58,7 +58,7 @@ public class visionTools {
             }else{
                 direction = 1;
             }
-            double correction = ((smoothTx - offset) * (33/13));//+(direction*0.008);
+            double correction = ((smoothTx - offset) * (30/15));//+(direction*0.008);
             return -(correction / 1800.0) + currentAngle;
         } else {
             return currentAngle;
