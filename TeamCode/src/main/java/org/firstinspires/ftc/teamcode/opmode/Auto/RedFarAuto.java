@@ -59,9 +59,9 @@ public class RedFarAuto extends LinearOpMode {
 
     ElapsedTime timer = new ElapsedTime();
 
-    double minVelIntaking = 40;
-    double minAccelIntaking = -40;
-    double maxAccelIntaking = 40;
+    double minVelIntaking = 30;
+    double minAccelIntaking = -30;
+    double maxAccelIntaking = 30;
 
     double minVelDrive = 60;
     double minAccelDrive = -60;
@@ -134,8 +134,8 @@ public class RedFarAuto extends LinearOpMode {
         leftHood.setPosition(0.4);
         rightHood.setPosition(0.4);
 
-        leftTurretServo.setPosition(0.613);
-        rightTurretServo.setPosition(0.613);
+        leftTurretServo.setPosition(0.61);
+        rightTurretServo.setPosition(0.61);
 
         while(!opModeIsActive() && !isStopRequested()) {
 
@@ -176,7 +176,7 @@ public class RedFarAuto extends LinearOpMode {
         sleep(4);
 
         Actions.runBlocking(new SequentialAction(
-                new setShooter(leftShooterMotor, rightShooterMotor, Globals.defaultFarZonePowerAuto),
+                new setShooter(leftShooterMotor, rightShooterMotor, -0.90),
                 new SleepAction(shooterStartDelay),
                 new SleepAction(initialDelay),
                 new startKicker(leftKickerServo, rightKickerServo, frontIntakeMotor),

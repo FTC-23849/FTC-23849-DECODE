@@ -59,9 +59,9 @@ public class BlueFarAuto extends LinearOpMode {
 
     ElapsedTime timer = new ElapsedTime();
 
-    double minVelIntaking = 40;
-    double minAccelIntaking = -40;
-    double maxAccelIntaking = 40;
+    double minVelIntaking = 30;
+    double minAccelIntaking = -30;
+    double maxAccelIntaking = 30;
 
     double minVelDrive = 60;
     double minAccelDrive = -60;
@@ -149,11 +149,11 @@ public class BlueFarAuto extends LinearOpMode {
                 initialDelay = 15;
             }
 
-            if (gamepad1.a) {
-                pickupLastSpike = true;
-            } else if (gamepad1.b) {
-                pickupLastSpike = false;
-            }
+//            if (gamepad1.a) {
+//                pickupLastSpike = true;
+//            } else if (gamepad1.b) {
+//                pickupLastSpike = false;
+//            }
 
             if (gamepad1.x) {
                 pickupHP = true;
@@ -162,7 +162,7 @@ public class BlueFarAuto extends LinearOpMode {
             }
 
             telemetry.addData("Initial Delay (Seconds): ", initialDelay);
-            telemetry.addData("Picking up last spike mark? (a/b): ", pickupLastSpike);
+            //telemetry.addData("Picking up last spike mark? (a/b): ", pickupLastSpike);
             telemetry.addData("Picking up HP? (x/y): ", pickupHP);
 
             telemetry.update();
