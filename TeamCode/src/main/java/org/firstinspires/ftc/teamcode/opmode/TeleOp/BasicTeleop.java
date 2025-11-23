@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 
+import static java.lang.Thread.sleep;
+
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.limelightvision.LLFieldMap;
 import com.qualcomm.hardware.limelightvision.LLResult;
@@ -42,6 +44,9 @@ public class BasicTeleop extends OpMode {
     ServoImplEx rightTipper;
     CRServoImplEx leftBackRoller;
     CRServoImplEx rightBackRoller;
+    ServoImplEx leftHood;
+    ServoImplEx rightHood;
+
     AnalogInput kickerEncoder;
     boolean kickerShoot = false;
     boolean kickerRecycle = false;
@@ -70,6 +75,8 @@ public class BasicTeleop extends OpMode {
     boolean rightBumperTrue = false;
     boolean leftBumperTrue = false;
     int attempts = 0;
+    int status = 0;
+    ElapsedTime cycleTimer = new ElapsedTime();
     @Override
 
     public void init() {
@@ -112,7 +119,13 @@ public class BasicTeleop extends OpMode {
         kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
         leftTurretServo.setPosition(0.5);
         rightTurretServo.setPosition(0.5);
-    }
+
+        leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
+        rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
+        rightHood.setDirection(ServoImplEx.Direction.REVERSE);
+
+        rightHood.setPosition(0.0);
+        leftHood.setPosition(0.0);    }
 
     @Override
     public void loop() {
@@ -232,10 +245,9 @@ public class BasicTeleop extends OpMode {
                     leftKickerServo.setPower(-0.09);
                     rightKickerServo.setPower(-0.09);
                     telemetry.addLine("ae");
-                } else {
+                }else{
                     rightKickerServo.setPower(0);
                     leftKickerServo.setPower(0);
-
                 }
 
             }
@@ -270,6 +282,8 @@ public class BasicTeleop extends OpMode {
             if(rightBumperTrue && !leftBumperTrue){
                 leftShooterMotor.setPower(Globals.defaultFarZonePower);
                 rightShooterMotor.setPower(Globals.defaultFarZonePower);
+                leftHood.setPosition(0.4);
+                rightHood.setPosition(0.4);
                 telemetry.addData("flywheel",leftShooterMotor.getVelocity());
                 telemetry.update();
             }
@@ -291,9 +305,11 @@ public class BasicTeleop extends OpMode {
                     leftBumperTrue = true;
                 }
             }
-            if(leftBumperTrue && !rightBumperTrue) {
+            if(leftBumperTrue && !rightBumperTrue){
                 leftShooterMotor.setPower(Globals.defaultCloseZonePower);
                 rightShooterMotor.setPower(Globals.defaultCloseZonePower);
+                leftHood.setPosition(0.0);
+                rightHood.setPosition(0.0);
                 telemetry.addData("flywheel",leftShooterMotor.getVelocity());
                 telemetry.update();
             }
@@ -318,13 +334,38 @@ public class BasicTeleop extends OpMode {
             //manual sort
             if (gamepad1.left_stick_button) {
                 purpleSortingEnabled = true;
+                attempts = 0;
+                status = -1;
+                cycleTimer.reset();
 
             }
-            if(purpleSortingEnabled){
-                // Set a timer to handle the cycling process.
-                purpleSortingEnabled = vision.recycleToColor("Purple", leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor,
-                        leftBackRoller, rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
+            if(purpleSortingEnabled) {
+                if (cycleTimer.milliseconds() > 400) {
+                    status = (("Purple".equals(vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor))) ? 1 : 0);
+                    if (status == 0) {
+                        //recycleintaketimer is for turning intake after kicker reaches position so next ball is in right position
+                        //recycleintaketimerstarted is for only starting it once
+                        recycleIntakeTimerStarted = false;
+                        //kickerrotationsleft is how many balls to recycle, code at bottom for decreasing that number
+                        kickerAction = 3;
+                        kickerRotationsLeft = 1 + kickerRotationsLeft;
+                        //checks if in default position; rotationsleft is decrased by one when kicker is in this position, dont want to double count
+                        if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1) {
+                            kickerInDefaultPosition = true;
+                            telemetry.addLine("eewewwe");
+                        } else {
+                            kickerInDefaultPosition = false;
+                        }
+                        leftKickerServo.setPower(Globals.kickerRecycle);
+                        rightKickerServo.setPower(Globals.kickerRecycle);
+                        frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
+                        backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
+                        cycleTimer.reset();
+                    } else if (status == 1) {
 
+                        purpleSortingEnabled = false;
+                        cycleTimer.reset();
+                    }
                    /* String color = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
                     telemetry.addData("color",color);
                     telemetry.update();
@@ -345,17 +386,43 @@ public class BasicTeleop extends OpMode {
                         rightBackRoller.setPower(Globals.backRollersMaxPower);
                         backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
                     }*/
+                }
             }
             if (gamepad1.right_stick_button) {
                 greenSortingEnabled = true;
                 attempts = 0;
-            }
-            if (greenSortingEnabled) {
-            //green
-                greenSortingEnabled = vision.recycleToColor("Green", leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor,
-                        leftBackRoller, rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
+                status = -1;
+                cycleTimer.reset();
 
-                greenSortingEnabled = false;
+            }
+            if(greenSortingEnabled){
+                if (cycleTimer.milliseconds() > 400) {
+                    status = (("Green".equals(vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor))) ? 1 : 0);
+                    if (status == 0) {
+                        //recycleintaketimer is for turning intake after kicker reaches position so next ball is in right position
+                        //recycleintaketimerstarted is for only starting it once
+                        recycleIntakeTimerStarted = false;
+                        //kickerrotationsleft is how many balls to recycle, code at bottom for decreasing that number
+                        kickerAction = 3;
+                        kickerRotationsLeft = 1 + kickerRotationsLeft;
+                        //checks if in default position; rotationsleft is decrased by one when kicker is in this position, dont want to double count
+                        if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1) {
+                            kickerInDefaultPosition = true;
+                            telemetry.addLine("eewewwe");
+                        } else {
+                            kickerInDefaultPosition = false;
+                        }
+                        leftKickerServo.setPower(Globals.kickerRecycle);
+                        rightKickerServo.setPower(Globals.kickerRecycle);
+                        frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
+                        backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
+                        cycleTimer.reset();
+                    } else if (status == 1) {
+
+                        greenSortingEnabled = false;
+                        cycleTimer.reset();
+                    }
+
 
                 /*timer.reset();
                 String color = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
@@ -381,8 +448,8 @@ public class BasicTeleop extends OpMode {
                     rightBackRoller.setPower(Globals.backRollersMaxPower);
                     backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
                 }}*/
-
-                    }
+                }
+            }
             // tipping
             if (!yPressed && gamepad1.y) {
                 yPressed = true;
