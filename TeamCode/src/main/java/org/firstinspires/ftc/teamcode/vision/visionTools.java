@@ -176,71 +176,58 @@ public class visionTools {
         LLResult results = limelight.getLatestResult();
         return results.getPythonOutput()[3];
     }
+
     public boolean recycleToColor(String targetColor,
-                               CRServoImplEx leftKickerServo,
-                               CRServoImplEx rightKickerServo,
-                               DcMotorEx frontIntakeMotor,
-                               DcMotorEx backIntakeMotor,
-                               CRServoImplEx leftBackRoller,
-                               CRServoImplEx rightBackRoller,
-                               NormalizedColorSensor leftIntakeColorSensor,
-                               NormalizedColorSensor rightIntakeColorSensor) {
+                                  CRServoImplEx leftKickerServo,
+                                  CRServoImplEx rightKickerServo,
+                                  DcMotorEx frontIntakeMotor,
+                                  DcMotorEx backIntakeMotor,
+                                  CRServoImplEx leftBackRoller,
+                                  CRServoImplEx rightBackRoller,
+                                  NormalizedColorSensor leftIntakeColorSensor,
+                                  NormalizedColorSensor rightIntakeColorSensor) {
 
-        int attempts = 0;  // Track how many times we cycle through the balls
-        boolean colorDetected = false;  // Flag to indicate when we've found the target color
-        ElapsedTime cycleTimer = new ElapsedTime();  // Timer to handle cycling delay
-        cycleTimer.reset();  // Reset the timer
+        int attempts = 0;
+        boolean colorDetected = false;
+        ElapsedTime cycleTimer = new ElapsedTime();
+        cycleTimer.reset();
 
-        // Cycle through up to 3 balls (since we can only hold 3 balls at max)
         while (attempts < 3 && !colorDetected) {
             frontIntakeMotor.setPower(-0.7);
             backIntakeMotor.setPower(-0.7);
             leftBackRoller.setPower(-0.8);
             rightBackRoller.setPower(-0.8);
 
-            // Wait 500ms before checking the next ball (gives time for sensors to detect)
-            if (cycleTimer.milliseconds() >= 500) {
+            cycleTimer.reset();
+            while (cycleTimer.milliseconds() < 400) {
+            }
 
-                // Check the current color detected by the sensors
-                String currentColor = currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
+            String currentColor = currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
 
-                // Display current color for debugging
-
-                // If the current color matches the target color, stop cycling
-                if (currentColor.equals(targetColor)) {
-                    // Stop all motors and servos once the correct color is found
-                    leftKickerServo.setPower(0);
-                    rightKickerServo.setPower(0);
-                    frontIntakeMotor.setPower(0);
-                    backIntakeMotor.setPower(0);
-                    leftBackRoller.setPower(0);
-                    rightBackRoller.setPower(0);
-                    colorDetected = true;  // Set the flag to true, indicating color found
-                } else {
-                    // If not the target color, recycle to the next ball
-                    leftKickerServo.setPower(Globals.kickerRecycle);
-                    rightKickerServo.setPower(Globals.kickerRecycle);
-                    frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
-                    backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
-                    leftBackRoller.setPower(Globals.backRollersReverse);
-                    rightBackRoller.setPower(Globals.backRollersReverse);
-
-                    // Increment attempts as we're checking for a new ball
-                    attempts++;
-                }
-
-                // After cycling, stop motors to reset before checking again
+            if (currentColor.equals(targetColor)) {
+                leftKickerServo.setPower(0);
+                rightKickerServo.setPower(0);
                 frontIntakeMotor.setPower(0);
                 backIntakeMotor.setPower(0);
                 leftBackRoller.setPower(0);
                 rightBackRoller.setPower(0);
-
-                // Reset the cycle timer for the next cycle
-                cycleTimer.reset();
+                colorDetected = true;
+            } else {
+                leftKickerServo.setPower(Globals.kickerRecycle);
+                rightKickerServo.setPower(Globals.kickerRecycle);
+                frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
+                backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
+                leftBackRoller.setPower(Globals.backRollersReverse);
+                rightBackRoller.setPower(Globals.backRollersReverse);
+                attempts++;
             }
+
+            frontIntakeMotor.setPower(0);
+            backIntakeMotor.setPower(0);
+            leftBackRoller.setPower(0);
+            rightBackRoller.setPower(0);
         }
 
-        // If color was not detected within 3 attempts, stop all motors
         if (!colorDetected) {
             leftKickerServo.setPower(0);
             rightKickerServo.setPower(0);
@@ -249,6 +236,7 @@ public class visionTools {
             leftBackRoller.setPower(0);
             rightBackRoller.setPower(0);
         }
+
         return false;
     }
 
