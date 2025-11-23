@@ -14,6 +14,7 @@ import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -28,7 +29,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 
-@com.qualcomm.robotcore.eventloop.opmode.Autonomous
+@Autonomous
 public class BlueFarAuto extends LinearOpMode {
 
     Limelight3A limelight;
@@ -62,12 +63,12 @@ public class BlueFarAuto extends LinearOpMode {
     double minAccelIntaking = -40;
     double maxAccelIntaking = 40;
 
-    double minVelDrive = 70;
-    double minAccelDrive = -70;
-    double maxAccelDrive = 70;
+    double minVelDrive = 60;
+    double minAccelDrive = -60;
+    double maxAccelDrive = 60;
 
-    double shooterStartDelay = 0.3;
-    double shootingDelay = 2;
+    double shooterStartDelay = 1.5;
+    double shootingDelay = 3;
 
     double intakeStopDelay = 0.1;
 
@@ -82,7 +83,7 @@ public class BlueFarAuto extends LinearOpMode {
 
         // Create Roadrunner Trajectories
 
-        Pose2d startPose = new Pose2d(63, -14.5, Math.toRadians(90));
+        Pose2d startPose = new Pose2d(63, -14.5, Math.toRadians(270));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
 
         //map motors and servos
@@ -133,38 +134,42 @@ public class BlueFarAuto extends LinearOpMode {
         leftHood.setPosition(0.4);
         rightHood.setPosition(0.4);
 
-        leftTurretServo.setPosition(0.39);
-        rightTurretServo.setPosition(0.39);
+        leftTurretServo.setPosition(0.387);
+        rightTurretServo.setPosition(0.387);
 
-        waitForStart();
-
-        while(!isStarted()) {
+        while(!opModeIsActive() && !isStopRequested()) {
 
             if (gamepad1.dpad_up) {
-                if (initialDelay < 30) {
-                    initialDelay ++;
-                }
+                initialDelay = 20;
             } else if (gamepad1.dpad_down) {
-                if (initialDelay > 0) {
-                    initialDelay --;
-                }
+                initialDelay = 5;
+            } else if (gamepad1.dpad_left) {
+                initialDelay = 10;
+            } else if (gamepad1.dpad_right) {
+                initialDelay = 15;
             }
 
             if (gamepad1.a) {
                 pickupLastSpike = true;
+            } else if (gamepad1.b) {
+                pickupLastSpike = false;
             }
 
-            if (gamepad1.b) {
+            if (gamepad1.x) {
                 pickupHP = true;
+            } else if (gamepad1.y) {
+                pickupHP = false;
             }
 
             telemetry.addData("Initial Delay (Seconds): ", initialDelay);
-            telemetry.addData("Picking up last spike mark?: ", pickupLastSpike);
-            telemetry.addData("Picking up HP?: ", pickupHP);
+            telemetry.addData("Picking up last spike mark? (a/b): ", pickupLastSpike);
+            telemetry.addData("Picking up HP? (x/y): ", pickupHP);
 
             telemetry.update();
 
         }
+
+        waitForStart();
 
         if (isStopRequested()) return;
 
@@ -172,13 +177,77 @@ public class BlueFarAuto extends LinearOpMode {
 
         Actions.runBlocking(new SequentialAction(
                 new setShooter(leftShooterMotor, rightShooterMotor, Globals.defaultFarZonePowerAuto),
+                new SleepAction(shooterStartDelay),
                 new SleepAction(initialDelay),
-                new startKicker(leftKickerServo, rightKickerServo, frontIntakeMotor)
+                new startKicker(leftKickerServo, rightKickerServo, frontIntakeMotor),
+                new SleepAction(shootingDelay)
         ));
 
         if (pickupLastSpike) {
 
         } else if (pickupHP) {
+
+            drive.updatePoseEstimate();
+            drive.localizer.update();
+
+            TrajectoryActionBuilder goToIntakeHP = drive.actionBuilder(drive.localizer.getPose())
+                    .strafeToLinearHeading(new Vector2d(44.5, -64), Math.toRadians(0),
+                            new TranslationalVelConstraint(minVelIntaking),
+                            new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking));
+
+            Actions.runBlocking(new SequentialAction(
+                    new ParallelAction(
+                            goToIntakeHP.build(),
+                            new stopKickerPlain(leftKickerServo, rightKickerServo, frontIntakeMotor, false)
+                    )
+            ));
+
+            drive.updatePoseEstimate();
+            drive.localizer.update();
+
+            TrajectoryActionBuilder intakeHP = drive.actionBuilder(drive.localizer.getPose())
+                    .strafeToLinearHeading(new Vector2d(62, -64), Math.toRadians(0),
+                            new TranslationalVelConstraint(minVelIntaking),
+                            new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking));
+
+            Actions.runBlocking(new SequentialAction(
+                    new ParallelAction(
+                            intakeHP.build(),
+                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.7)
+                    )
+            ));
+
+            drive.updatePoseEstimate();
+            drive.localizer.update();
+
+            TrajectoryActionBuilder scoreHP = drive.actionBuilder(drive.localizer.getPose())
+                    .strafeToLinearHeading(new Vector2d(52, -15), Math.toRadians(270),
+                            new TranslationalVelConstraint(minVelDrive),
+                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
+
+            Actions.runBlocking(new SequentialAction(
+                    new ParallelAction(
+                            scoreHP.build()
+                    ),
+                    new SleepAction(shooterStartDelay),
+                    new startKicker(leftKickerServo, rightKickerServo, frontIntakeMotor),
+                    new SleepAction(shootingDelay)
+            ));
+
+            drive.updatePoseEstimate();
+            drive.localizer.update();
+
+            TrajectoryActionBuilder plainPark = drive.actionBuilder(drive.localizer.getPose())
+                    .strafeToLinearHeading(new Vector2d(63, -35), Math.toRadians(270),
+                            new TranslationalVelConstraint(minVelDrive),
+                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
+
+            Actions.runBlocking(new SequentialAction(
+                    new ParallelAction(
+                            plainPark.build(),
+                            new stopKickerPlain(leftKickerServo, rightKickerServo, frontIntakeMotor, true)
+                    )
+            ));
 
         } else {
 
@@ -186,12 +255,15 @@ public class BlueFarAuto extends LinearOpMode {
             drive.localizer.update();
 
             TrajectoryActionBuilder plainPark = drive.actionBuilder(drive.localizer.getPose())
-                    .lineToY(-35,
+                    .strafeToLinearHeading(new Vector2d(63, -35), Math.toRadians(270),
                             new TranslationalVelConstraint(minVelDrive),
                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
 
             Actions.runBlocking(new SequentialAction(
-                    plainPark.build()
+                    new ParallelAction(
+                            plainPark.build(),
+                            new stopKickerPlain(leftKickerServo, rightKickerServo, frontIntakeMotor, true)
+                    )
             ));
 
         }
@@ -238,8 +310,8 @@ public class BlueFarAuto extends LinearOpMode {
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
-            leftKickerServo.setPower(Globals.kickerShoot);
-            rightKickerServo.setPower(Globals.kickerShoot);
+            leftKickerServo.setPower(-0.3);
+            rightKickerServo.setPower(-0.3);
             frontIntakeMotor.setPower(1);
 
             return false;
@@ -298,53 +370,63 @@ public class BlueFarAuto extends LinearOpMode {
             ElapsedTime recycleIntakeTimer = new ElapsedTime(0);
             boolean recycleIntakeTimerStarted = false;
             boolean kickerInDefaultPosition = false;
-
-            if (stopIntake) {
+            int loops = 0;
+            loops ++;
+            telemetry.addData("loops", loops );
+            while(kickerInDefaultPosition == false){
+                if (stopIntake) {
                 frontIntakeMotor.setPower(0.0);
-            }
-
-            if (kickerEncoder.getVoltage() > 1.65) {
-                kickerLocation = kickerEncoder.getVoltage() - 1.65;
-            } else {
-                kickerLocation = kickerEncoder.getVoltage();
-            }
-            if (kickerLocation > 0.7) {
-                kickerLocation = kickerLocation - 0.7;
-            } else {
-                kickerLocation = 1.65 - (kickerLocation - 0.7);
-            }
-
-            if (kickerRotationsLeft == 0) {
-                if (recycleIntakeTimerStarted == false) {
-                    recycleIntakeTimer.reset();
-                    recycleIntakeTimerStarted = true;
                 }
-                if (recycleIntakeTimerStarted == true && recycleIntakeTimer.milliseconds() > 1000) {
-                    frontIntakeMotor.setPower(0);
-                    backIntakeMotor.setPower(0);
-                }
-                if (kickerLocation < Globals.defaultKickerLocationAuto - 0.1) {
-                    leftKickerServo.setPower(0.09 /* (kickerLocation - Globals.defaultKickerLocation)/ / (Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
-                    rightKickerServo.setPower(0.09);
-                    telemetry.addLine("e");
 
-                } else if (kickerLocation > Globals.defaultKickerLocationAuto + 0.1) {
-                    leftKickerServo.setPower(-0.09);
-                    rightKickerServo.setPower(-0.09);
-                    telemetry.addLine("ae");
+                if (kickerEncoder.getVoltage() > 1.65) {
+                    kickerLocation = kickerEncoder.getVoltage() - 1.65;
                 } else {
-                    rightKickerServo.setPower(0);
-                    leftKickerServo.setPower(0);
+                    kickerLocation = kickerEncoder.getVoltage();
                 }
-                if (kickerLocation > Globals.defaultKickerLocationAuto - 0.1 && kickerLocation < Globals.defaultKickerLocationAuto + 0.1 && kickerInDefaultPosition == false) {
-                    kickerRotationsLeft = kickerRotationsLeft - 1;
-                    kickerInDefaultPosition = true;
+                if (kickerLocation > 0.6) {
+                    kickerLocation = kickerLocation - 0.6;
+                } else {
+                    kickerLocation = 1.65 - (kickerLocation - 0.6);
                 }
-                if (kickerLocation < Globals.defaultKickerLocationAuto - 0.1 || kickerLocation > Globals.defaultKickerLocationAuto + 0.1) {
-                    kickerInDefaultPosition = false;
+
+                if (kickerRotationsLeft == 0) {
+                    if (recycleIntakeTimerStarted == false) {
+                        recycleIntakeTimer.reset();
+                        recycleIntakeTimerStarted = true;
+                    }
+                    if (recycleIntakeTimerStarted == true && recycleIntakeTimer.milliseconds() > 1000) {
+//                        frontIntakeMotor.setPower(0);
+//                        backIntakeMotor.setPower(0);
+                    }
+                    telemetry.addData("kicker locaiton", kickerLocation);
+                    if (kickerLocation < Globals.defaultKickerLocationAuto - 0.01) {
+                        leftKickerServo.setPower(0.075 /* (kickerLocation - Globals.defaultKickerLocation)/ / (Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
+                        rightKickerServo.setPower(0.075);
+                        telemetry.addLine("e");
+                    } else if (kickerLocation > Globals.defaultKickerLocationAuto + 0.01) {
+                        leftKickerServo.setPower(-0.075);
+                        rightKickerServo.setPower(-0.075);
+                        telemetry.addLine("ae");
+                    } else {
+//                        rightKickerServo.setPower(0);
+//                        leftKickerServo.setPower(0);
+                        kickerInDefaultPosition = true;
+                        telemetry.addLine("6767676767667 VICTORY IT WORKS");
+                    }
+    //                if (kickerLocation > Globals.defaultKickerLocationAuto - 0.1 && kickerLocation < Globals.defaultKickerLocationAuto + 0.1 && kickerInDefaultPosition == false) {
+    //                    kickerRotationsLeft = kickerRotationsLeft - 1;
+    //                    kickerInDefaultPosition = true;
+    //                }
+    //                if (kickerLocation < Globals.defaultKickerLocationAuto - 0.1 || kickerLocation > Globals.defaultKickerLocationAuto + 0.1) {
+    //                    kickerInDefaultPosition = false;
+    //                }
+                    telemetry.addData("kickerindefault positon", kickerInDefaultPosition);
+                    telemetry.update();
                 }
-                telemetry.addData("kickerindefault positon", kickerInDefaultPosition);
-                telemetry.update();
+                rightKickerServo.setPower(0);
+                leftKickerServo.setPower(0);
+                frontIntakeMotor.setPower(0);
+                backIntakeMotor.setPower(0);
 
             }
 

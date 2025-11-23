@@ -29,7 +29,7 @@ import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class BlueCloseAuto extends LinearOpMode {
+public class RedCloseAuto extends LinearOpMode {
 
     Limelight3A limelight;
     DcMotorEx leftFrontMotor;
@@ -76,7 +76,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
         // Create Roadrunner Trajectories
 
-        Pose2d startPose = new Pose2d(-54.5, -45, Math.toRadians(225));
+        Pose2d startPose = new Pose2d(-54.5, 45, Math.toRadians(135));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
 
         //map motors and servos
@@ -127,8 +127,8 @@ public class BlueCloseAuto extends LinearOpMode {
         leftHood.setPosition(0.25);
         rightHood.setPosition(0.25);
 
-        leftTurretServo.setPosition(0.422);
-        rightTurretServo.setPosition(0.422);
+        leftTurretServo.setPosition(0.578);
+        rightTurretServo.setPosition(0.578);
 
         waitForStart();
 
@@ -138,7 +138,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
         //score preload
         TrajectoryActionBuilder scorePreloads = drive.actionBuilder(startPose)
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
+                .strafeToLinearHeading(new Vector2d(-12, 15), Math.toRadians(90), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
 
         Actions.runBlocking(new SequentialAction(
                 new ParallelAction(
@@ -156,7 +156,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
         //Collect 1st spike mark
         TrajectoryActionBuilder intakeSpike1 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(-11, -60), Math.toRadians(270), new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking));
+                .strafeToLinearHeading(new Vector2d(-11, 60), Math.toRadians(90), new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking));
 
         Actions.runBlocking(new ParallelAction(
                 intakeSpike1.build(),
@@ -170,7 +170,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
         //shoot 1st spike mark
         TrajectoryActionBuilder scoreSpike1 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
+                .strafeToLinearHeading(new Vector2d(-12, 15), Math.toRadians(90), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
 
         Actions.runBlocking(new SequentialAction(
                 new ParallelAction(
@@ -193,7 +193,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
         //Collect 2nd spike mark
         TrajectoryActionBuilder goToIntakeSpike2 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(12.5, -25), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
+                .strafeToLinearHeading(new Vector2d(12.5, 25), Math.toRadians(90), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
 
         Actions.runBlocking(new ParallelAction(
                 goToIntakeSpike2.build(),
@@ -208,7 +208,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
 
         TrajectoryActionBuilder intakeSpike2 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(12.5, -66), Math.toRadians(270), new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking));
+                .strafeToLinearHeading(new Vector2d(12.5, 66), Math.toRadians(90), new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking));
 
         Actions.runBlocking(new SequentialAction(
                 intakeSpike2.build()
@@ -222,8 +222,8 @@ public class BlueCloseAuto extends LinearOpMode {
 
         //shoot 2nd spike mark
         TrajectoryActionBuilder scoreSpike2 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(11.5, -52), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive))
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
+                .strafeToLinearHeading(new Vector2d(11.5, 52), Math.toRadians(90), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive))
+                .strafeToLinearHeading(new Vector2d(-12, 15), Math.toRadians(90), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
 
         Actions.runBlocking(new SequentialAction(
                 new ParallelAction(
@@ -247,7 +247,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
         //Collect 3rd spike mark
         TrajectoryActionBuilder goToIntakeSpike3 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(36, -25), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
+                .strafeToLinearHeading(new Vector2d(36, 25), Math.toRadians(90), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
 
         Actions.runBlocking(new ParallelAction(
                 goToIntakeSpike3.build(),
@@ -262,7 +262,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
 
         TrajectoryActionBuilder intakeSpike3 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(36, -66), Math.toRadians(270), new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking));
+                .strafeToLinearHeading(new Vector2d(36, 66), Math.toRadians(90), new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking));
 
         Actions.runBlocking(new SequentialAction(
                 intakeSpike3.build()
@@ -276,7 +276,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
         //shoot 3rd spike mark
         TrajectoryActionBuilder scoreSpike3 = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270), new TranslationalVelConstraint(60), new ProfileAccelConstraint(-50, 50));
+                .strafeToLinearHeading(new Vector2d(-12, 15), Math.toRadians(90), new TranslationalVelConstraint(60), new ProfileAccelConstraint(-50, 50));
 
         Actions.runBlocking(new SequentialAction(
                 new ParallelAction(
@@ -297,7 +297,7 @@ public class BlueCloseAuto extends LinearOpMode {
 
         //park
         TrajectoryActionBuilder park = drive.actionBuilder(drive.localizer.getPose())
-                .strafeToLinearHeading(new Vector2d(-22, -58), Math.toRadians(270), new TranslationalVelConstraint(200), new ProfileAccelConstraint(-200, 200));
+                .strafeToLinearHeading(new Vector2d(-22, 58), Math.toRadians(90), new TranslationalVelConstraint(200), new ProfileAccelConstraint(-200, 200));
 
         Actions.runBlocking(new SequentialAction(
                 new ParallelAction(

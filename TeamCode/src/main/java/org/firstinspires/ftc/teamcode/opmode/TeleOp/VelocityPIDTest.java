@@ -60,8 +60,6 @@ public class VelocityPIDTest extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            rightKickerServo.setPower(Globals.kickerShoot);
-            leftKickerServo.setPower(Globals.kickerShoot);
             leftBackRoller.setPower(Globals.backRollersMaxPower);
             rightBackRoller.setPower(Globals.backRollersMaxPower);
             backIntakeMotor.setPower(Globals.backIntakeShootSpeed);

@@ -34,12 +34,12 @@ public class visionTools {
         LLResult result = limelight.getLatestResult();
         List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
         for (LLResultTypes.FiducialResult fiducial : fiducials) {
-            tagID = fiducial.getFiducialId(); // The ID number of the fiducial
+            tagID = fiducial.getFiducialId(); // The ID number of the Apriltag
         }
         if (zone == 1){
             offset = 0;
         }else{
-            offset = 2.15;
+            offset = 4.3;
         }
         if (tagID == 24){
             offset = -offset;
@@ -58,7 +58,7 @@ public class visionTools {
             }else{
                 direction = 1;
             }
-            double correction = ((smoothTx - offset) * (13/33.0))+0*(direction*0.004);
+            double correction = ((smoothTx - offset) * (33/13));//+(direction*0.008);
             return -(correction / 1800.0) + currentAngle;
         } else {
             return currentAngle;

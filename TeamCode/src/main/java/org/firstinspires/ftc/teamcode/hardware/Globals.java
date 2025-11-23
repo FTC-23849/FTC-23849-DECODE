@@ -15,7 +15,7 @@ public class Globals {
     public static double defaultCloseZonePower = -0.67;
     public static double defaultCloseZonePowerAuto = -0.71;
     public static double defaultFarZonePower = -0.95;
-    public static double defaultFarZonePowerAuto = -0.98;
+    public static double defaultFarZonePowerAuto = -0.85;
     public static double tipperRetracted = 0.23;
     public static double tipperExtended = 0.5;
     public static double backRollersMaxPower = 1;

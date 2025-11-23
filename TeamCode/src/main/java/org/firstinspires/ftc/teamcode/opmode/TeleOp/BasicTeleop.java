@@ -77,6 +77,8 @@ public class BasicTeleop extends OpMode {
     int attempts = 0;
     int status = 0;
     ElapsedTime cycleTimer = new ElapsedTime();
+    ServoImplEx light;
+    ServoImplEx zoneLight;
 
     @Override
 
@@ -110,6 +112,8 @@ public class BasicTeleop extends OpMode {
         rightShooterMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         leftShooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightShooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        light = hardwareMap.get(ServoImplEx.class, "light");
+        zoneLight = hardwareMap.get(ServoImplEx.class, "zoneLight");
         leftTipper = hardwareMap.get(ServoImplEx.class, "leftTipper");
         rightTipper = hardwareMap.get(ServoImplEx.class, "rightTipper");
         leftBackRoller = hardwareMap.get(CRServoImplEx.class, "leftBackRoller");
@@ -177,7 +181,13 @@ public class BasicTeleop extends OpMode {
         leftBackMotor.setPower(backLeftPower);
         rightFrontMotor.setPower(frontRightPower);
         rightBackMotor.setPower(backRightPower);
-
+        LLResult result = limelight.getLatestResult();
+        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+        int tagID = 0 ;
+        for (LLResultTypes.FiducialResult fiducial : fiducials) {
+            tagID = fiducial.getFiducialId(); // The ID number of the Apriltag
+        }
+        telemetry.addData("Tag ID",tagID);
         if (gamepad1.right_trigger > 0.1) {
             frontIntakeMotor.setPower(Globals.frontIntakeIntakeSpeed);
             backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
@@ -190,8 +200,13 @@ public class BasicTeleop extends OpMode {
             rightBackRoller.setPower(Globals.backRollersReverse);
 
         } else if (gamepad1.left_trigger > 0.1) {
-            rightKickerServo.setPower(Globals.kickerShoot);
-            leftKickerServo.setPower(Globals.kickerShoot);
+            if(rightBumperTrue) {
+                rightKickerServo.setPower(Globals.kickerShoot * 0.3);
+                leftKickerServo.setPower(Globals.kickerShoot * 0.3);
+            }else{
+                rightKickerServo.setPower(Globals.kickerShoot);
+                leftKickerServo.setPower(Globals.kickerShoot);
+            }
             leftBackRoller.setPower(Globals.backRollersMaxPower);
             rightBackRoller.setPower(Globals.backRollersMaxPower);
             backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
@@ -515,6 +530,27 @@ public class BasicTeleop extends OpMode {
 ////                    backIntakeMotor.setPower(0);
 ////                }
 //            }
+            if(tipped){
+                light.setPosition(0.277);
+            }
+            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("green"))){
+                light.setPosition(0.5);
+            }
+            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("purple"))){
+                light.setPosition(0.722);
+            }
+            else{
+                light.setPosition(0);
+            }
+
+            if(rightBumperTrue){
+                zoneLight.setPosition(0.388);
+            }
+            else if(leftBumperTrue){
+                zoneLight.setPosition(0.666);
+            }else{
+                zoneLight.setPosition(0.5);
+            }
         }
     }
 }
