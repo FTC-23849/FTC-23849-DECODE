@@ -16,6 +16,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 
+import java.util.List;
+
 public class visionTools {
     ElapsedTime timer = new ElapsedTime();
     double hueThresholdPurple = 200;
@@ -28,13 +30,16 @@ public class visionTools {
         double errorMargin = 2;
         double smoothingRange = 0.25;
         double offset;
+        int tagID = 20;
         LLResult result = limelight.getLatestResult();
-        LLResultTypes.FiducialResult fiducial = null;
-        double tagID = fiducial.getFiducialId();
+        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+        for (LLResultTypes.FiducialResult fiducial : fiducials) {
+            tagID = fiducial.getFiducialId(); // The ID number of the fiducial
+        }
         if (zone == 1){
             offset = 0;
         }else{
-            offset = 9.2;
+            offset = 2.15;
         }
         if (tagID == 24){
             offset = -offset;
