@@ -534,14 +534,14 @@ public class BasicTeleop extends OpMode {
             if(tipped){
                 light.setPosition(0.277);
             }
-            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("green"))){
+            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("Green"))){
                 light.setPosition(0.5);
             }
-            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("purple"))){
+            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("Purple"))){
                 light.setPosition(0.722);
             }
             else{
-                light.setPosition(0.5);
+                light.setPosition(0.0);
             }
             if(tipped){
                 zoneLight.setPosition(0.3);
