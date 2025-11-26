@@ -454,7 +454,7 @@ public class BlueFarAuto extends LinearOpMode {
 
             if (power != 0.0) {
                 frontIntakeMotor.setPower(power);
-                backIntakeMotor.setPower(Globals.backIntakeReverseSpeed);
+                backIntakeMotor.setPower(1);
             } else if (power == 0.0) {
                 frontIntakeMotor.setPower(0.0);
                 backIntakeMotor.setPower(0.0);

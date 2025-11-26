@@ -51,6 +51,7 @@ public class BasicTeleop extends OpMode {
     boolean kickerShoot = false;
     boolean kickerRecycle = false;
     double kickerLocation;
+    double closezone = 1;
     int kickerAction;
     double kickerRotationsLeft;
     boolean kickerInDefaultPosition;
@@ -149,6 +150,7 @@ public class BasicTeleop extends OpMode {
         telemetry.addData("Kd", Kd);
         telemetry.addData("# of balls: ", vision.ballsInRamp(limelight));
         telemetry.addData("flywheel", leftShooterMotor.getVelocity());
+        telemetry.addData("inRange? ",vision.inRange(limelight));
         telemetry.update();
         totalCurrent = (leftFrontMotor.getCurrent(CurrentUnit.AMPS) + rightFrontMotor.getCurrent(CurrentUnit.AMPS) + leftBackMotor.getCurrent(CurrentUnit.AMPS) + rightBackMotor.getCurrent(CurrentUnit.AMPS) + leftShooterMotor.getCurrent(CurrentUnit.AMPS) + rightShooterMotor.getCurrent(CurrentUnit.AMPS) + frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("totalcurrent", totalCurrent);
@@ -157,10 +159,10 @@ public class BasicTeleop extends OpMode {
         } else {
             kickerLocation = kickerEncoder.getVoltage();
         }
-        if (kickerLocation > 0.6) {
-            kickerLocation = kickerLocation - 0.6;
+        if (kickerLocation > 0.7) {
+            kickerLocation = kickerLocation - 0.7;
         } else {
-            kickerLocation = 1.65 - (kickerLocation - 0.6);
+            kickerLocation = 1.65 - (kickerLocation - 0.7);
         }
 
 
@@ -254,8 +256,8 @@ public class BasicTeleop extends OpMode {
                     backIntakeMotor.setPower(0);
                 }
                 if (kickerLocation < Globals.defaultKickerLocation - 0.05) {
-                    leftKickerServo.setPower(0.09 /* (kickerLocation - Globals.defaultKickerLocation)/ / (Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
-                    rightKickerServo.setPower(0.09);
+                    leftKickerServo.setPower(0.1 /* (kickerLocation - Globals.defaultKickerLocation)/ / (Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
+                    rightKickerServo.setPower(0.1);
                     telemetry.addLine("e");
 
                 } else if (kickerLocation > Globals.defaultKickerLocation + 0.05) {
@@ -271,7 +273,13 @@ public class BasicTeleop extends OpMode {
             if (!gamepad1.dpad_down) {
                 dpadDownPressed = false;
             }
-
+            if (gamepad1.b){
+                if(closezone == 1){
+                    closezone = 3;
+                }else{
+                    closezone = 1;
+                }
+            }
             if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1 && kickerInDefaultPosition == false && kickerRotationsLeft != 0) {
                 kickerRotationsLeft = kickerRotationsLeft - 1;
                 kickerInDefaultPosition = true;
@@ -326,8 +334,8 @@ public class BasicTeleop extends OpMode {
             if (leftBumperTrue && !rightBumperTrue) {
                 leftShooterMotor.setPower(Globals.defaultCloseZonePower);
                 rightShooterMotor.setPower(Globals.defaultCloseZonePower);
-                leftHood.setPosition(0.0);
-                rightHood.setPosition(0.0);
+                leftHood.setPosition(0.15);
+                rightHood.setPosition(0.15);
                 telemetry.addData("flywheel", leftShooterMotor.getVelocity());
                 telemetry.update();
             }
@@ -345,8 +353,8 @@ public class BasicTeleop extends OpMode {
                 double position = leftTurretServo.getPosition();
                 telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
                 telemetry.update();
-                leftTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,1));
-                rightTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,1));
+                leftTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,closezone));
+                rightTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,closezone));
                 //leftTurretServo.setPower(0.5);
             }
             //manual sort
@@ -531,8 +539,8 @@ public class BasicTeleop extends OpMode {
 ////                    backIntakeMotor.setPower(0);
 ////                }
 //            }
-            if(tipped){
-                light.setPosition(0.277);
+            if((vision.inRange(limelight))||((vision.correctPos ==1)&&(rightBumperTrue))){
+                light.setPosition(0.333);
             }
             else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("Green"))){
                 light.setPosition(0.5);
@@ -541,7 +549,7 @@ public class BasicTeleop extends OpMode {
                 light.setPosition(0.722);
             }
             else{
-                light.setPosition(0.0);
+                light.setPosition(0);
             }
             if(tipped){
                 zoneLight.setPosition(0.3);

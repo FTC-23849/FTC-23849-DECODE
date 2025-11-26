@@ -22,14 +22,24 @@ public class visionTools {
     ElapsedTime timer = new ElapsedTime();
     double hueThresholdPurple = 200;
     double hueThresholdGreen = 100;
+    public double correctPos = 0;
     public double TurretPowerTxDebug;
     private double smoothTx = 0;
-
-    public double adjustedTurretAngle(double currentAngle, Limelight3A limelight,int zone) {
+    public boolean inRange (Limelight3A limelight){
+        LLResult result = limelight.getLatestResult();
+        double size = result.getTa();
+        if ((size < 3.5)&(size > 1.5)){
+            return true;
+        }else{
+            return false;
+        }
+    }
+    public double adjustedTurretAngle(double currentAngle, Limelight3A limelight,double zone) {
+        double correction = 0;
         limelight.pipelineSwitch(9);
         double errorMargin = 2;
         double smoothingRange = 0.25;
-        double offset;
+        double offset = 0;
         int tagID = 20;
         LLResult result = limelight.getLatestResult();
         List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
@@ -38,11 +48,13 @@ public class visionTools {
         }
         if (zone == 1){
             offset = 0;
-        }else{
+        }else if (zone == 2){
             offset = 4.3;
+        }else if (zone == 3){
+            offset = 0;
         }
         if (tagID == 24){
-            offset = -offset;
+            offset = -1*offset;
         }
         if (result != null && result.isValid()) {
             double tx = result.getTx();
@@ -50,7 +62,10 @@ public class visionTools {
                 smoothTx = tx;
             }
             if (Math.abs(smoothTx) <= errorMargin) {
+                correctPos = 1;
                 return currentAngle;
+            }else{
+                correctPos = 0;
             }
             double direction;
             if (tx < offset){
@@ -58,7 +73,13 @@ public class visionTools {
             }else{
                 direction = 1;
             }
-            double correction = ((smoothTx - offset) * (30/15));//+(direction*0.008);
+            if (zone == 1){
+                correction = ((smoothTx - offset) * (30/18));
+            }else if (zone == 2){
+                correction = ((smoothTx - offset) * (25/13))-(direction*0.008);
+            }else if (zone == 3){
+                correction = ((smoothTx - offset) * (30/18));
+            }
             return -(correction / 1800.0) + currentAngle;
         } else {
             return currentAngle;
@@ -169,7 +190,89 @@ public class visionTools {
         return -pid;
     }
 
+    public double adjustedTurretAnglePID(double currentAngle, Limelight3A limelight,double zone, double kP, double kI, double kD) {
+        double correction = 0;
+        limelight.pipelineSwitch(9);
+        double errorMargin = 2;
+        double smoothingRange = 0.25;
+        double offset = 0;
+        int tagID = 20;
+        LLResult result = limelight.getLatestResult();
+        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+        for (LLResultTypes.FiducialResult fiducial : fiducials) {
+            tagID = fiducial.getFiducialId(); // The ID number of the Apriltag
+        }
+        if (zone == 1){
+            offset = 0;
+        }else if (zone == 2){
+            offset = 4.3;
+        }else if (zone == 3){
+            offset = 0;
+        }
+        if (tagID == 24){
+            offset = -1*offset;
+        }
+        if (result != null && result.isValid()) {
+            double tx = result.getTx();
+            if (Math.abs(tx - smoothTx) > smoothingRange) {
+                smoothTx = tx;
+            }
+            if (Math.abs(smoothTx) <= errorMargin) {
+                return currentAngle;
+            }
+            double direction;
+            if (tx < offset){
+                direction = -1;
+            }else{
+                direction = 1;
+            }
+            double error = smoothTx - offset;
+            if (Math.abs(error) <= errorMargin) {
+                correctPos = 1;
+                lastError = 0;
+                integral = 0;
+                return 0;
+            }else{
+                correctPos = 0;
+            }
 
+                double turnDeg = ((33.0 / 13.0) * error) / 1800.0;
+
+                if (Math.abs(turnDeg) <= errorMargin) {
+                    correctPos = 1;
+                    lastError = 0;
+                    integral = 0;
+                    return currentAngle;
+                }else{
+                    correctPos = 0;
+                }
+
+                long now = System.nanoTime();
+                double dt = (now - lastTime) / 1e9;
+                lastTime = now;
+                if (dt <= 0) dt = 0.001;
+
+                integral += turnDeg * dt;
+                integral = Math.max(Math.min(integral, 0.5), -0.5);
+
+                double derivative = (turnDeg - lastError) / dt;
+                lastError = turnDeg;
+
+                double pid = (kP * turnDeg) + (kI * integral) + (kD * derivative);
+
+                if (pid > 0) pid += 0.05;
+                else if (pid < 0) pid -= 0.05;
+
+                double newPos = currentAngle + pid;
+                newPos = Math.max(0.0, Math.min(1.0, newPos));
+
+                return newPos;
+            }
+         else {
+            return currentAngle;
+        }
+
+    }
 
 
     public String currentColor(NormalizedColorSensor leftIntakeColorSensor,NormalizedColorSensor rightIntakeColorSensor) {
