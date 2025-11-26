@@ -1,7 +1,8 @@
 package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 
+import static java.lang.Thread.sleep;
+
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.hardware.limelightvision.LLFieldMap;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -24,7 +25,7 @@ import java.util.List;
 
 @Config
 @TeleOp
-public class BasicTeleOpCopyingV1 extends OpMode {
+public class TeleOpPID extends OpMode {
     Limelight3A limelight;
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;
@@ -33,8 +34,8 @@ public class BasicTeleOpCopyingV1 extends OpMode {
     DcMotorEx frontIntakeMotor;
     DcMotorEx backIntakeMotor;
     CRServoImplEx leftKickerServo;
-    CRServoImplEx leftTurretServo;
-    CRServoImplEx rightTurretServo;
+    ServoImplEx leftTurretServo;
+    ServoImplEx rightTurretServo;
     CRServoImplEx rightKickerServo;
     DcMotorEx leftShooterMotor;
     DcMotorEx rightShooterMotor;
@@ -42,16 +43,23 @@ public class BasicTeleOpCopyingV1 extends OpMode {
     ServoImplEx rightTipper;
     CRServoImplEx leftBackRoller;
     CRServoImplEx rightBackRoller;
+    ServoImplEx leftHood;
+    ServoImplEx rightHood;
+
     AnalogInput kickerEncoder;
     boolean kickerShoot = false;
     boolean kickerRecycle = false;
     double kickerLocation;
+    double closezone = 1;
     int kickerAction;
     double kickerRotationsLeft;
     boolean kickerInDefaultPosition;
     boolean dpadDownPressed = false;
     boolean recycleIntakeTimerStarted = false;
-
+    boolean shooting;
+    boolean yPressed = false;
+    boolean purpleSortingEnabled = false;
+    boolean greenSortingEnabled = false;
     ElapsedTime timer = new ElapsedTime();
     ElapsedTime recycleIntakeTimer = new ElapsedTime();
     AnalogInput turretEncoder;
@@ -60,24 +68,30 @@ public class BasicTeleOpCopyingV1 extends OpMode {
     double totalCurrent;
     boolean tipped = false;
     visionTools vision = new visionTools();
-    List currentBalls ;
-    public static double Kp = 0.01;
+    List currentBalls;
+    public static double Kp = 0.007;
     public static double Ki = 0.0000;
     public static double Kd = 0.00;
     boolean rightBumperTrue = false;
     boolean leftBumperTrue = false;
+    int attempts = 0;
+    int status = 0;
+    ElapsedTime cycleTimer = new ElapsedTime();
+    ServoImplEx light;
+    ServoImplEx zoneLight;
+
     @Override
 
     public void init() {
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
         limelight.pipelineSwitch(9);
-        leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"leftIntakeColorSensor");
-        rightIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"rightIntakeColorSensor");
+        leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "leftIntakeColorSensor");
+        rightIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "rightIntakeColorSensor");
         turretEncoder = hardwareMap.get(AnalogInput.class, "turretEncoder");
-        leftFrontMotor  = hardwareMap.get(DcMotorEx.class,"LF");
+        leftFrontMotor = hardwareMap.get(DcMotorEx.class, "LF");
         rightFrontMotor = hardwareMap.get(DcMotorEx.class, "RF");
-        leftBackMotor = hardwareMap.get(DcMotorEx.class,"LB");
-        rightBackMotor = hardwareMap.get(DcMotorEx.class,"RB");
+        leftBackMotor = hardwareMap.get(DcMotorEx.class, "LB");
+        rightBackMotor = hardwareMap.get(DcMotorEx.class, "RB");
         leftFrontMotor.setDirection(DcMotorEx.Direction.REVERSE);
         leftBackMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
@@ -88,8 +102,8 @@ public class BasicTeleOpCopyingV1 extends OpMode {
         frontIntakeMotor = hardwareMap.get(DcMotorEx.class, "frontIntakeMotor");
         leftKickerServo = hardwareMap.get(CRServoImplEx.class, "leftKickerServo");
         rightKickerServo = hardwareMap.get(CRServoImplEx.class, "rightKickerServo");
-        leftTurretServo = hardwareMap.get(CRServoImplEx.class, "leftTurretServo");
-        rightTurretServo = hardwareMap.get(CRServoImplEx.class, "rightTurretServo");
+        leftTurretServo = hardwareMap.get(ServoImplEx.class, "leftTurretServo");
+        rightTurretServo = hardwareMap.get(ServoImplEx.class, "rightTurretServo");
         rightKickerServo.setDirection(CRServoImplEx.Direction.REVERSE);
         backIntakeMotor = hardwareMap.get(DcMotorEx.class, "backIntakeMotor");
         backIntakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -98,6 +112,8 @@ public class BasicTeleOpCopyingV1 extends OpMode {
         rightShooterMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         leftShooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightShooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        light = hardwareMap.get(ServoImplEx.class, "light");
+        zoneLight = hardwareMap.get(ServoImplEx.class, "zoneLight");
         leftTipper = hardwareMap.get(ServoImplEx.class, "leftTipper");
         rightTipper = hardwareMap.get(ServoImplEx.class, "rightTipper");
         leftBackRoller = hardwareMap.get(CRServoImplEx.class, "leftBackRoller");
@@ -106,6 +122,15 @@ public class BasicTeleOpCopyingV1 extends OpMode {
         limelight.setPollRateHz(100);
         limelight.start();
         kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
+        leftTurretServo.setPosition(0.5);
+        rightTurretServo.setPosition(0.5);
+
+        leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
+        rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
+        rightHood.setDirection(ServoImplEx.Direction.REVERSE);
+
+        rightHood.setPosition(0.0);
+        leftHood.setPosition(0.0);
     }
 
     @Override
@@ -123,6 +148,9 @@ public class BasicTeleOpCopyingV1 extends OpMode {
         telemetry.addData("Ki", Ki);
         telemetry.addData("Kd", Kd);
         telemetry.addData("# of balls: ", vision.ballsInRamp(limelight));
+        telemetry.addData("flywheel", leftShooterMotor.getVelocity());
+        telemetry.addData("inRange? ",vision.inRange(limelight));
+        telemetry.update();
         totalCurrent = (leftFrontMotor.getCurrent(CurrentUnit.AMPS) + rightFrontMotor.getCurrent(CurrentUnit.AMPS) + leftBackMotor.getCurrent(CurrentUnit.AMPS) + rightBackMotor.getCurrent(CurrentUnit.AMPS) + leftShooterMotor.getCurrent(CurrentUnit.AMPS) + rightShooterMotor.getCurrent(CurrentUnit.AMPS) + frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("totalcurrent", totalCurrent);
         if (kickerEncoder.getVoltage() > 1.65) {
@@ -154,7 +182,13 @@ public class BasicTeleOpCopyingV1 extends OpMode {
         leftBackMotor.setPower(backLeftPower);
         rightFrontMotor.setPower(frontRightPower);
         rightBackMotor.setPower(backRightPower);
-
+        LLResult result = limelight.getLatestResult();
+        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+        int tagID = 0 ;
+        for (LLResultTypes.FiducialResult fiducial : fiducials) {
+            tagID = fiducial.getFiducialId(); // The ID number of the Apriltag
+        }
+        telemetry.addData("Tag ID",tagID);
         if (gamepad1.right_trigger > 0.1) {
             frontIntakeMotor.setPower(Globals.frontIntakeIntakeSpeed);
             backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
@@ -167,12 +201,18 @@ public class BasicTeleOpCopyingV1 extends OpMode {
             rightBackRoller.setPower(Globals.backRollersReverse);
 
         } else if (gamepad1.left_trigger > 0.1) {
-            rightKickerServo.setPower(Globals.kickerShoot);
-            leftKickerServo.setPower(Globals.kickerShoot);
-            frontIntakeMotor.setPower(Globals.frontIntakeShootSpeed);
+            if(rightBumperTrue) {
+                rightKickerServo.setPower(Globals.kickerShoot * 0.3);
+                leftKickerServo.setPower(Globals.kickerShoot * 0.3);
+            }else{
+                rightKickerServo.setPower(Globals.kickerShoot);
+                leftKickerServo.setPower(Globals.kickerShoot);
+            }
             leftBackRoller.setPower(Globals.backRollersMaxPower);
             rightBackRoller.setPower(Globals.backRollersMaxPower);
             backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
+            frontIntakeMotor.setPower(Globals.frontIntakeShootSpeed);
+            shooting = true;
         } else if (gamepad1.dpad_up) {
             rightKickerServo.setPower(Globals.kickerShoot);
             leftKickerServo.setPower(Globals.kickerShoot);
@@ -202,8 +242,9 @@ public class BasicTeleOpCopyingV1 extends OpMode {
             rightKickerServo.setPower(Globals.kickerRecycle);
             leftKickerServo.setPower(Globals.kickerRecycle);
         } else {
-            frontIntakeMotor.setPower(0);
-            backIntakeMotor.setPower(0);
+            shooting = false;
+            leftBackRoller.setPower(0);
+            rightBackRoller.setPower(0);
             if (kickerRotationsLeft == 0) {
                 if (recycleIntakeTimerStarted == false) {
                     recycleIntakeTimer.reset();
@@ -214,8 +255,8 @@ public class BasicTeleOpCopyingV1 extends OpMode {
                     backIntakeMotor.setPower(0);
                 }
                 if (kickerLocation < Globals.defaultKickerLocation - 0.05) {
-                    leftKickerServo.setPower(0.09 /* (kickerLocation - Globals.defaultKickerLocation)/ / (Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
-                    rightKickerServo.setPower(0.09);
+                    leftKickerServo.setPower(0.1 /* (kickerLocation - Globals.defaultKickerLocation)/ / (Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
+                    rightKickerServo.setPower(0.1);
                     telemetry.addLine("e");
 
                 } else if (kickerLocation > Globals.defaultKickerLocation + 0.05) {
@@ -225,14 +266,19 @@ public class BasicTeleOpCopyingV1 extends OpMode {
                 } else {
                     rightKickerServo.setPower(0);
                     leftKickerServo.setPower(0);
-
                 }
 
             }
             if (!gamepad1.dpad_down) {
                 dpadDownPressed = false;
             }
-
+            if (gamepad1.b){
+                if(closezone == 1){
+                    closezone = 3;
+                }else{
+                    closezone = 1;
+                }
+            }
             if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1 && kickerInDefaultPosition == false && kickerRotationsLeft != 0) {
                 kickerRotationsLeft = kickerRotationsLeft - 1;
                 kickerInDefaultPosition = true;
@@ -241,60 +287,118 @@ public class BasicTeleOpCopyingV1 extends OpMode {
                 kickerInDefaultPosition = false;
             }
             LLResult results = limelight.getLatestResult();
-            if (results.isValid() && (results != null)) {
+            /*if (results.isValid() && (results != null)) {
                 double errorMargin = 0.5;
-                //leftTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
-                //rightTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
-            }
+                leftTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
+                rightTurretServo.setPower(vision.TurretPowerPID(limelight, errorMargin, Kp, Ki, Kd));
+            }*/
             //close zone shoot
 
-            telemetry.addData("left",leftBumperTrue);
-            telemetry.addData("right",rightBumperTrue);
-            if (gamepad1.left_bumper) {
-                leftShooterMotor.setPower(Globals.defaultCloseZonePower);
-                rightShooterMotor.setPower(Globals.defaultCloseZonePower);
-                boolean CheckStatus = false;
-                if(gamepad1.left_bumper & !CheckStatus){
-                    CheckStatus = vision.AprilTagTrackerDriveTrain(leftFrontMotor, leftBackMotor, rightFrontMotor,rightBackMotor,limelight,1);
-
+            telemetry.addData("left", leftBumperTrue);
+            telemetry.addData("right", rightBumperTrue);
+            if (gamepad1.rightBumperWasReleased()) {
+                if (rightBumperTrue) {
+                    rightBumperTrue = false;
+                } else {
+                    rightBumperTrue = true;
                 }
-                leftFrontMotor.setDirection(DcMotorEx.Direction.REVERSE);
-                leftBackMotor.setDirection(DcMotorEx.Direction.REVERSE);
-                rightFrontMotor.setDirection(DcMotorEx.Direction.FORWARD);
-                rightBackMotor.setDirection(DcMotorEx.Direction.FORWARD);
-
-                leftShooterMotor.setPower(Globals.defaultCloseZonePower);
-                rightShooterMotor.setPower(Globals.defaultCloseZonePower);
-            } else {
-                leftShooterMotor.setPower(0);
-                rightShooterMotor.setPower(0);
             }
-
-            //far zone shoot
-
-            if (gamepad1.right_bumper) {
+            if (rightBumperTrue && !leftBumperTrue) {
                 leftShooterMotor.setPower(Globals.defaultFarZonePower);
                 rightShooterMotor.setPower(Globals.defaultFarZonePower);
-                boolean CheckStatus = false;
-                if(gamepad1.left_bumper & !CheckStatus){
-                    CheckStatus = vision.AprilTagTrackerDriveTrain(leftFrontMotor, leftBackMotor, rightFrontMotor,rightBackMotor,limelight,2);
 
+                leftHood.setPosition(0.4);
+                rightHood.setPosition(0.4);
+                telemetry.addData("flywheel", leftShooterMotor.getVelocity());
+                telemetry.update();
+            }
+            if (rightBumperTrue && !leftBumperTrue) {
+                double errorMargin = 0.5;
+                double position = leftTurretServo.getPosition();
+
+                telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
+                telemetry.update();
+                leftTurretServo.setPosition(vision.adjustedTurretAnglePID(position, limelight,2,Kp,Ki,Kd));
+                rightTurretServo.setPosition(vision.adjustedTurretAnglePID(position, limelight,2,Kp,Ki,Kd));
+                //leftTurretServo.setPower(0.5);
+            }
+            //far zone shoot
+            if (gamepad1.leftBumperWasReleased()) {
+                if (leftBumperTrue) {
+                    leftBumperTrue = false;
+                } else {
+                    leftBumperTrue = true;
                 }
-                leftFrontMotor.setDirection(DcMotorEx.Direction.REVERSE);
-                leftBackMotor.setDirection(DcMotorEx.Direction.REVERSE);
-                rightFrontMotor.setDirection(DcMotorEx.Direction.FORWARD);
-                rightBackMotor.setDirection(DcMotorEx.Direction.FORWARD);
-
+            }
+            if (leftBumperTrue && !rightBumperTrue) {
                 leftShooterMotor.setPower(Globals.defaultCloseZonePower);
                 rightShooterMotor.setPower(Globals.defaultCloseZonePower);
-            } else {
+                leftHood.setPosition(0.15);
+                rightHood.setPosition(0.15);
+                telemetry.addData("flywheel", leftShooterMotor.getVelocity());
+                telemetry.update();
+            }
+            if (!rightBumperTrue && !leftBumperTrue) {
+                telemetry.addData("slowing down flywheel", 0);
+                leftTurretServo.setPosition(0.5);
+                rightTurretServo.setPosition(0.5);
+                telemetry.update();
                 leftShooterMotor.setPower(0);
                 rightShooterMotor.setPower(0);
+
+            }
+            if (leftBumperTrue && !rightBumperTrue) {
+                double errorMargin = 0.5;
+                double position = leftTurretServo.getPosition();
+                telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
+                telemetry.update();
+                leftTurretServo.setPosition(vision.adjustedTurretAnglePID(position, limelight,closezone,Kp,Ki,Kd));
+                rightTurretServo.setPosition(vision.adjustedTurretAnglePID(position, limelight,closezone,Kp,Ki,Kd));
+                //leftTurretServo.setPower(0.5);
             }
             //manual sort
             if (gamepad1.left_stick_button) {
-                //vision.recycleToColor(1, leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor, leftBackRoller,
-                //        rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
+                purpleSortingEnabled = true;
+                attempts = 0;
+                status = -1;
+                cycleTimer.reset();
+            }
+
+            if (purpleSortingEnabled) {
+                if (cycleTimer.milliseconds() > 400) {
+                    String detectedColor = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
+                    status = "Purple".equals(detectedColor) ? 1 : 0;
+
+                    if (status == 1) {
+                        purpleSortingEnabled = false;
+                        cycleTimer.reset();
+                    } else {
+                        attempts++;
+                        recycleIntakeTimerStarted = false;
+                        kickerAction = 3;
+                        kickerRotationsLeft += 1;
+
+                        if (kickerLocation > Globals.defaultKickerLocation - 0.1
+                                && kickerLocation < Globals.defaultKickerLocation + 0.1) {
+                            kickerInDefaultPosition = true;
+                            telemetry.addLine("Kicker in default position");
+                        } else {
+                            kickerInDefaultPosition = false;
+                        }
+
+                        leftKickerServo.setPower(Globals.kickerRecycle);
+                        rightKickerServo.setPower(Globals.kickerRecycle);
+                        frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
+                        backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
+
+                        cycleTimer.reset();
+                    } if(attempts > 3) {
+                        purpleSortingEnabled = false;
+                        telemetry.addLine("Max recycle attempts reached");
+                        cycleTimer.reset();
+                    }
+
+
                    /* String color = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
                     telemetry.addData("color",color);
                     telemetry.update();
@@ -315,11 +419,54 @@ public class BasicTeleOpCopyingV1 extends OpMode {
                         rightBackRoller.setPower(Globals.backRollersMaxPower);
                         backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
                     }*/
-
+                }
             }
             if (gamepad1.right_stick_button) {
-                //vision.recycleToColor(0, leftKickerServo, rightKickerServo, frontIntakeMotor, backIntakeMotor, leftBackRoller,
-                //        rightBackRoller, leftIntakeColorSensor, rightIntakeColorSensor);
+                greenSortingEnabled = true;
+                attempts = 0;
+                status = -1;
+                cycleTimer.reset();
+            }
+
+            if (greenSortingEnabled) {
+                if (cycleTimer.milliseconds() > 400) {
+                    String detectedColor = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
+                    status = "Green".equals(detectedColor) ? 1 : 0;
+
+                    if (status == 1) {
+                        greenSortingEnabled = false;
+                        cycleTimer.reset();
+                    } else {
+                        attempts++;
+
+                        recycleIntakeTimerStarted = false;
+                        kickerAction = 3;
+                        kickerRotationsLeft += 1;
+
+                        if (kickerLocation > Globals.defaultKickerLocation - 0.1
+                                && kickerLocation < Globals.defaultKickerLocation + 0.1) {
+                            kickerInDefaultPosition = true;
+                            telemetry.addLine("Kicker in default position");
+                        } else {
+                            kickerInDefaultPosition = false;
+                        }
+
+                        leftKickerServo.setPower(Globals.kickerRecycle);
+                        rightKickerServo.setPower(Globals.kickerRecycle);
+                        frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
+                        backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
+
+                        cycleTimer.reset();
+                        if(attempts>3){
+                            greenSortingEnabled = false;
+                            telemetry.addLine("Max recycle attempts reached");
+                            cycleTimer.reset();
+                        }
+                    }
+                }
+
+
+
                 /*timer.reset();
                 String color = vision.currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
                 telemetry.addData("color",color);
@@ -344,10 +491,11 @@ public class BasicTeleOpCopyingV1 extends OpMode {
                     rightBackRoller.setPower(Globals.backRollersMaxPower);
                     backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
                 }}*/
-
             }
+
             // tipping
-            if (!gamepad1.yWasPressed() && gamepad1.y) {
+            if (!yPressed && gamepad1.y) {
+                yPressed = true;
                 if (!tipped) {
                     leftTipper.setPosition(Globals.tipperExtended);
                     rightTipper.setPosition(Globals.tipperExtended);
@@ -358,13 +506,61 @@ public class BasicTeleOpCopyingV1 extends OpMode {
                     tipped = false;
 
                 }
+            } else {
+                yPressed = false;
             }
             if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1 && kickerInDefaultPosition == false && kickerRotationsLeft != 0) {
                 kickerRotationsLeft = kickerRotationsLeft - 1;
                 kickerInDefaultPosition = true;
+//                if(shooting) {
+//                    frontIntakeMotor.setPower(Globals.frontIntakeShootSpeed);
+//                    backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
+//                }
             }
             if (kickerLocation < Globals.defaultKickerLocation - 0.1 || kickerLocation > Globals.defaultKickerLocation + 0.1) {
                 kickerInDefaultPosition = false;
+//                if(shooting) {
+//                    frontIntakeMotor.setPower(0);
+//                    backIntakeMotor.setPower(0);
+//                }
+            }
+            telemetry.addData("shooting", shooting);
+//            if (kickerLocation > Globals.defaultKickerLocation - 0.5 && kickerLocation < Globals.defaultKickerLocation + 0.1) {
+//                if(shooting == true) {
+//                    frontIntakeMotor.setPower(Globals.frontIntakeShootSpeed);
+//                    backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
+//                }
+//            }
+//            if (kickerLocation < Globals.defaultKickerLocation - 0.1 || kickerLocation > Globals.defaultKickerLocation + 0.1) {
+//                kickerInDefaultPosition = false;
+////                if(shooting) {
+////                    frontIntakeMotor.setPower(0);
+////                    backIntakeMotor.setPower(0);
+////                }
+//            }
+            if((vision.inRange(limelight))||((vision.correctPos ==1)&&(rightBumperTrue))){
+                light.setPosition(0.333);
+            }
+            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("Green"))){
+                light.setPosition(0.5);
+            }
+            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("Purple"))){
+                light.setPosition(0.722);
+            }
+            else{
+                light.setPosition(0);
+            }
+            if(tipped){
+                zoneLight.setPosition(0.3);
+            }
+
+            else if(rightBumperTrue){
+                zoneLight.setPosition(0.388);
+            }
+            else if(leftBumperTrue){
+                zoneLight.setPosition(0.666);
+            }else{
+                zoneLight.setPosition(0);
             }
         }
     }

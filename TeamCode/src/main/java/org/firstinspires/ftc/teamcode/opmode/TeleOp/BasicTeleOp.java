@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.hardware.Globals;
 
 
 @TeleOp
-public class BasicTeleop1 extends OpMode {
+public class BasicTeleOp extends OpMode {
 
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;

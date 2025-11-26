@@ -3,12 +3,10 @@ package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 import static java.lang.Thread.sleep;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.hardware.limelightvision.LLFieldMap;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -25,8 +23,8 @@ import org.firstinspires.ftc.teamcode.hardware.Globals;
 import java.util.List;
 
 @Config
-@TeleOp
-public class BasicTeleop extends OpMode {
+@com.qualcomm.robotcore.eventloop.opmode.TeleOp
+public class TeleOp extends OpMode {
     Limelight3A limelight;
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;
