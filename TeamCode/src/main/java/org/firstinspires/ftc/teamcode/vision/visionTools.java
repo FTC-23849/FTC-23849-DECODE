@@ -190,6 +190,7 @@ public class visionTools {
         return -pid;
     }
     public int ObeliskID(Limelight3A limelight){
+        limelight.pipelineSwitch(8);
         LLResult result = limelight.getLatestResult();
         int tagID = -1;
         List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
