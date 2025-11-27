@@ -320,40 +320,41 @@ public class visionTools {
                                   ElapsedTime cycleTimer,
                                   double kickerLocation,
                                   double defaultKickerLocation,
-                                  int maxAttempts) {
-        String currentBallColor = currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
+                                  int maxAttempts,
+                                  boolean xtrue) {
+        if (!xtrue) {
+            String currentBallColor = currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
 
-        if (currentBallColor.equals(targetColor)) {
-            return false;
-        }
-
-        if (maxAttempts <= 0) {
-            return false;
-        }
-
-        cycleTimer.reset();
-
-        leftKickerServo.setPower(Globals.kickerRecycle);
-        rightKickerServo.setPower(Globals.kickerRecycle);
-        frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
-        backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
-        leftBackRoller.setPower(Globals.backRollersMaxPower);
-        rightBackRoller.setPower(Globals.backRollersMaxPower);
-
-        if (cycleTimer.milliseconds() > 1000) {
-            frontIntakeMotor.setPower(0);
-            backIntakeMotor.setPower(0);
-            leftBackRoller.setPower(0);
-            rightBackRoller.setPower(0);
-            leftKickerServo.setPower(0);
-            rightKickerServo.setPower(0);
-            cycleTimer.reset();
-            if(cycleTimer.milliseconds() < 200){
+            if (currentBallColor.equals(targetColor)) {
                 return false;
             }
-        }
 
-        return true;
+            if (maxAttempts <= 0) {
+                return false;
+            }
+
+            cycleTimer.reset();
+
+            leftKickerServo.setPower(Globals.kickerRecycle);
+            rightKickerServo.setPower(Globals.kickerRecycle);
+            frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed - 0.2);
+            backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed - 0.2);
+            leftBackRoller.setPower(Globals.backRollersMaxPower);
+            rightBackRoller.setPower(Globals.backRollersMaxPower);
+
+            if (cycleTimer.milliseconds() > 1000) {
+                frontIntakeMotor.setPower(0);
+                backIntakeMotor.setPower(0);
+                leftBackRoller.setPower(0);
+                rightBackRoller.setPower(0);
+                leftKickerServo.setPower(0);
+                rightKickerServo.setPower(0);
+                return false;
+            }
+            cycleTimer.reset();
+            return true;
+        }
+        return false;
     }
 
 

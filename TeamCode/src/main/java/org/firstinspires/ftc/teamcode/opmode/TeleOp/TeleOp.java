@@ -362,7 +362,10 @@ public class TeleOp extends OpMode {
             }
 
             if (purpleSortingEnabled) {
-                purpleSortingEnabled = vision.recycleToColor("Purple",leftIntakeColorSensor,rightIntakeColorSensor,frontIntakeMotor,backIntakeMotor,leftKickerServo,rightKickerServo,leftBackRoller,rightBackRoller,cycleTimer,kickerLocation, Globals.defaultKickerLocation,3);
+                if(gamepad1.x){
+                    purpleSortingEnabled = false;
+                }
+                purpleSortingEnabled = vision.recycleToColor("Purple",leftIntakeColorSensor,rightIntakeColorSensor,frontIntakeMotor,backIntakeMotor,leftKickerServo,rightKickerServo,leftBackRoller,rightBackRoller,cycleTimer,kickerLocation, Globals.defaultKickerLocation,3,gamepad1.x);
             }
 
             if (gamepad1.right_stick_button) {
@@ -370,7 +373,10 @@ public class TeleOp extends OpMode {
             }
 
             if (greenSortingEnabled) {
-                greenSortingEnabled = vision.recycleToColor("Green",leftIntakeColorSensor,rightIntakeColorSensor,frontIntakeMotor,backIntakeMotor,leftKickerServo,rightKickerServo,leftBackRoller,rightBackRoller,cycleTimer,kickerLocation, Globals.defaultKickerLocation,3);
+                if(gamepad1.x){
+                    greenSortingEnabled = false;
+                }
+                greenSortingEnabled = vision.recycleToColor("Green",leftIntakeColorSensor,rightIntakeColorSensor,frontIntakeMotor,backIntakeMotor,leftKickerServo,rightKickerServo,leftBackRoller,rightBackRoller,cycleTimer,kickerLocation, Globals.defaultKickerLocation,3,gamepad1.x);
             }
 
             // tipping
