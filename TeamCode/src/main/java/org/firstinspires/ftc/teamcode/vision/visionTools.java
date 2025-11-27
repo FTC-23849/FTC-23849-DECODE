@@ -189,7 +189,15 @@ public class visionTools {
         //pid = Math.max(-1, Math.min(1, pid));
         return -pid;
     }
-
+    public int ObeliskID(Limelight3A limelight){
+        LLResult result = limelight.getLatestResult();
+        int tagID = -1;
+        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+        for (LLResultTypes.FiducialResult fiducial : fiducials) {
+            tagID = fiducial.getFiducialId(); // The ID number of the Apriltag
+        }
+        return tagID;
+    }
     public double adjustedTurretAnglePID(double currentAngle, Limelight3A limelight,double zone, double kP, double kI, double kD) {
         double correction = 0;
         limelight.pipelineSwitch(9);
@@ -298,61 +306,55 @@ public class visionTools {
         LLResult results = limelight.getLatestResult();
         return results.getPythonOutput()[3];
     }
-    private void stopAll(CRServoImplEx leftKick, CRServoImplEx rightKick,
-                         DcMotorEx frontIntake, DcMotorEx backIntake,
-                         CRServoImplEx leftRoller, CRServoImplEx rightRoller) {
-        leftKick.setPower(0);
-        rightKick.setPower(0);
-        frontIntake.setPower(0);
-        backIntake.setPower(0);
-        leftRoller.setPower(0);
-        rightRoller.setPower(0);
-    }
-    public int recycleToColor(String targetColor,
-                               NormalizedColorSensor leftSensor,
-                               NormalizedColorSensor rightSensor,
-                               double attempts){
-        if (attempts < 3 ) {
-            boolean reachedCorrectColor = currentColor(leftSensor, rightSensor).equals(targetColor);
-            if (reachedCorrectColor) {
-                int correctColor = 1;
-                return correctColor;
-            } else {
-                int correctColor = 0;
-                return correctColor;
-            }
-        }else{
-            return -1;
+
+    public boolean recycleToColor(String targetColor,
+                                  NormalizedColorSensor leftIntakeColorSensor,
+                                  NormalizedColorSensor rightIntakeColorSensor,
+                                  DcMotorEx frontIntakeMotor,
+                                  DcMotorEx backIntakeMotor,
+                                  CRServoImplEx leftKickerServo,
+                                  CRServoImplEx rightKickerServo,
+                                  CRServoImplEx leftBackRoller,
+                                  CRServoImplEx rightBackRoller,
+                                  ElapsedTime cycleTimer,
+                                  double kickerLocation,
+                                  double defaultKickerLocation,
+                                  int maxAttempts) {
+        String currentBallColor = currentColor(leftIntakeColorSensor, rightIntakeColorSensor);
+
+        if (currentBallColor.equals(targetColor)) {
+            return false;
         }
-    }
-    public boolean recycle(int action,
-                              CRServoImplEx leftKickerServo,
-                              CRServoImplEx rightKickerServo,
-                              DcMotorEx frontIntakeMotor,
-                              DcMotorEx backIntakeMotor,
-                              CRServoImplEx leftBackRoller,
-                              CRServoImplEx rightBackRoller) {
 
+        if (maxAttempts <= 0) {
+            return false;
+        }
 
-        if (action == 1) {
+        cycleTimer.reset();
+
+        leftKickerServo.setPower(Globals.kickerRecycle);
+        rightKickerServo.setPower(Globals.kickerRecycle);
+        frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
+        backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
+        leftBackRoller.setPower(Globals.backRollersMaxPower);
+        rightBackRoller.setPower(Globals.backRollersMaxPower);
+
+        if (cycleTimer.milliseconds() > 1000) {
             frontIntakeMotor.setPower(0);
             backIntakeMotor.setPower(0);
             leftBackRoller.setPower(0);
             rightBackRoller.setPower(0);
             leftKickerServo.setPower(0);
             rightKickerServo.setPower(0);
-            return true;
-        }else{
-            frontIntakeMotor.setPower(Globals.frontIntakeRecycleSpeed);
-            backIntakeMotor.setPower(Globals.backIntakeRecycleSpeed);
-            leftBackRoller.setPower(Globals.backRollersReverse);
-            rightBackRoller.setPower(Globals.backRollersReverse);
-            leftKickerServo.setPower(Globals.kickerRecycle);
-            rightKickerServo.setPower(Globals.kickerRecycle);
-            return false;
+            cycleTimer.reset();
+            if(cycleTimer.milliseconds() < 200){
+                return false;
+            }
         }
 
+        return true;
     }
+
 
 }
 
