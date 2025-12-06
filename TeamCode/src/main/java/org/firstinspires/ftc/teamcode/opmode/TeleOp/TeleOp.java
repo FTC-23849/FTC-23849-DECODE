@@ -135,6 +135,7 @@ public class TeleOp extends OpMode {
     @Override
     public void loop() {
         timer.reset();
+        telemetry.addData("encoder voltage: ", kickerEncoder.getVoltage());
         telemetry.addData("tipped", tipped);
         telemetry.addData("lf", leftFrontMotor.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("rf", rightFrontMotor.getCurrent(CurrentUnit.AMPS));
@@ -157,10 +158,10 @@ public class TeleOp extends OpMode {
         } else {
             kickerLocation = kickerEncoder.getVoltage();
         }
-        if (kickerLocation > 0.6) {
-            kickerLocation = kickerLocation - 0.6;
+        if (kickerLocation > 0.5) {
+            kickerLocation = kickerLocation - 0.5;
         } else {
-            kickerLocation = 1.65 - (kickerLocation - 0.6);
+            kickerLocation = 1.65 - (kickerLocation - 0.5);
         }
 
 
@@ -193,6 +194,8 @@ public class TeleOp extends OpMode {
             backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
             leftBackRoller.setPower(Globals.backRollersMaxPower);
             rightBackRoller.setPower(Globals.backRollersMaxPower);
+            rightKickerServo.setPower(0);
+            leftKickerServo.setPower(0);
         } else if (gamepad1.a) {
             frontIntakeMotor.setPower(Globals.frontIntakeReverseSpeed);
             backIntakeMotor.setPower(Globals.backIntakeReverseSpeed);
@@ -253,14 +256,14 @@ public class TeleOp extends OpMode {
                     frontIntakeMotor.setPower(0);
                     backIntakeMotor.setPower(0);
                 }
-                if (kickerLocation < Globals.defaultKickerLocation - 0.05) {
-                    leftKickerServo.setPower(0.1 /* (kickerLocation - Globals.defaultKickerLocation)/ / (Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
-                    rightKickerServo.setPower(0.1);
+                if (kickerLocation < Globals.defaultKickerLocation - 0.03) {
+                    leftKickerServo.setPower(0.2 /* (kickerLocation - Globals.defaultKickerLocation)/ / (Globals.defaultKickerLocation - kickerEncoder.getVoltage())*/);
+                    rightKickerServo.setPower(0.2);
                     telemetry.addLine("e");
 
-                } else if (kickerLocation > Globals.defaultKickerLocation + 0.05) {
-                    leftKickerServo.setPower(-0.09);
-                    rightKickerServo.setPower(-0.09);
+                } else if (kickerLocation > Globals.defaultKickerLocation + 0.03) {
+                    leftKickerServo.setPower(-0.08);
+                    rightKickerServo.setPower(-0.08);
                     telemetry.addLine("ae");
                 } else {
                     rightKickerServo.setPower(0);

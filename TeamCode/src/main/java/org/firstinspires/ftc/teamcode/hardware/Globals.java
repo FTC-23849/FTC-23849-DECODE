@@ -1,27 +1,54 @@
 package org.firstinspires.ftc.teamcode.hardware;
 
+import com.acmerobotics.dashboard.config.Config;
+
+@Config
 public class Globals {
 
+    // Front Intake
     public static double frontIntakeIntakeSpeed = -1;
-    public static double frontIntakeShootSpeed = -1;
-    public static double frontIntakeRecycleSpeed = -0.67;
+    public static double frontIntakeShootSpeed = -1.0; //-0.7
+    public static double frontIntakeRecycleSpeed = -0.5;//-0.67
     public static double frontIntakeReverseSpeed = 1;
+
+    // Back Intake
     public static double backIntakeIntakeSpeed = -1;
     public static double backIntakeReverseSpeed = 1;
     public static double backIntakeShootSpeed = 1;
-    public static double backIntakeRecycleSpeed = -0.67;
+    public static double backIntakeRecycleSpeed = -0.3;
+
+    public static double backRollersMaxPower = 1;
+    public static double backRollersReverse = -1;
+
+    // Kicker
     public static double kickerShoot = -1;
     public static double kickerRecycle = 0.4;
+
+    public static double defaultKickerLocation = 0.8;
+    public static double defaultKickerLocationAuto = 0.7;
+
+    // Kicker PID
+    public static double KICKER_kP = 5;
+    public static double KICKER_kD = 0.02;
+
+    public static double KICKER_ZERO = 2.8;
+
+    public static double KICKER_IDLE = 0.07;
+    public static double KICKER_RECYCLE = 0.31;
+
+
+    // Shooter
     public static double defaultCloseZonePower = -0.67;
     public static double defaultCloseZonePowerAuto = -0.71;
     public static double defaultFarZonePower = -0.92;
     public static double defaultFarZonePowerAuto = -0.87;
+
+
+    // Tipper
     public static double tipperRetracted = 0.23;
     public static double tipperExtended = 0.5;
-    public static double backRollersMaxPower = 1;
-    public static double backRollersReverse = -1;
-    public static double defaultKickerLocation = 0.8;
-    public static double defaultKickerLocationAuto = 0.7;
+
+
 
 
 

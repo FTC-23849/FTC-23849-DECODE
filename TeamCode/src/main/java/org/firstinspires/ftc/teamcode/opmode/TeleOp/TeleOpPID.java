@@ -194,6 +194,8 @@ public class TeleOpPID extends OpMode {
             backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
             leftBackRoller.setPower(Globals.backRollersMaxPower);
             rightBackRoller.setPower(Globals.backRollersMaxPower);
+            rightKickerServo.setPower(0);
+            leftKickerServo.setPower(0);
         } else if (gamepad1.a) {
             frontIntakeMotor.setPower(Globals.frontIntakeReverseSpeed);
             backIntakeMotor.setPower(Globals.backIntakeReverseSpeed);

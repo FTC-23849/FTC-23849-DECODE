@@ -74,11 +74,11 @@ public class visionTools {
                 direction = 1;
             }
             if (zone == 1){
-                correction = ((smoothTx - offset) * (30/18));
+                correction = ((smoothTx - offset) * (1.67)); //30/18
             }else if (zone == 2){
-                correction = ((smoothTx - offset) * (25/13))-(direction*0.008);
+                correction = ((smoothTx - offset) * (1.92 /*25/13*/))-(direction*0.008);
             }else if (zone == 3){
-                correction = ((smoothTx - offset) * (30/18));
+                correction = ((smoothTx - offset) * (1.67)); //30/18
             }
             return -(correction / 1800.0) + currentAngle;
         } else {
