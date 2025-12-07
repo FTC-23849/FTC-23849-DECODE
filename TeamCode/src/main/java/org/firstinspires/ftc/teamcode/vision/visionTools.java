@@ -307,7 +307,49 @@ public class visionTools {
         LLResult results = limelight.getLatestResult();
         return results.getPythonOutput()[3];
     }
-
+    public double distance (Limelight3A limelight) {
+        //limelight to apriltag distance
+        limelight.pipelineSwitch(9);
+        LLResult result = limelight.getLatestResult();
+        double TA = result.getTa();
+        double distance = 1.068 * Math.sqrt((3.05 * Math.cos(Math.toRadians(20))) / TA);
+        //distance = referenceDistance * sqrt ( (reference target area * cos(limelight vertical angle)) / current target area)
+        return distance;
+    }
+    public double groundDistance(Limelight3A limelight){
+        double distance = distance(limelight);
+        double groundDistance =Math.sqrt((distance*distance) - 0.1505828025);
+        if (groundDistance > 50){
+            return -1;
+        }else{
+        return groundDistance;
+        }
+    }
+    public double closeZoneflywheelspeed(Limelight3A limelight, double currentVelocity){
+        double groundDistance = groundDistance(limelight);
+        double speed = -1 * (0.57 + 0.1*groundDistance);
+        if (groundDistance > 3.4){
+            speed += -1 * (0.1 * (groundDistance - 3.3));
+        }
+        if (groundDistance == -1) {
+            return currentVelocity;
+        }else{
+            return speed;
+        }
+    }
+    public double closeZonehood(Limelight3A limelight, double currentHood){
+        double groundDistance = groundDistance(limelight);
+        double hood = 0.05 + 0.1*groundDistance ;
+        if (groundDistance == -1) {
+            return currentHood;
+        }else{
+            if (hood>0.4){
+                return 0.4;
+            }else{
+            return hood;
+            }
+        }
+    }
     public boolean recycleToColor(String targetColor,
                                   NormalizedColorSensor leftIntakeColorSensor,
                                   NormalizedColorSensor rightIntakeColorSensor,

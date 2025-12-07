@@ -71,6 +71,7 @@ public class TeleOp extends OpMode {
     public static double Kp = 0.007;
     public static double Ki = 0.0000;
     public static double Kd = 0.00;
+    double currentSpeed = 0;
     boolean rightBumperTrue = false;
     boolean leftBumperTrue = false;
     int attempts = 0;
@@ -150,7 +151,8 @@ public class TeleOp extends OpMode {
         telemetry.addData("# of balls: ", vision.ballsInRamp(limelight));
         telemetry.addData("flywheel", leftShooterMotor.getVelocity());
         telemetry.addData("inRange? ",vision.inRange(limelight));
-
+        telemetry.addData("distance", vision.distance(limelight));
+        telemetry.addData("ground distance", vision.groundDistance(limelight));
         totalCurrent = (leftFrontMotor.getCurrent(CurrentUnit.AMPS) + rightFrontMotor.getCurrent(CurrentUnit.AMPS) + leftBackMotor.getCurrent(CurrentUnit.AMPS) + rightBackMotor.getCurrent(CurrentUnit.AMPS) + leftShooterMotor.getCurrent(CurrentUnit.AMPS) + rightShooterMotor.getCurrent(CurrentUnit.AMPS) + frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("totalcurrent", totalCurrent);
         if (kickerEncoder.getVoltage() > 1.65) {
@@ -329,15 +331,17 @@ public class TeleOp extends OpMode {
             if (gamepad1.leftBumperWasReleased()) {
                 if (leftBumperTrue) {
                     leftBumperTrue = false;
+                    //currentSpeed = 0.67;
                 } else {
                     leftBumperTrue = true;
                 }
             }
             if (leftBumperTrue && !rightBumperTrue) {
-                leftShooterMotor.setPower(Globals.defaultCloseZonePower);
-                rightShooterMotor.setPower(Globals.defaultCloseZonePower);
-                leftHood.setPosition(0.15);
-                rightHood.setPosition(0.15);
+                leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed));
+                rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed));
+                currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed);
+                leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition()));
+            rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition()));
                 telemetry.addData("flywheel", leftShooterMotor.getVelocity());
 
             }
@@ -464,5 +468,6 @@ public class TeleOp extends OpMode {
                 zoneLight.setPosition(0);
             }
         }
+            telemetry.addData("looptime", timer.milliseconds());
     }
 }
