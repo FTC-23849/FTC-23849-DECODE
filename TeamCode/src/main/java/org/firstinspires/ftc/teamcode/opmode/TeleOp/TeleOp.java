@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
@@ -79,6 +80,9 @@ public class TeleOp extends OpMode {
     ElapsedTime cycleTimer = new ElapsedTime();
     ServoImplEx light;
     ServoImplEx zoneLight;
+    ElapsedTime runTime = new ElapsedTime();
+    double lastLoopTime;
+    double loops = 1;
 
     @Override
 
@@ -136,6 +140,12 @@ public class TeleOp extends OpMode {
     @Override
     public void loop() {
         timer.reset();
+        telemetry.addData("last loop time", runTime.milliseconds() - lastLoopTime);
+        telemetry.addData("average loop time", runTime.milliseconds() / loops);
+        telemetry.addData("loops", loops);
+        loops = loops + 1;
+        lastLoopTime = runTime.milliseconds();
+        telemetry.addData("frontIntakeMotorSpeed", frontIntakeMotor.getVelocity());
         telemetry.addData("encoder voltage: ", kickerEncoder.getVoltage());
         telemetry.addData("tipped", tipped);
         telemetry.addData("lf", leftFrontMotor.getCurrent(CurrentUnit.AMPS));
@@ -192,6 +202,7 @@ public class TeleOp extends OpMode {
         }
         telemetry.addData("Tag ID",tagID);
         if (gamepad1.right_trigger > 0.1) {
+            frontIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             frontIntakeMotor.setPower(Globals.frontIntakeIntakeSpeed);
             backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
             leftBackRoller.setPower(Globals.backRollersMaxPower);
@@ -215,6 +226,7 @@ public class TeleOp extends OpMode {
             leftBackRoller.setPower(Globals.backRollersMaxPower);
             rightBackRoller.setPower(Globals.backRollersMaxPower);
             backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
+            frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             frontIntakeMotor.setPower(Globals.frontIntakeShootSpeed);
             shooting = true;
         } else if (gamepad1.dpad_up) {
@@ -246,6 +258,7 @@ public class TeleOp extends OpMode {
             rightKickerServo.setPower(Globals.kickerRecycle);
             leftKickerServo.setPower(Globals.kickerRecycle);
         } else {
+            frontIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             shooting = false;
             leftBackRoller.setPower(0);
             rightBackRoller.setPower(0);
@@ -443,18 +456,18 @@ public class TeleOp extends OpMode {
 ////                    backIntakeMotor.setPower(0);
 ////                }
 //            }
-            if((vision.inRange(limelight))||((vision.correctPos ==1)&&(rightBumperTrue))){
-                light.setPosition(0.333);
-            }
-            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("Green"))){
-                light.setPosition(0.5);
-            }
-            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("Purple"))){
-                light.setPosition(0.722);
-            }
-            else{
-                light.setPosition(0);
-            }
+//            if((vision.inRange(limelight))||((vision.correctPos ==1)&&(rightBumperTrue))){
+//                light.setPosition(0.333);
+//            }
+//            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("Green"))){
+//                light.setPosition(0.5);
+//            }
+//            else if((vision.currentColor(leftIntakeColorSensor,rightIntakeColorSensor).equals("Purple"))){
+//                light.setPosition(0.722);
+//            }
+//            else{
+//                light.setPosition(0);
+//            }
             if(tipped){
                 zoneLight.setPosition(0.3);
             }

@@ -6,10 +6,10 @@ import com.acmerobotics.dashboard.config.Config;
 public class Globals {
 
     // Front Intake
-    public static double frontIntakeIntakeSpeed = -1;
-    public static double frontIntakeShootSpeed = -1.0; //-0.7
-    public static double frontIntakeRecycleSpeed = -0.5;//-0.67
-    public static double frontIntakeReverseSpeed = 1;
+    public static double frontIntakeIntakeSpeed = 1;
+    public static double frontIntakeShootSpeed = 1; //-0.7
+    public static double frontIntakeRecycleSpeed = 0.5;//-0.67
+    public static double frontIntakeReverseSpeed = -1;
 
     // Back Intake
     public static double backIntakeIntakeSpeed = -1;
@@ -21,11 +21,11 @@ public class Globals {
     public static double backRollersReverse = -1;
 
     // Kicker
-    public static double kickerShoot = -1;
+    public static double kickerShoot = -0.6;
     public static double kickerRecycle = 0.4;
 
     public static double defaultKickerLocation = 0.8;
-    public static double defaultKickerLocationAuto = 0.7;
+    public static double defaultKickerLocationAuto = 0.9;
 
     // Kicker PID
     public static double KICKER_kP = 5;
