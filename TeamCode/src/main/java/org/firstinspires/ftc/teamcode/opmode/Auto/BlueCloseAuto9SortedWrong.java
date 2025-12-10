@@ -16,6 +16,7 @@ import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -32,9 +33,10 @@ import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 
+@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class BlueCloseAutoSorted extends LinearOpMode {
+public class BlueCloseAuto9SortedWrong extends LinearOpMode {
 
     // Initialize all hardware
     Limelight3A limelight;
@@ -75,7 +77,7 @@ public class BlueCloseAutoSorted extends LinearOpMode {
     public static double shooterStartDelay = 0.3;
     public static double shootingDelay = 2;
 
-    public static double intakeStopDelay = 0.6;
+    public static double intakeStopDelay = 0.4;
 
     public static double turretStartPos = 0.34;
     public static double turretShootPos = 0.422;
@@ -210,8 +212,9 @@ public class BlueCloseAutoSorted extends LinearOpMode {
                         // Preloads
                         new ParallelAction(
                                 // Preload Path
-                                drive.actionBuilder(startPose).strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270),
-                                        new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)).build(),
+                                drive.actionBuilder(startPose)
+                                        .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)).build(),
 
                                 new setShooter(leftShooterMotor, rightShooterMotor, Globals.defaultCloseZonePowerAuto)
                         ),
@@ -226,20 +229,77 @@ public class BlueCloseAutoSorted extends LinearOpMode {
                         // Spike 1
                         new ParallelAction(
                                 // Intake Spike 1 Path
-                                drive.actionBuilder(drive.localizer.getPose()).strafeToLinearHeading(new Vector2d(-11, -60), Math.toRadians(270),
-                                        new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking)).build(),
+                                drive.actionBuilder(drive.localizer.getPose())
+                                        .strafeToLinearHeading(new Vector2d(-11, -60), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking)).build(),
 
                                 new kickerIdle(false)
                                 //new setIntake(frontIntakeMotor, backIntakeMotor, 0.75)
-                        )
+                        ),
+
+                        new ParallelAction(
+                                // Score Spike 1 Path
+                                drive.actionBuilder(drive.localizer.getPose())
+                                        .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)).build(),
+
+                                new SequentialAction(
+                                        new SleepAction(intakeStopDelay),
+                                        new recycle("PPG", frontIntakeMotor)
+                                )
+                        ),
+                        new SleepAction(shooterStartDelay),
+                        new kickerShoot(),
+                        new SleepAction(shootingDelay),
 
                         // Spike 2
+                        new ParallelAction(
+                                // Go to intake Spike 2 Path
+                                drive.actionBuilder(drive.localizer.getPose())
+                                        .strafeToLinearHeading(new Vector2d(12.5, -25), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)).build(),
 
+
+                                new kickerIdle(false)
+                                //new setIntake(frontIntakeMotor, backIntakeMotor, 0.75)
+                        ),
+
+                        // Intake Spike 2 Path
+                        drive.actionBuilder(drive.localizer.getPose()).strafeToLinearHeading(new Vector2d(12.5, -66), Math.toRadians(270),
+                                        new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking)).build(),
+
+                        new ParallelAction(
+                                // Score Spike 2 Path
+                                drive.actionBuilder(drive.localizer.getPose())
+                                        .strafeToLinearHeading(new Vector2d(11.5, -52), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive))
+                                        .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)).build(),
+
+                                new SequentialAction(
+                                        new SleepAction(intakeStopDelay),
+                                        new recycle("PGP", frontIntakeMotor)
+                                )
+                        ),
+                        new SleepAction(shooterStartDelay = 0.2),
+                        new kickerShoot(),
+                        new SleepAction(shootingDelay),
 
                         // Spike 3
 
 
                         // Park
+                        new ParallelAction(
+                                // Park Path
+                                drive.actionBuilder(drive.localizer.getPose())
+                                        .strafeToLinearHeading(new Vector2d(-22, -58), Math.toRadians(270),
+                                                new TranslationalVelConstraint(100), new ProfileAccelConstraint(-100, 100)).build(),
+
+                                new setShooter(leftShooterMotor, rightShooterMotor, 0.0),
+                                new kickerIdle(true)
+                        )
+
+
                 ),
 
                 // Thread 2: Kicker PID
@@ -283,14 +343,35 @@ public class BlueCloseAutoSorted extends LinearOpMode {
                 leftKickerServo.setPower(power);
                 rightKickerServo.setPower(power);
 
-                telemetry.addData("Normalized Encoder Value", processedEncoderValue);
-                telemetry.update();
+//                telemetry.addData("Normalized Encoder Value", processedEncoderValue);
+//                telemetry.update();
             } else {
                 leftKickerServo.setPower(plainKickerPower);
                 rightKickerServo.setPower(plainKickerPower);
             }
 
             return true;
+        }
+    }
+
+    public class updatePose implements Action {
+
+        private MecanumDrive drive = null;
+
+        public updatePose(MecanumDrive drive){
+
+            this.drive = drive;
+
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+
+            drive.updatePoseEstimate();
+            drive.localizer.update();
+
+            return false;
+
         }
     }
 
