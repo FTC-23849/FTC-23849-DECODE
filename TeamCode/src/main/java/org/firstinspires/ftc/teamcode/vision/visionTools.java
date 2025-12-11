@@ -2,11 +2,11 @@ package org.firstinspires.ftc.teamcode.vision;
 
 import static java.lang.Thread.sleep;
 
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
@@ -14,8 +14,15 @@ import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class visionTools {
@@ -397,6 +404,42 @@ public class visionTools {
             return true;
         }
         return false;
+    }
+    private List updatePinpoint(Limelight3A limelight, IMU imu, double currentPosition){
+        double robotYaw = imu.getRobotOrientation(AxesReference.EXTRINSIC, AxesOrder.ZXY, AngleUnit.DEGREES).firstAngle;
+        double x = 0;
+        double y = 0;
+        double yaw = 0;
+        limelight.updateRobotOrientation(robotYaw);
+        LLResult result = limelight.getLatestResult();
+        if (result != null && result.isValid()) {
+            Pose3D botpose_mt2 = result.getBotpose_MT2();
+            if (botpose_mt2 != null) {
+                x = botpose_mt2.getPosition().x;
+                y = botpose_mt2.getPosition().y;
+                yaw = botpose_mt2.getOrientation().getYaw(AngleUnit.DEGREES);
+            } else {
+                return null;
+            }
+
+        }
+
+        List<Double> coords = new ArrayList<>();
+        coords.add(1000*x);
+        coords.add(1000*y);
+        return coords;
+
+    }
+    public double pinpointTurret(GoBildaPinpointDriver pinpoint,double currentPos){
+        pinpoint.update();
+        Pose2D pose2d = pinpoint.getPosition();
+
+        double x = pose2d.getX(DistanceUnit.METER);
+        double y = pose2d.getY(DistanceUnit.METER);
+        double yaw = pose2d.getHeading(AngleUnit.DEGREES);
+        double turretAngle = Math.toDegrees(Math.atan2(3.4544-y,3.4544-x));
+        double GearedTurretAngle = ((33.0 / 13.0) * turretAngle) / 1800.0;
+        return 0.5 - GearedTurretAngle ;
     }
 
 
