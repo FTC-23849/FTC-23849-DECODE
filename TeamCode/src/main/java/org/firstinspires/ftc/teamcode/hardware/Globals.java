@@ -24,8 +24,9 @@ public class Globals {
     public static double kickerShoot = -0.6;
     public static double kickerRecycle = 0.4;
 
-    public static double defaultKickerLocation = 0.8;
+    public static double defaultKickerLocation = 0.2;
     public static double defaultKickerLocationAuto = 0.9;
+    public static double defaultKickerStopDelay = 500;
 
     // Kicker PID
     public static double KICKER_kP = 5;

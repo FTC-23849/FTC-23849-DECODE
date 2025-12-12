@@ -25,7 +25,7 @@ import java.util.List;
 
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp
-public class TeleOp extends OpMode {
+public class Teleop2 extends OpMode {
     Limelight3A limelight;
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;
@@ -83,6 +83,10 @@ public class TeleOp extends OpMode {
     ElapsedTime runTime = new ElapsedTime();
     double lastLoopTime;
     double loops = 1;
+
+    boolean kickerStopped = true;
+    boolean kickerReadyToStop = true;
+    ElapsedTime kickerStopTimer = new ElapsedTime();
 
     @Override
 
@@ -155,9 +159,9 @@ public class TeleOp extends OpMode {
 //        telemetry.addData("leftshooter", leftShooterMotor.getCurrent(CurrentUnit.AMPS));
 //        telemetry.addData("rightSHooter", rightShooterMotor.getCurrent(CurrentUnit.AMPS));
 //        telemetry.addData("frontIntake", frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
-//        telemetry.addData("Kp", Kp);
-//        telemetry.addData("Ki", Ki);
-//        telemetry.addData("Kd", Kd);
+        telemetry.addData("Kp", Kp);
+        telemetry.addData("Ki", Ki);
+        telemetry.addData("Kd", Kd);
 //        telemetry.addData("# of balls: ", vision.ballsInRamp(limelight));
 //        telemetry.addData("flywheel", leftShooterMotor.getVelocity());
 //        telemetry.addData("inRange? ",vision.inRange(limelight));
@@ -165,15 +169,20 @@ public class TeleOp extends OpMode {
 //        telemetry.addData("ground distance", vision.groundDistance(limelight));
 //        totalCurrent = (leftFrontMotor.getCurrent(CurrentUnit.AMPS) + rightFrontMotor.getCurrent(CurrentUnit.AMPS) + leftBackMotor.getCurrent(CurrentUnit.AMPS) + rightBackMotor.getCurrent(CurrentUnit.AMPS) + leftShooterMotor.getCurrent(CurrentUnit.AMPS) + rightShooterMotor.getCurrent(CurrentUnit.AMPS) + frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
 //        telemetry.addData("totalcurrent", totalCurrent);
+        telemetry.addData("kickerStopTimer", kickerStopTimer.milliseconds());
+        telemetry.addData("kickerStopped", kickerStopped);
+        telemetry.addData("kickerInDefaultPosition", kickerInDefaultPosition);
+        telemetry.addData("kickerReadyToStop", kickerReadyToStop);
+        telemetry.addData("kickerLocation", kickerLocation);
         if (kickerEncoder.getVoltage() > 1.65) {
             kickerLocation = kickerEncoder.getVoltage() - 1.65;
         } else {
             kickerLocation = kickerEncoder.getVoltage();
         }
-        if (kickerLocation > 0.5) {
-            kickerLocation = kickerLocation - 0.5;
+        if (kickerLocation > 0.1) {
+            kickerLocation = kickerLocation - 0.1;
         } else {
-            kickerLocation = 1.65 - (kickerLocation - 0.5);
+            kickerLocation = 1.65 - (kickerLocation - 0.1);
         }
 
 
@@ -216,13 +225,29 @@ public class TeleOp extends OpMode {
             rightBackRoller.setPower(Globals.backRollersReverse);
 
         } else if (gamepad1.left_trigger > 0.1) {
-            if(rightBumperTrue) {
-                rightKickerServo.setPower(Globals.kickerShoot * 0.3);
-                leftKickerServo.setPower(Globals.kickerShoot * 0.3);
-            }else{
-                rightKickerServo.setPower(Globals.kickerShoot);
-                leftKickerServo.setPower(Globals.kickerShoot);
+            if(kickerLocation > Globals.defaultKickerLocation + 0.6 && kickerLocation < Globals.defaultKickerLocation + 0.8 && kickerStopped == false && kickerReadyToStop){
+                kickerStopped = true;
+                leftKickerServo.setPower(-0.1);
+                rightKickerServo.setPower(-0.1);
+                kickerStopTimer.reset();
+                telemetry.addLine("kicker stopped");
+                kickerReadyToStop = false;
             }
+            else if(kickerStopTimer.milliseconds() > Globals.defaultKickerStopDelay && kickerStopped){
+                leftKickerServo.setPower(Globals.kickerShoot);
+                rightKickerServo.setPower(Globals.kickerShoot);
+                kickerStopped = false;
+            }
+            if(kickerLocation < Globals.defaultKickerLocation + 0.6 || kickerLocation > Globals.defaultKickerLocation + 0.8){
+                kickerReadyToStop = true;
+            }
+//            if(rightBumperTrue) {
+//                rightKickerServo.setPower(Globals.kickerShoot * 0.3);
+//                leftKickerServo.setPower(Globals.kickerShoot * 0.3);
+//            }else{
+//                rightKickerServo.setPower(Globals.kickerShoot);
+//                leftKickerServo.setPower(Globals.kickerShoot);
+//            }
             leftBackRoller.setPower(Globals.backRollersMaxPower);
             rightBackRoller.setPower(Globals.backRollersMaxPower);
             backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
@@ -258,6 +283,7 @@ public class TeleOp extends OpMode {
             rightKickerServo.setPower(Globals.kickerRecycle);
             leftKickerServo.setPower(Globals.kickerRecycle);
         } else {
+            kickerStopped = true;
             frontIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             shooting = false;
             leftBackRoller.setPower(0);
@@ -415,7 +441,7 @@ public class TeleOp extends OpMode {
         } else {
             yPressed = false;
         }
-        if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1 && kickerInDefaultPosition == false && kickerRotationsLeft != 0) {
+        if (kickerLocation > Globals.defaultKickerLocation - 0.1 && kickerLocation < Globals.defaultKickerLocation + 0.1 && kickerInDefaultPosition == false && kickerRotationsLeft != 0 && gamepad1.left_trigger < 0.1) {
             kickerRotationsLeft = kickerRotationsLeft - 1;
             kickerInDefaultPosition = true;
 //                if(shooting) {
@@ -423,7 +449,7 @@ public class TeleOp extends OpMode {
 //                    backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
 //                }
         }
-        if (kickerLocation < Globals.defaultKickerLocation - 0.1 || kickerLocation > Globals.defaultKickerLocation + 0.1) {
+        if (kickerLocation < Globals.defaultKickerLocation - 0.1 || kickerLocation > Globals.defaultKickerLocation + 0.1 && gamepad1.left_trigger < 0.1) {
             kickerInDefaultPosition = false;
 //                if(shooting) {
 //                    frontIntakeMotor.setPower(0);

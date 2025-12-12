@@ -8,6 +8,10 @@ buildscript {
     repositories {
         mavenCentral()
         google()
+//        maven {
+//            name "nullftcReleases"
+//            url "https://maven.nullftc.dev/releases"
+//        }
     }
     dependencies {
         // Note for FTC Teams: Do not modify this yourself.
@@ -21,9 +25,17 @@ allprojects {
     repositories {
         mavenCentral()
         google()
+//        maven {
+//            name "nullftcReleases"
+//            url "https://maven.nullftc.dev/releases"
+//        }
     }
 }
 
 repositories {
     mavenCentral()
+//    maven {
+//        name "nullftcReleases"
+//        url "https://maven.nullftc.dev/releases"
+//    }
 }
