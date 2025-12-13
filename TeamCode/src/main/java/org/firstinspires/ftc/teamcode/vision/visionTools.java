@@ -405,29 +405,30 @@ public class visionTools {
         }
         return false;
     }
-    private List updatePinpoint(Limelight3A limelight, IMU imu, double currentPosition){
-        double robotYaw = imu.getRobotOrientation(AxesReference.EXTRINSIC, AxesOrder.ZXY, AngleUnit.DEGREES).firstAngle;
+    private void updatePinpoint(Limelight3A limelight, IMU imu, double currentPosition, GoBildaPinpointDriver pinpoint){
+        pinpoint.update();
+        Pose2D pose2d = pinpoint.getPosition();
+        double robotYaw = pose2d.getHeading(AngleUnit.DEGREES);
         double x = 0;
         double y = 0;
         double yaw = 0;
         limelight.updateRobotOrientation(robotYaw);
         LLResult result = limelight.getLatestResult();
+        double NormalizedCurrentPose = ((currentPosition - 0.5) * 1800.0) * 13/33;
         if (result != null && result.isValid()) {
             Pose3D botpose_mt2 = result.getBotpose_MT2();
             if (botpose_mt2 != null) {
                 x = botpose_mt2.getPosition().x;
-                y = botpose_mt2.getPosition().y;
+                y = botpose_mt2.getPosition().x;;
                 yaw = botpose_mt2.getOrientation().getYaw(AngleUnit.DEGREES);
             } else {
-                return null;
+                return;
             }
 
         }
 
-        List<Double> coords = new ArrayList<>();
-        coords.add(1000*x);
-        coords.add(1000*y);
-        return coords;
+
+        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,x,y,AngleUnit.DEGREES,yaw));
 
     }
     public double pinpointTurret(GoBildaPinpointDriver pinpoint,double currentPos){
@@ -437,9 +438,9 @@ public class visionTools {
         double x = pose2d.getX(DistanceUnit.METER);
         double y = pose2d.getY(DistanceUnit.METER);
         double yaw = pose2d.getHeading(AngleUnit.DEGREES);
-        double turretAngle = Math.toDegrees(Math.atan2(1.7272-y,1.7272-x));
+        double turretAngle = 90-Math.toDegrees(Math.atan2(1.8288-x,-1.8288+y));
         double GearedTurretAngle = ((2.53846153846 ) * turretAngle) / 1800.0;
-        return (0.5 - GearedTurretAngle)-((yaw*2.53846153846)/1800.0 ) ;
+        return (0.5 + GearedTurretAngle)-((yaw*2.53846153846)/1800.0 ) ;
     }
 
 

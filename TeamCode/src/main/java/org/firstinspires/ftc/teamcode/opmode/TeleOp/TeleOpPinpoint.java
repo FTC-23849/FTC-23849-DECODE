@@ -15,9 +15,11 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
@@ -136,11 +138,11 @@ public class TeleOpPinpoint extends OpMode {
 
         pinpoint.resetPosAndIMU();
 
-
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
         rightHood.setDirection(ServoImplEx.Direction.REVERSE);
-
+        leftTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
+        rightTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
         rightHood.setPosition(0.0);
         leftHood.setPosition(0.0);
     }
@@ -387,9 +389,18 @@ public class TeleOpPinpoint extends OpMode {
             double errorMargin = 0.5;
             double position = leftTurretServo.getPosition();
             telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
+            pinpoint.update();
+            Pose2D pose2d = pinpoint.getPosition();
 
-            leftTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,closezone));
-            rightTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,closezone));
+            double px = pose2d.getX(DistanceUnit.METER);
+            double py = pose2d.getY(DistanceUnit.METER);
+            telemetry.addData("pinpoint x", px);
+            telemetry.addData("pinpoint y", py);
+            telemetry.addData("odometery", pose2d.getHeading(AngleUnit.DEGREES));
+            telemetry.addData("pinpoint turret", vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())*(13.0/33)*1800);
+            telemetry.addData("turret location", rightTurretServo.getPosition()*(13.0/33)*1800);
+            leftTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
+            rightTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
             //leftTurretServo.setPower(0.5);
         }
         //manual sort
