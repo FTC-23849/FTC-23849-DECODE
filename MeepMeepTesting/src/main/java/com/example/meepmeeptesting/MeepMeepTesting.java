@@ -16,27 +16,51 @@ public class MeepMeepTesting {
                 .setDimensions(14, 17)
                 .build();
 
-        myBot.runAction(myBot.getDrive().actionBuilder(/*new Pose2d(63, -14.5, Math.toRadians(270))*/ new Pose2d(-54.5, -45, Math.toRadians(225)))
-//                .strafeToLinearHeading(new Vector2d(46.5, -64), Math.toRadians(0))
-//                .strafeToLinearHeading(new Vector2d(62, -64), Math.toRadians(0))
-//                .strafeToLinearHeading(new Vector2d(50, -15), Math.toRadians(270))
-//                .strafeToLinearHeading(new Vector2d(57, -30), Math.toRadians(90))
+        myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(63, -14.5, Math.toRadians(270)) /*new Pose2d(-54.5, -45, Math.toRadians(225))*/)
+                    .strafeToLinearHeading(new Vector2d(36, -28), Math.toRadians(270))
+                    .strafeToLinearHeading(new Vector2d(36, -60), Math.toRadians(270))
+                    .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
 
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270))
-                .strafeToLinearHeading(new Vector2d(-12, -25), Math.toRadians(270))
-                .strafeToLinearHeading(new Vector2d(-12, -53), Math.toRadians(270))
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270))
+//                                .strafeToLinearHeading()
+//                                .strafeToLinearHeading()
+                    .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
 
-                .strafeToLinearHeading(new Vector2d(13, -25), Math.toRadians(270))
-                .strafeToLinearHeading(new Vector2d(13, -63), Math.toRadians(270))
-                .strafeToLinearHeading(new Vector2d(13, -52), Math.toRadians(270))
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270))
+                    .strafeToLinearHeading(new Vector2d(62, -50), Math.toRadians(270))
+                    .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
 
-                .strafeToLinearHeading(new Vector2d(35, -25), Math.toRadians(270))
-                .strafeToLinearHeading(new Vector2d(35, -63), Math.toRadians(270))
-                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270))
+                    .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
 
-                .strafeToLinearHeading(new Vector2d(-22, -58), Math.toRadians(270))
+                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+
+                .strafeToLinearHeading(new Vector2d(62, -50), Math.toRadians(270))
+                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+
+                .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
+
+                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+
+                .strafeToLinearHeading(new Vector2d(62, -50), Math.toRadians(270))
+                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+
+                .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
+
+                    .strafeToLinearHeading(new Vector2d(57, -30), Math.toRadians(270))
+
+//                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(-12, -25), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(-12, -53), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270))
+//
+//                .strafeToLinearHeading(new Vector2d(13, -25), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(13, -63), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(13, -52), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270))
+//
+//                .strafeToLinearHeading(new Vector2d(35, -25), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(35, -63), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270))
+//
+//                .strafeToLinearHeading(new Vector2d(-22, -58), Math.toRadians(270))
 
                 .build());
 

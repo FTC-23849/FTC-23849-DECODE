@@ -1,15 +1,12 @@
 package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 
-import static java.lang.Thread.sleep;
-
 import android.graphics.Color;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -24,21 +21,18 @@ import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DroidLib.CRAxonPDController;
 import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
-import org.firstinspires.ftc.teamcode.opmode.misc.ArtifactColorDetector;
-import org.firstinspires.ftc.teamcode.vision.visionTools;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
+import org.firstinspires.ftc.teamcode.vision.visionTools;
 
 import java.util.List;
 
-@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp
-public class TeleOpTesting extends OpMode {
+public class TeleOpKickerPID_Pinpoint extends OpMode {
     Limelight3A limelight;
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;
@@ -401,7 +395,7 @@ public class TeleOpTesting extends OpMode {
             if (rightBumperTrue) {
                 rightBumperTrue = false;
             } else {
-                rightBumperTrue = true;
+                rightBumperTrue = false;
             }
         }
         if (rightBumperTrue && !leftBumperTrue) {
@@ -435,11 +429,11 @@ public class TeleOpTesting extends OpMode {
 
         if (leftBumperTrue && !rightBumperTrue) {
             kickerKP = 3;
-//!            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed));
-//!            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed));
-//!            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed);
-//!            leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition()));
-//!            rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition()));
+            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint));
+            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint));
+            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint);
+            leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint));
+            rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint));
             telemetry.addData("flywheel", leftShooterMotor.getVelocity());
 
         }
@@ -469,8 +463,8 @@ public class TeleOpTesting extends OpMode {
 //            telemetry.addData("odometery", pose2d.getHeading(AngleUnit.DEGREES));
 //            telemetry.addData("pinpoint turret", vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())*(13.0/33)*1800);
 //            telemetry.addData("turret location", rightTurretServo.getPosition()*(13.0/33)*1800);
-            //!leftTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
-            //!rightTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
+            leftTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
+            rightTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
             //leftTurretServo.setPower(0.5);
         }
 
