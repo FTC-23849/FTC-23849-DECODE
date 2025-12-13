@@ -57,6 +57,7 @@ public class TeleOpPinpoint extends OpMode {
     AnalogInput kickerEncoder;
     boolean kickerShoot = false;
     boolean kickerRecycle = false;
+    String allianceColor = "Red";
     double kickerLocation;
     double closezone = 1;
     int kickerAction;
@@ -354,9 +355,9 @@ public class TeleOpPinpoint extends OpMode {
             double py = pose2d.getY(DistanceUnit.METER);
             telemetry.addData("pinpoint x", px);
             telemetry.addData("pinpoint y", py);
-            telemetry.addData("pinpoint turret", vision.pinpointTurret(pinpoint,leftTurretServo.getPosition()));
-            leftTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition()));
-            rightTurretServo.setPosition(vision.pinpointTurret(pinpoint,rightTurretServo.getPosition()));
+            telemetry.addData("pinpoint turret", vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),"Blue"));
+            leftTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),"Blue"));
+            rightTurretServo.setPosition(vision.pinpointTurret(pinpoint,rightTurretServo.getPosition(),"Blue"));
 
             //leftTurretServo.setPower(0.5);
         }
@@ -370,11 +371,11 @@ public class TeleOpPinpoint extends OpMode {
             }
         }
         if (leftBumperTrue && !rightBumperTrue) {
-            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint));
-            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint));
-            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint);
-            leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint));
-            rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint));
+            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
+            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
+            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor);
+            leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
+            rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             telemetry.addData("flywheel", leftShooterMotor.getVelocity());
 
         }
@@ -399,10 +400,10 @@ public class TeleOpPinpoint extends OpMode {
             telemetry.addData("pinpoint x", px);
             telemetry.addData("pinpoint y", py);
             telemetry.addData("odometery", pose2d.getHeading(AngleUnit.DEGREES));
-            telemetry.addData("pinpoint turret", vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())*(13.0/33)*1800);
+            telemetry.addData("pinpoint turret", vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),"Blue")*(13.0/33)*1800);
             telemetry.addData("turret location", rightTurretServo.getPosition()*(13.0/33)*1800);
-            leftTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
-            rightTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
+            leftTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),"Blue")/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
+            rightTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),"Blue")/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
             //leftTurretServo.setPower(0.5);
         }
         //manual sort
