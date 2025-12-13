@@ -135,7 +135,7 @@ public class TeleOpPinpoint extends OpMode {
         kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
         leftTurretServo.setPosition(0.5);
         rightTurretServo.setPosition(0.5);
-
+        pinpoint.setOffsets(96.6511963161, -2.55558368232, DistanceUnit.MM);
         pinpoint.resetPosAndIMU();
 
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");

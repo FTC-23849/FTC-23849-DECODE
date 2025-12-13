@@ -478,7 +478,7 @@ public class visionTools {
         double x = pose2d.getX(DistanceUnit.METER);
         double y = pose2d.getY(DistanceUnit.METER);
         double yaw = pose2d.getHeading(AngleUnit.DEGREES);
-        double turretAngle = 90-Math.toDegrees(Math.atan2(1.6288-x,-1.288-y));
+        double turretAngle = 90-Math.toDegrees(Math.atan2(1.6288-x,-1.6288-y));
         double GearedTurretAngle = ((2.53846153846 ) * turretAngle) / 1800.0;
         //if(Math.abs(x)<0.01 && Math.abs(y)<0.01 && Math.abs(yaw)<0.5){
         //    return 0.43653846154;
