@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 import static java.lang.Thread.sleep;
 
 import com.acmerobotics.dashboard.config.Config;
+import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -45,6 +46,7 @@ public class TeleOp extends OpMode {
     CRServoImplEx rightBackRoller;
     ServoImplEx leftHood;
     ServoImplEx rightHood;
+    GoBildaPinpointDriver pinpoint;
 
     AnalogInput kickerEncoder;
     boolean kickerShoot = false;
@@ -350,11 +352,11 @@ public class TeleOp extends OpMode {
             }
         }
         if (leftBumperTrue && !rightBumperTrue) {
-            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed));
-            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed));
-            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed);
-            leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition()));
-            rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition()));
+            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint));
+            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint));
+            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint);
+            leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint));
+            rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint));
             telemetry.addData("flywheel", leftShooterMotor.getVelocity());
 
         }

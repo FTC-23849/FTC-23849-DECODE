@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 import static java.lang.Thread.sleep;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -22,6 +21,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
@@ -368,11 +368,11 @@ public class TeleOpPinpoint extends OpMode {
             }
         }
         if (leftBumperTrue && !rightBumperTrue) {
-            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed));
-            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed));
-            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed);
-            leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition()));
-            rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition()));
+            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint));
+            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint));
+            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint);
+            leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint));
+            rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint));
             telemetry.addData("flywheel", leftShooterMotor.getVelocity());
 
         }
