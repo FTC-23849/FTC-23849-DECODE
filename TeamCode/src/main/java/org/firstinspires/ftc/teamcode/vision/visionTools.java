@@ -476,16 +476,22 @@ public class visionTools {
         pinpoint.update();
         Pose2D pose2d = pinpoint.getPosition();
 
-        double x = pose2d.getX(DistanceUnit.METER);
-        double y = pose2d.getY(DistanceUnit.METER);
-        double yaw = pose2d.getHeading(AngleUnit.DEGREES);
-        double turretAngle = 90-Math.toDegrees(Math.atan2(1.6288-x,-1.6288-y));
-        double GearedTurretAngle = ((2.53846153846 ) * turretAngle) / 1800.0;
-        //if(Math.abs(x)<0.01 && Math.abs(y)<0.01 && Math.abs(yaw)<0.5){
-        //    return 0.43653846154;
-        //}
+        double curX = pose2d.getX(DistanceUnit.METER);
+        double curY = pose2d.getY(DistanceUnit.METER);
+        double curYaw = pose2d.getHeading(AngleUnit.DEGREES);
 
-        return Range.clip((0.5 + GearedTurretAngle)-((yaw*2.53846153846)/1800.0),0.35,0.85);
+        // constantsdouble goalMeters = 1.6288;
+        double centerPos = 0.5;
+
+        // calculate turret pos
+        double goalPosX = goalMeters-curX;
+        double goalPosY = -goalMeters-curY; //looks suspicious
+        double turretAngle = 90 - Math.toDegrees(Math.atan2(goalPosX, goalPosY));
+        double turretOffset = turretAngle - curYaw;
+        double turretPos = centerPos + (turretOffset * gearRatio / 1800.0);
+
+        // Restrict turretPos to not run into wires
+        return Range.clip(turretPos,0.35,0.85);
     }
 
 

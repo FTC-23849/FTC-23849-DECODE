@@ -393,14 +393,15 @@ public class TeleOpPinpoint extends OpMode {
             telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
             pinpoint.update();
             Pose2D pose2d = pinpoint.getPosition();
+            double gearRatio = 33.0/13.0; //2.53846153846
 
             double px = pose2d.getX(DistanceUnit.METER);
             double py = pose2d.getY(DistanceUnit.METER);
             telemetry.addData("pinpoint x", px);
             telemetry.addData("pinpoint y", py);
             telemetry.addData("odometery", pose2d.getHeading(AngleUnit.DEGREES));
-            telemetry.addData("pinpoint turret", vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())*(13.0/33)*1800);
-            telemetry.addData("turret location", rightTurretServo.getPosition()*(13.0/33)*1800);
+            telemetry.addData("pinpoint turret", vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())*1800/gearRatio);
+            telemetry.addData("turret location", rightTurretServo.getPosition()*1800/gearRatio);
             leftTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
             rightTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
             //leftTurretServo.setPower(0.5);
