@@ -492,27 +492,27 @@ public class visionTools {
         pinpoint.update();
         Pose2D pose2d = pinpoint.getPosition();
 
-        double x = pose2d.getX(DistanceUnit.METER);
-        double y = pose2d.getY(DistanceUnit.METER);
-        double yaw = pose2d.getHeading(AngleUnit.DEGREES);
-        double Goalx = 0;
-        double Goaly = 0;
+        double curX = pose2d.getX(DistanceUnit.METER);
+        double curY = pose2d.getY(DistanceUnit.METER);
+        double curYaw = pose2d.getHeading(AngleUnit.DEGREES);
+
+        double goalX = 0;
+        double goalY = 0;
         if(alliance.equals("Red")){
-            Goalx= 1.6288;
-            Goaly = -1.6288;
-        }if(alliance.equals("Blue")){
-            Goalx = 1.6288;
-            Goaly = 1.6288;
+            goalX = 1.6288;
+            goalY = -1.6288;
+        } else if(alliance.equals("Blue")){
+            goalX = 1.6288;
+            goalY = 1.6288;
         }
 
-        double turretAngle = 90-Math.toDegrees(Math.atan2(Goalx-x,Goaly-y));
-        double GearedTurretAngle = ((2.53846153846 ) * turretAngle) / 1800.0;
-        //if(Math.abs(x)<0.01 && Math.abs(y)<0.01 && Math.abs(yaw)<0.5){
-        //    return 0.43653846154;
-        //}
+        double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
+        double turretOffset = turretAngle - curYaw;
+        double turretPos = 0.5 + (turretOffset * 2.53846153846 / 1800.0);
 
-        return Range.clip((0.5 + GearedTurretAngle)-((yaw*2.53846153846)/1800.0),0.35,0.85);
+        return Range.clip(turretPos, 0.35, 0.85);
     }
+
 
 
 }
