@@ -506,6 +506,10 @@ public class visionTools {
             goalY = 1.6288;
         }
 
+        if(curX > 1.5){
+            goalX = 1.5288;
+        }
+
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;
         double turretPos = 0.5 + (turretOffset * 2.53846153846 / 1800.0);
