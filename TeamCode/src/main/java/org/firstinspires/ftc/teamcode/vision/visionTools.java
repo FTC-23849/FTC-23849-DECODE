@@ -440,7 +440,7 @@ public class visionTools {
         }
     }
 
-    public static double[] adjustMT2Values(
+    public double[] adjustMT2Values(
             double x,
             double y,
             double mt2Heading,
