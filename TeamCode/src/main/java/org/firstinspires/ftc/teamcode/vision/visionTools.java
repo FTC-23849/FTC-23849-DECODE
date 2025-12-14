@@ -318,7 +318,7 @@ public class visionTools {
         LLResult result = limelight.getLatestResult();
         double TA = result.getTa();
         double distance = 1.068 * Math.sqrt((3.05 * Math.cos(Math.toRadians(20))) / TA);
-        //distance = referenceDistance * sqrt ( (reference target area * cos(limelight vertical angle)) / current target area)
+        //distance = referenceDistance * sqrt ( (reference target area * cos(limelight vertical angle) ) / current target area)
         return distance;
     }
     public double groundDistance(Limelight3A limelight){
@@ -344,8 +344,8 @@ public class visionTools {
     public double closeZoneflywheelspeed(Limelight3A limelight, double currentVelocity, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
         double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
         double speed = -1 * (0.57 + 0.1 * groundDistance);
-        if (groundDistance > 3.4){
-            speed += -1 * (0.1 * (groundDistance - 3.3));
+        if (groundDistance > 3.3){
+            speed += -1 * (0.12 * (groundDistance - 3.2));
         }
         if (groundDistance == -1) {
             return currentVelocity;

@@ -2,14 +2,18 @@ package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 
 import android.graphics.Color;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
+
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -27,14 +31,14 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DroidLib.CRAxonPDController;
 import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
+import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 
 import java.util.List;
-
+@TeleOp
 @Config
-@com.qualcomm.robotcore.eventloop.opmode.TeleOp
-public class TeleOpKickerPID_Pinpoint extends OpMode {
+public class TeleOpKickerPIDPinpointVelocityPID extends OpMode {
     Limelight3A limelight;
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;
@@ -59,7 +63,13 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
     private NormalizedColorSensor colorLeft;
     private NormalizedColorSensor colorRight;
     private Servo rgbLight;
-
+    private PIDVelocityController velocityPID;
+    public static double currentVelocity;
+    public static double TargetVelocity = 900;
+    public static double VKp = 0.00107;
+    public static double VKi = 0;
+    public static double VKd = 0.000007;
+    public static double VKv = 0.000627;
     double closezone = 1;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
@@ -76,8 +86,8 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
     boolean tipped = false;
     visionTools vision = new visionTools();
     List currentBalls;
-    public static double Kp = 0.007;
-    public static double Ki = 0.0000;
+    public static double Kp = 0.001;
+    public static double Ki = 0.0048;
     public static double Kd = 0.00;
     double currentSpeed = 0;
     boolean rightBumperTrue = false;
@@ -140,6 +150,7 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
     // Kicker PID tunables
     public static double kickerKP = Globals.KICKER_kP;
     public static double kickerKD = Globals.KICKER_kD;
+
 
     // Color Detection
 
@@ -249,6 +260,13 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
         initSensor(colorRight);
 
         stallTimer.reset();
+        velocityPID = new   PIDVelocityController(VKp, VKi, VKd, VKv, TargetVelocity);
+        velocityPID.setGains(VKp, VKi, VKd);
+        velocityPID.setFeedforward(VKv);
+
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
     }
 
     @Override
@@ -430,9 +448,9 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
         }
         if (gamepad1.x){
             if(allianceColor.equals("Blue")){
-                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63.65,-65, AngleUnit.DEGREES,0));
+                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,-65, AngleUnit.DEGREES,0));
             }else if(allianceColor.equals("Red")){
-                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63.65,65, AngleUnit.DEGREES,0));
+                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,65, AngleUnit.DEGREES,0));
             }
 
         }
@@ -443,9 +461,16 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
 
         if (leftBumperTrue && !rightBumperTrue) {
             kickerKP = 3;
-            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
-            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
-            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor);
+            double flywheelCurrentVelocity = leftShooterMotor.getVelocity();
+            double variableFlywheelSpeed = vision.closeZoneflywheelspeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor);
+            velocityPID.setTargetVelocity((variableFlywheelSpeed*5800)*(28.0/60.0));
+            double power = velocityPID.update(currentVelocity);
+            velocityPID.setGains(VKp, VKi, VKd);
+            velocityPID.setFeedforward(VKv);
+
+            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor));
+            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor));
+            currentSpeed = vision.closeZoneflywheelspeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor);
             leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             telemetry.addData("flywheel", leftShooterMotor.getVelocity());
