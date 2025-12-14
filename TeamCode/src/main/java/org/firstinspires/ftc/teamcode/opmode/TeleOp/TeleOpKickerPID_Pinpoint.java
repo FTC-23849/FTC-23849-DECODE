@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 import android.graphics.Color;
 
 import com.acmerobotics.dashboard.config.Config;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
@@ -426,7 +428,14 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
             leftTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,2));
             rightTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,2));
         }
+        if (gamepad1.x){
+            if(allianceColor.equals("Blue")){
+                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-72,-72, AngleUnit.DEGREES,0));
+            }else if(allianceColor.equals("Red")){
+                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-72,72, AngleUnit.DEGREES,0));
+            }
 
+        }
         //far zone shoot
         if (gamepad1.leftBumperWasReleased()) {
             leftBumperTrue = !leftBumperTrue;
