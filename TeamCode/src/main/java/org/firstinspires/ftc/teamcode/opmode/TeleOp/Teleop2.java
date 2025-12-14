@@ -379,11 +379,12 @@ public class Teleop2 extends OpMode {
             }
         }
         if (leftBumperTrue && !rightBumperTrue) {
-            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint));
-            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint));
-            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint);
-            leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint));
-            rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint));
+            String allianceColor = "Red";
+            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
+            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
+            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor);
+            leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
+            rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             telemetry.addData("flywheel", leftShooterMotor.getVelocity());
 
         }

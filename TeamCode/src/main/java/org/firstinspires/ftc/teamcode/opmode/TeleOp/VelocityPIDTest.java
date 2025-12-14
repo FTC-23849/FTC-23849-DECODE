@@ -62,9 +62,13 @@ public class VelocityPIDTest extends LinearOpMode {
         rightShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         rightShooterMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        velocityPID = new PIDVelocityController(Kp, Ki, Kd, Kv, TargetVelocity);
+        velocityPID = new   PIDVelocityController(Kp, Ki, Kd, Kv, TargetVelocity);
         velocityPID.setGains(Kp, Ki, Kd);
         velocityPID.setFeedforward(Kv);
+
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
+
         waitForStart();
 
         while (opModeIsActive()) {

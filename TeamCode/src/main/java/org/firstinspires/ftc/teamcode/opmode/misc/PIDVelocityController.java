@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.opmode.misc;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class PIDVelocityController {
+    //Kd: 0, Ki: 0.0053, Kp: 0.001, Kv: 0,
     private double Kp, Ki, Kd, Kv;
     private double targetVelocity;
     private double integralSum = 0;

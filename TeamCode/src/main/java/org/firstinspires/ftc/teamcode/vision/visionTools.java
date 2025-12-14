@@ -330,14 +330,19 @@ public class visionTools {
         return groundDistance;
         }
     }
-    public double groundDistancePinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint){
+    public double groundDistancePinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
         double x = pinpoint.getPosition().getX(DistanceUnit.METER);
         double y = pinpoint.getPosition().getY(DistanceUnit.METER);
-        double groundDistance = Math.sqrt(((1.8288-x)*(1.8288-x))+((-1.8288-y)*(-1.8288-y)));
-        return  groundDistance;
+        double groundDistance = 0;
+        if (allianceColor.equals("Red")) {
+            groundDistance = Math.sqrt(((1.8288 - x) * (1.8288 - x)) + ((-1.8288 - y) * (-1.8288 - y)));
+        }if (allianceColor.equals("Blue")) {
+            groundDistance = Math.sqrt(((1.8288 - x) * (1.8288 - x)) + ((1.8288 - y) * (1.8288 - y)));
+        }
+        return  groundDistance - 0.465;
     }
-    public double closeZoneflywheelspeed(Limelight3A limelight, double currentVelocity, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint){
-        double groundDistance = groundDistancePinpoint(pinpoint);
+    public double closeZoneflywheelspeed(Limelight3A limelight, double currentVelocity, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
+        double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
         double speed = -1 * (0.57 + 0.1 * groundDistance);
         if (groundDistance > 3.4){
             speed += -1 * (0.1 * (groundDistance - 3.3));
@@ -349,8 +354,8 @@ public class visionTools {
         }
     }
 
-    public double closeZonehood(Limelight3A limelight, double currentHood, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint){
-        double groundDistance = groundDistancePinpoint(pinpoint);
+    public double closeZonehood(Limelight3A limelight, double currentHood, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
+        double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
         double hood = 0.05 + 0.1 * groundDistance;
         if (groundDistance == -1) {
             return currentHood;
@@ -411,7 +416,7 @@ public class visionTools {
         }
         return false;
     }
-    private double[] getMT2(Limelight3A limelight, IMU imu, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint){
+    public double[] getMT2(Limelight3A limelight, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint){
         pinpoint.update();
         Pose2D pose2d = pinpoint.getPosition();
         double robotYaw = pose2d.getHeading(AngleUnit.DEGREES);
@@ -424,69 +429,90 @@ public class visionTools {
             Pose3D botpose_mt2 = result.getBotpose_MT2();
             if (botpose_mt2 != null) {
                 x = botpose_mt2.getPosition().x;
-                y = botpose_mt2.getPosition().x;;
+                y = botpose_mt2.getPosition().y;
                 yaw = botpose_mt2.getOrientation().getYaw(AngleUnit.DEGREES);
-                return new double[]{x,y,yaw};
+                return new double[]{x, y, yaw};
             } else {
-                return new double[]{-5,-5,-5};
+                return new double[]{-5, -5, -5};
             }
-
-        }else{
-            return new double[]{-5,-5,-5};
+        } else {
+            return new double[]{-5, -5, -5};
         }
-
-
     }
 
-    private static double[] adjustMT2Values(double x, double y, double mt2Heading, double turretAngle,
-                                           double cameraOffsetY, double turretOffsetX, double turretOffsetY) {
-        double adjustedHeadingX = Math.atan2(y, x + turretOffsetX);
-        double adjustedHeadingY = Math.atan2(y + turretOffsetY, x);
-        double adjustedHeading = Math.atan2(adjustedHeadingY, adjustedHeadingX);
+    public double[] adjustMT2Values(
+            double x,
+            double y,
+            double mt2Heading,
+            double turretAngle,
+            double turretOffsetX,
+            double turretOffsetY,
+            double cameraOffsetX
+    ) {
+        double x_rel = x - turretOffsetX - cameraOffsetX;
+        double y_rel = y - turretOffsetY;
 
-        double robotHeading = mt2Heading - turretAngle;
+        double x_rot = x_rel * Math.cos(turretAngle) - y_rel * Math.sin(turretAngle);
+        double y_rot = x_rel * Math.sin(turretAngle) + y_rel * Math.cos(turretAngle);
 
-        double rotatedX = x * Math.cos(turretAngle) - y * Math.sin(turretAngle);
-        double rotatedY = x * Math.sin(turretAngle) + y * Math.cos(turretAngle);
+        double adjustedX = x_rot + turretOffsetX + cameraOffsetX;
+        double adjustedY = y_rot + turretOffsetY;
 
-        double adjustedX = rotatedX + turretOffsetX;
-        double adjustedY = rotatedY + cameraOffsetY + turretOffsetY;
+        double robotHeading = mt2Heading - Math.toDegrees(turretAngle);
+        robotHeading = ((robotHeading + 180) % 360 + 360) % 360 - 180;
 
         return new double[]{adjustedX, adjustedY, robotHeading};
     }
-    public double updatePinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, Limelight3A limelight, IMU imu, double turretAngle){
-        double x = getMT2(limelight,imu,pinpoint)[0];
-        double y = getMT2(limelight,imu,pinpoint)[1];
-        double yaw = getMT2(limelight,imu,pinpoint)[2];
-        if (x == y && x == yaw && x == -5)/*null value*/ {
+
+    public double updatePinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, Limelight3A limelight, double turretAngle){
+        double[] mt2 = getMT2(limelight, pinpoint);
+        double x = mt2[0];
+        double y = mt2[1];
+        double yaw = mt2[2];
+        if (x == y && x == yaw && x == -5) {
             return 0;
         }
-        double[]MT2Val = adjustMT2Values(x,y,yaw,turretAngle,10,0,15);
-        //new values
+        double[] MT2Val = adjustMT2Values(x, y, yaw, turretAngle, -0.07650, 0.0, 0.14281);
         double nx = MT2Val[0];
         double ny = MT2Val[1];
-        double nyaw = MT2Val[2];
-        //double NormalizedCurrentPose = ((currentPosition - 0.5) * 1800.0) * 13/33;
-        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,nx,ny,AngleUnit.DEGREES,nyaw));
-        return 1;
+        double nyaw =MT2Val[2];
 
+        // Map MT2 axes (X forward, Y left) to old turret axes (X right, Y forward)
+        double turretX = -ny; // left → right
+        double turretY = nx;  // forward → forward
+
+        pinpoint.setPosition(new Pose2D(DistanceUnit.METER, turretX, turretY, AngleUnit.DEGREES, nyaw));
+        return 1;
     }
-    public double pinpointTurret(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos){
+
+
+
+    public double pinpointTurret(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos, String alliance){
 
         pinpoint.update();
         Pose2D pose2d = pinpoint.getPosition();
 
-        double x = pose2d.getX(DistanceUnit.METER);
-        double y = pose2d.getY(DistanceUnit.METER);
-        double yaw = pose2d.getHeading(AngleUnit.DEGREES);
-        double turretAngle = 90-Math.toDegrees(Math.atan2(1.6288-x,-1.6288-y));
-        double GearedTurretAngle = ((2.53846153846 ) * turretAngle) / 1800.0;
-        //if(Math.abs(x)<0.01 && Math.abs(y)<0.01 && Math.abs(yaw)<0.5){
-        //    return 0.43653846154;
-        //}
+        double curX = pose2d.getX(DistanceUnit.METER);
+        double curY = pose2d.getY(DistanceUnit.METER);
+        double curYaw = pose2d.getHeading(AngleUnit.DEGREES);
 
-        return Range.clip((0.5 + GearedTurretAngle)-((yaw*2.53846153846)/1800.0),0.35,0.85);
+        double goalX = 0;
+        double goalY = 0;
+        if(alliance.equals("Red")){
+            goalX = 1.6288;
+            goalY = -1.6288;
+        } else if(alliance.equals("Blue")){
+            goalX = 1.6288;
+            goalY = 1.6288;
+        }
+
+        double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
+        double turretOffset = turretAngle - curYaw;
+        double turretPos = 0.5 + (turretOffset * 2.53846153846 / 1800.0);
+
+        return Range.clip(turretPos, 0.35, 0.85);
     }
+
 
 
 }
