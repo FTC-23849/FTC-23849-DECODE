@@ -121,7 +121,6 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
     double openLoopStartTimeMs = 0.0;
     double stallGraceMs = 300; // how long after starting open-loop before we detect stall
 
-
     // Stall detection state
     ElapsedTime stallTimer = new ElapsedTime();
     boolean stallSampleValid = false;
@@ -133,11 +132,10 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
     double recoveryStartTimeMs = 0.0;
 
     double stallWindowMs   = 200;   // how long we wait to see movement
-    double stallMinDelta   = 0.1;  // minimum encoder change to consider "moving"
-    double stallRecoveryMs = 1000;   // how long to hold in IDLE before resuming shot
+    double stallMinDelta   = 0.1;   // minimum encoder change to consider "moving"
+    double stallRecoveryMs = 1000;  // how long to hold in IDLE before resuming shot
 
-    // Kicker
-
+    // Kicker PID tunables
     public static double kickerKP = Globals.KICKER_kP;
     public static double kickerKD = Globals.KICKER_kD;
 
@@ -169,12 +167,13 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
         }
     }
 
-
     CRAxonPDController kickerPID = new CRAxonPDController();
     DroidForceMethods DFM = new DroidForceMethods();
 
-    @Override
+    // track B state for edge detection
+    boolean lastBPressed = false;
 
+    @Override
     public void init() {
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
         limelight.pipelineSwitch(9);
@@ -222,8 +221,6 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
         leftTurretServo.setPosition(0.5);
         rightTurretServo.setPosition(0.5);
 
-
-
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
         rightHood.setDirection(ServoImplEx.Direction.REVERSE);
@@ -234,13 +231,15 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
         colorRight = hardwareMap.get(NormalizedColorSensor.class, "rightIntakeColorSensor");
 
         kickerTarget = Globals.KICKER_IDLE;
-
         kickerPIDEnabled = true;
 
         rightHood.setPosition(0.0);
         leftHood.setPosition(0.0);
         pinpoint.setOffsets(96.6511963161, -2.55558368232, DistanceUnit.MM);
-        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        pinpoint.setEncoderDirections(
+                GoBildaPinpointDriver.EncoderDirection.FORWARD,
+                GoBildaPinpointDriver.EncoderDirection.REVERSED
+        );
         pinpoint.setEncoderResolution(19.970472542,DistanceUnit.MM);
         pinpoint.resetPosAndIMU();
 
@@ -248,8 +247,6 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
         initSensor(colorRight);
 
         stallTimer.reset();
-
-
     }
 
     @Override
@@ -280,36 +277,13 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
         telemetry.addData("loops", loops);
         loops = loops + 1;
         lastLoopTime = runTime.milliseconds();
-//        telemetry.addData("frontIntakeMotorSpeed", frontIntakeMotor.getVelocity());
-//        telemetry.addData("encoder voltage: ", kickerEncoder.getVoltage());
         telemetry.addData("tipped", tipped);
-//        telemetry.addData("lf", leftFrontMotor.getCurrent(CurrentUnit.AMPS));
-//        telemetry.addData("rf", rightFrontMotor.getCurrent(CurrentUnit.AMPS));
-//        telemetry.addData("lb", leftBackMotor.getCurrent(CurrentUnit.AMPS));
-//        telemetry.addData("rb", rightBackMotor.getCurrent(CurrentUnit.AMPS));
-//        telemetry.addData("leftshooter", leftShooterMotor.getCurrent(CurrentUnit.AMPS));
-//        telemetry.addData("rightSHooter", rightShooterMotor.getCurrent(CurrentUnit.AMPS));
-//        telemetry.addData("frontIntake", frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
-//        telemetry.addData("Kp", Kp);
-//        telemetry.addData("Ki", Ki);
-//        telemetry.addData("Kd", Kd);
-//        telemetry.addData("# of balls: ", vision.ballsInRamp(limelight));
-//        telemetry.addData("flywheel", leftShooterMotor.getVelocity());
-//        telemetry.addData("inRange? ",vision.inRange(limelight));
-//        telemetry.addData("distance", vision.distance(limelight));
-//        telemetry.addData("ground distance", vision.groundDistance(limelight));
-//        totalCurrent = (leftFrontMotor.getCurrent(CurrentUnit.AMPS) + rightFrontMotor.getCurrent(CurrentUnit.AMPS) + leftBackMotor.getCurrent(CurrentUnit.AMPS) + rightBackMotor.getCurrent(CurrentUnit.AMPS) + leftShooterMotor.getCurrent(CurrentUnit.AMPS) + rightShooterMotor.getCurrent(CurrentUnit.AMPS) + frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
-//        telemetry.addData("totalcurrent", totalCurrent);
 
         //Drive
-
-        double y = -gamepad1.left_stick_y; // Remember,    Y stick value is reversed
+        double y = -gamepad1.left_stick_y; // Y is reversed
         double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
         double rx = gamepad1.right_stick_x;
 
-        // Denominator is the largest motor power (absolute value) or 1
-        // This ensures all the powers maintain the same ratio,
-        // but only if at least one is out of the range [-1, 1]
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
         double frontLeftPower = (y + x + rx) / denominator;
         double backLeftPower = (y - x + rx) / denominator;
@@ -320,6 +294,7 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
         leftBackMotor.setPower(backLeftPower);
         rightFrontMotor.setPower(frontRightPower);
         rightBackMotor.setPower(backRightPower);
+
         LLResult result = limelight.getLatestResult();
         List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
         int tagID = 0 ;
@@ -327,59 +302,87 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
             tagID = fiducial.getFiducialId(); // The ID number of the Apriltag
         }
         telemetry.addData("Tag ID",tagID);
-        if (gamepad1.right_trigger > 0.1) {
-            frontIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            frontIntakeMotor.setPower(-Globals.frontIntakeIntakeSpeed);
-            backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
 
-        } else if (gamepad1.a) {
-            frontIntakeMotor.setPower(-Globals.frontIntakeReverseSpeed);
-            backIntakeMotor.setPower(Globals.backIntakeReverseSpeed);
+        // --- KICKER MANUAL OVERRIDE ON B ---
+        boolean bPressed = gamepad1.b;
 
-        } else if (gamepad1.left_trigger > 0.1 && !recyclerIsRunning) {
+        if (bPressed) {
+            // Cancel recycle and stall state
+            recyclerIsRunning = false;
+            started = false;
+            intakeStarted = false;
 
+            recoveringFromStall = false;
+            stallSampleValid = false;
+            wasShootingOpenLoop = false;
+
+            // Disable PID for kicker
             kickerPIDEnabled = false;
+            plainKickerPower = 0.0; // not used in this mode
 
-            if(rightBumperTrue) {
+            // Directly drive kickers at full power
+            leftKickerServo.setPower(1.0);
+            rightKickerServo.setPower(1.0);
 
-                plainKickerPower = Globals.kickerShoot * 0.3;
+        } else {
+            // Just released B => send kicker back to idle via PID
+            if (lastBPressed) {
+                kickerPIDEnabled = true;
+                kickerTarget = Globals.KICKER_IDLE;
+                plainKickerPower = 0.0;
+            }
+
+            // Normal intake/shoot/recycle logic
+            if (gamepad1.right_trigger > 0.1) {
+                frontIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                frontIntakeMotor.setPower(-Globals.frontIntakeIntakeSpeed);
+                backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
+
+            } else if (gamepad1.a) {
+                frontIntakeMotor.setPower(-Globals.frontIntakeReverseSpeed);
+                backIntakeMotor.setPower(Globals.backIntakeReverseSpeed);
+
+            } else if (gamepad1.left_trigger > 0.1 && !recyclerIsRunning) {
+
+                kickerPIDEnabled = false;
+
+                if(rightBumperTrue) {
+                    plainKickerPower = Globals.kickerShoot * 0.3;
+                } else {
+                    plainKickerPower = Globals.kickerShoot;
+                }
+
+                backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
+                frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
+                shooting = true;
+
+            } else if (gamepad1.dpad_up && !recyclerIsRunning) {
+
+                kickerPIDEnabled = false;
+                plainKickerPower = Globals.kickerShoot;
+
+            } else if (gamepad1.dpadDownWasReleased() && !recyclerIsRunning) {
+
+                recyclerIsRunning = true;
 
             } else {
 
-                plainKickerPower = Globals.kickerShoot;
+                kickerPIDEnabled = true;
+                plainKickerPower = 0.0;
 
+                // Only mess with intake when we are NOT recycling.
+                if (!recyclerIsRunning) {
+                    frontIntakeMotor.setPower(0.0);
+                    backIntakeMotor.setPower(0.0);
+                }
             }
-
-            backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
-            frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
-            shooting = true;
-
-        } else if (gamepad1.dpad_up && !recyclerIsRunning) {
-
-            kickerPIDEnabled = false;
-            plainKickerPower = Globals.kickerShoot;
-
-        } else if (gamepad1.dpadDownWasReleased() && !recyclerIsRunning) {
-
-            recyclerIsRunning = true;
-
-        } else {
-
-            kickerPIDEnabled = true;
-            plainKickerPower = 0.0;
-
-            // Only mess with intake when we are NOT recycling.
-            if (!recyclerIsRunning) {
-                frontIntakeMotor.setPower(0.0);
-                backIntakeMotor.setPower(0.0);
-            }
-
         }
 
         updateRecycle();
 
-        if (gamepad1.b){
+        // closezone toggle moved to X
+        if (gamepad1.x){
             if(closezone == 1){
                 closezone = 3;
             }else{
@@ -393,19 +396,18 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
 
         telemetry.addData("left", leftBumperTrue);
         telemetry.addData("right", rightBumperTrue);
+
         if (gamepad1.rightBumperWasReleased()) {
-            if (rightBumperTrue) {
-                rightBumperTrue = false;
-            } else {
-                rightBumperTrue = false;
-            }
+            rightBumperTrue = !rightBumperTrue;
         }
+
         if (gamepad1.dpad_left){
             allianceColor ="Blue";
         }
         if (gamepad1.dpad_right){
             allianceColor ="Red";
         }
+
         if (rightBumperTrue && !leftBumperTrue) {
             leftShooterMotor.setPower(Globals.defaultFarZonePower);
             rightShooterMotor.setPower(Globals.defaultFarZonePower);
@@ -423,16 +425,11 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
 
             leftTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,2));
             rightTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,2));
-            //leftTurretServo.setPower(0.5);
         }
+
         //far zone shoot
         if (gamepad1.leftBumperWasReleased()) {
-            if (leftBumperTrue) {
-                leftBumperTrue = false;
-                //currentSpeed = 0.67;
-            } else {
-                leftBumperTrue = true;
-            }
+            leftBumperTrue = !leftBumperTrue;
         }
 
         if (leftBumperTrue && !rightBumperTrue) {
@@ -445,7 +442,6 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
             telemetry.addData("flywheel", leftShooterMotor.getVelocity());
 
         }
-
 
         if (!rightBumperTrue && !leftBumperTrue) {
             kickerKP = Globals.KICKER_kP;
@@ -466,14 +462,13 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
 
             double px = pose2d.getX(DistanceUnit.METER);
             double py = pose2d.getY(DistanceUnit.METER);
-//            telemetry.addData("pinpoint x", px);
-//            telemetry.addData("pinpoint y", py);
-//            telemetry.addData("odometery", pose2d.getHeading(AngleUnit.DEGREES));
-//            telemetry.addData("pinpoint turret", vision.pinpointTurret(pinpoint,leftTurretServo.getPosition())*(13.0/33)*1800);
-//            telemetry.addData("turret location", rightTurretServo.getPosition()*(13.0/33)*1800);
-            leftTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),allianceColor)/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
-            rightTurretServo.setPosition(vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),allianceColor)/*vision.adjustedTurretAngle(position, limelight,closezone)*/);
-            //leftTurretServo.setPower(0.5);
+
+            leftTurretServo.setPosition(
+                    vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),allianceColor)
+            );
+            rightTurretServo.setPosition(
+                    vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),allianceColor)
+            );
         }
 
         // tipping
@@ -502,10 +497,13 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
         ArtifactColor overall = combineByConfidence(L, R);
         showOnRgbLight(overall);
 
-        //Kicker
+        //Kicker PID + stall detection (skip if B override)
+        if (!bPressed) {
+            updateKickerPIDWithStall();
+        }
 
-        updateKickerPIDWithStall();
-
+        // update last B state
+        lastBPressed = bPressed;
     }
 
     public void updateRecycle() {
@@ -696,7 +694,7 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
         if (left.val > right.val) return left.color;
         if (right.val > left.val) return right.color;
 
-        // final tie-breaker: prefer PURPLE (arbitrary; change if you prefer GREEN)
+        // final tie-breaker: prefer PURPLE
         return (left.color == ArtifactColor.PURPLE || right.color == ArtifactColor.PURPLE)
                 ? ArtifactColor.PURPLE : ArtifactColor.GREEN;
     }

@@ -29,6 +29,7 @@ import org.firstinspires.ftc.teamcode.hardware.Globals;
 
 import java.util.List;
 
+@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp
 public class TeleOpPinpoint extends OpMode {

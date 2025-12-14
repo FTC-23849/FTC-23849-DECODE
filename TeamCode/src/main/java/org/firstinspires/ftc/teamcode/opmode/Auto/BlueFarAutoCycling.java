@@ -83,7 +83,7 @@ public class BlueFarAutoCycling extends LinearOpMode {
 
     public static double plainKickerPower = 0.0;
 
-    public static double recyclingDelay = 2000;
+    public static double recyclingDelay = 1900;
     public static double recyclingIntakeDelay = 500;
     public static double recyclingKickerUpDelay = 500;
 
@@ -108,6 +108,7 @@ public class BlueFarAutoCycling extends LinearOpMode {
 
     CRAxonPDController kickerPID = new CRAxonPDController();
     DroidForceMethods DFM = new DroidForceMethods();
+
 
     @Override
     public void runOpMode() {
