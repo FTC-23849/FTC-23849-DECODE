@@ -1,56 +1,60 @@
 package org.firstinspires.ftc.teamcode.opmode.misc;
-
-import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.hardware.limelightvision.LLResult;
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
+import org.firstinspires.ftc.teamcode.vision.visionTools;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
-@TeleOp(name = "Pinpoint: MT2 Init", group = "Sensor")
 public class PinpointMT2Tester extends OpMode {
 
-    private GoBildaPinpointDriver pinpoint;
-    private Limelight3A limelight;
-    private IMU imu;
-    double robotYaw = 0;
+    GoBildaPinpointDriver pinpoint;
+    Limelight3A limelight;
+    visionTools vision;
+
     @Override
     public void init() {
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-        pinpoint.resetPosAndIMU();
-        imu = hardwareMap.get(IMU.class, "imu");
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
-        limelight.setPollRateHz(100);
-        limelight.start();
+        vision = new visionTools();
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
     }
 
     @Override
     public void loop() {
         pinpoint.update();
-        Pose2D pose2d = pinpoint.getPosition();
 
-        double pinx = pose2d.getX(DistanceUnit.METER);
-        double piny = pose2d.getY(DistanceUnit.METER);
-        telemetry.addData("Pinpoint Location:", "(" + pinx + ", " + piny + ")");
-        robotYaw = pinpoint.getHeading(AngleUnit.DEGREES);
-        limelight.updateRobotOrientation(robotYaw);
-        LLResult result = limelight.getLatestResult();
-        if (result != null && result.isValid()) {
-            Pose3D botpose_mt2 = result.getBotpose_MT2();
-            if (botpose_mt2 != null) {
-                double x = botpose_mt2.getPosition().x;
-                double y = botpose_mt2.getPosition().y;
-                telemetry.addData("MT2 Location:", "(" + x + ", " + y + ")");
-            }
-        }
+        double[] mt2 = vision.getMT2(limelight, pinpoint);
+        double mt2X = mt2[0];
+        double mt2Y = mt2[1];
+        double mt2Yaw = mt2[2];
+
+        Pose2D ppPose = pinpoint.getPosition();
+        double ppX = ppPose.getX(DistanceUnit.METER);
+        double ppY = ppPose.getY(DistanceUnit.METER);
+        double ppYaw = ppPose.getHeading(AngleUnit.DEGREES);
+
+        telemetry.addData("MT2 X", mt2X);
+        telemetry.addData("MT2 Y", mt2Y);
+        telemetry.addData("MT2 Yaw", mt2Yaw);
+        telemetry.addData("Pinpoint X", ppX);
+        telemetry.addData("Pinpoint Y", ppY);
+        telemetry.addData("Pinpoint Yaw", ppYaw);
         telemetry.update();
-    }
 
+        TelemetryPacket packet = new TelemetryPacket();
+
+        packet.fieldOverlay().setStroke("#b5b33f");
+        packet.fieldOverlay().fillCircle((float) mt2X, (float) mt2Y, 5);
+
+        packet.fieldOverlay().setStroke("#3F51B5");
+        packet.fieldOverlay().fillCircle((float) ppX, (float) ppY, 5);
+
+        FtcDashboard.getInstance().sendTelemetryPacket(packet);
+    }
 }

@@ -416,7 +416,7 @@ public class visionTools {
         }
         return false;
     }
-    private double[] getMT2(Limelight3A limelight, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint){
+    public double[] getMT2(Limelight3A limelight, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint){
         pinpoint.update();
         Pose2D pose2d = pinpoint.getPosition();
         double robotYaw = pose2d.getHeading(AngleUnit.DEGREES);
@@ -440,7 +440,7 @@ public class visionTools {
         }
     }
 
-    private static double[] adjustMT2Values(
+    public static double[] adjustMT2Values(
             double x,
             double y,
             double mt2Heading,
@@ -475,7 +475,7 @@ public class visionTools {
         double[] MT2Val = adjustMT2Values(x, y, yaw, turretAngle, -0.07650, 0.0, 0.14281);
         double nx = MT2Val[0];
         double ny = MT2Val[1];
-        double nyaw = 90-MT2Val[2];
+        double nyaw =MT2Val[2];
 
         // Map MT2 axes (X forward, Y left) to old turret axes (X right, Y forward)
         double turretX = -ny; // left → right
