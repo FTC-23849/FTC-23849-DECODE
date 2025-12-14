@@ -42,7 +42,7 @@ public class Globals {
     public static double defaultCloseZonePower = -0.67;
     public static double defaultCloseZonePowerAuto = -0.71;
     public static double defaultFarZonePower = -0.92;
-    public static double defaultFarZonePowerAuto = -0.87;
+    public static double defaultFarZonePowerAuto = -0.90;
 
 
     // Tipper

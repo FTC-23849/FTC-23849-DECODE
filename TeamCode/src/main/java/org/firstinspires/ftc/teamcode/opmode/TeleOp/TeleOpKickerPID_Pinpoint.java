@@ -240,6 +240,7 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
         rightHood.setPosition(0.0);
         leftHood.setPosition(0.0);
 
+        pinpoint.setOffsets(96.6511963161, -2.55558368232, DistanceUnit.MM);
         pinpoint.resetPosAndIMU();
 
         initSensor(colorLeft);
