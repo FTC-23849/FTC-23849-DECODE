@@ -70,9 +70,9 @@ public class BlueCloseAuto12NonSorted extends LinearOpMode {
     public static double minAccelIntaking = -40;
     public static double maxAccelIntaking = 40;
 
-    public static double minVelDrive = 70;
-    public static double minAccelDrive = -60;
-    public static double maxAccelDrive = 60;
+    public static double minVelDrive = 80;
+    public static double minAccelDrive = -70;
+    public static double maxAccelDrive = 70;
 
     public static double shooterStartDelay = 0.3;
     public static double shootingDelay = 3;
@@ -96,6 +96,8 @@ public class BlueCloseAuto12NonSorted extends LinearOpMode {
     public static double stallWindowMs   = 200;   // how long we wait to see movement
     public static double stallMinDelta   = 0.1;  // minimum encoder change to consider "moving"
     public static double stallRecoveryMs = 1000;   // how long to hold in IDLE before resuming shot
+
+    public static double stallGraceMs    = 400;  // ms
 
 
     int obeliskID = -1;
@@ -444,6 +446,10 @@ public class BlueCloseAuto12NonSorted extends LinearOpMode {
         private double lastShootPower = 0.0; // remember what power we were shooting with
         private double recoveryStartTimeMs = 0.0;
 
+        // Grace-period tracking
+        private boolean wasShootingOpenLoop = false;
+        private double openLoopStartTimeMs = 0.0;
+
         public startKickerPID(CRServoImplEx leftKickerServo, CRServoImplEx rightKickerServo){
             this.leftKickerServo = leftKickerServo;
             this.rightKickerServo = rightKickerServo;
@@ -458,10 +464,19 @@ public class BlueCloseAuto12NonSorted extends LinearOpMode {
             double processedEncoderValue =
                     DFM.zeroAndNormalizeAxonEncoder(encoderVoltage, Globals.KICKER_ZERO);
 
+            // Are we currently shooting open-loop?
+            boolean shootingOpenLoop = !kickerPIDEnabled && Math.abs(plainKickerPower) > 0.01;
+
+            // Just entered open-loop: start grace timer and clear sample
+            if (shootingOpenLoop && !wasShootingOpenLoop) {
+                openLoopStartTimeMs = nowMs;
+                stallSampleValid = false;
+            }
+
             // ---------- STALL RECOVERY STATE MACHINE ----------
 
             if (recoveringFromStall) {
-                // Phase: hold at IDLE with PID for stallRecoveryMs
+                // Hold at IDLE with PID for stallRecoveryMs
                 kickerPIDEnabled = true;
                 kickerTarget = Globals.KICKER_IDLE;
                 plainKickerPower = 0.0;
@@ -476,10 +491,9 @@ public class BlueCloseAuto12NonSorted extends LinearOpMode {
                 }
 
             } else {
-                // Only detect stall while shooting open-loop
-                boolean shootingOpenLoop = !kickerPIDEnabled && Math.abs(plainKickerPower) > 0.01;
+                // Only detect stall while shooting open-loop *after* grace period
+                if (shootingOpenLoop && (nowMs - openLoopStartTimeMs) >= stallGraceMs) {
 
-                if (shootingOpenLoop) {
                     if (!stallSampleValid) {
                         // Take first sample
                         stallSampleValid = true;
@@ -508,11 +522,14 @@ public class BlueCloseAuto12NonSorted extends LinearOpMode {
                             }
                         }
                     }
-                } else {
+                } else if (!shootingOpenLoop) {
                     // Not in open-loop shooting mode, don't track stall
                     stallSampleValid = false;
                 }
             }
+
+            // Remember last open-loop state
+            wasShootingOpenLoop = shootingOpenLoop;
 
             // ---------- DRIVE THE SERVOS ----------
 
@@ -536,27 +553,6 @@ public class BlueCloseAuto12NonSorted extends LinearOpMode {
         }
     }
 
-
-    public class updatePose implements Action {
-
-        private MecanumDrive drive = null;
-
-        public updatePose(MecanumDrive drive){
-
-            this.drive = drive;
-
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            drive.updatePoseEstimate();
-            drive.localizer.update();
-
-            return false;
-
-        }
-    }
 
     public class getObeliskID implements Action {
 

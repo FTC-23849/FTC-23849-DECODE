@@ -4,7 +4,6 @@ import com.acmerobotics.dashboard.config.Config;
 
 @Config
 public class Globals {
-
     // Front Intake
     public static double frontIntakeIntakeSpeed = 1;
     public static double frontIntakeShootSpeed = 1; //-0.7
@@ -42,7 +41,7 @@ public class Globals {
     public static double defaultCloseZonePower = -0.67;
     public static double defaultCloseZonePowerAuto = -0.71;
     public static double defaultFarZonePower = -0.92;
-    public static double defaultFarZonePowerAuto = -0.90;
+    public static double defaultFarZonePowerAuto = -0.92;
 
 
     // Tipper

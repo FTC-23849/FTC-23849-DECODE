@@ -73,6 +73,7 @@ public class TeleOpKickerPIDPinpointVelocityPID extends OpMode {
     double closezone = 1;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
+    double turretCorrection = 0;
     boolean shooting;
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
@@ -267,10 +268,13 @@ public class TeleOpKickerPIDPinpointVelocityPID extends OpMode {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
     }
 
     @Override
     public void init_loop() {
+        leftTipper.setPosition(Globals.tipperRetracted);
+        rightTipper.setPosition(Globals.tipperRetracted);
 
         kickerTarget = Globals.KICKER_IDLE;
 
@@ -386,6 +390,11 @@ public class TeleOpKickerPIDPinpointVelocityPID extends OpMode {
 
                 recyclerIsRunning = true;
 
+            }
+            else if (gamepad2.dpadDownWasReleased() && !recyclerIsRunning) {
+
+                recyclerIsRunning = true;
+
             } else {
 
                 kickerPIDEnabled = true;
@@ -409,12 +418,22 @@ public class TeleOpKickerPIDPinpointVelocityPID extends OpMode {
                 closezone = 1;
             }
         }
+        if(gamepad1.back){
+            if(leftTurretServo.getPosition() < 0.84){
+            turretCorrection += 0.0025;
+            }
+        }
+        if(gamepad1.start){
+            if(leftTurretServo.getPosition()>0.34) {
+                turretCorrection -= 0.0025;
+            }
+        }
 
         LLResult results = limelight.getLatestResult();
 
         //close zone shoot
 
-        telemetry.addData("left", leftBumperTrue);
+        telemetry.addData( "left", leftBumperTrue);
         telemetry.addData("right", rightBumperTrue);
 
         if (gamepad1.rightBumperWasReleased()) {
@@ -443,10 +462,11 @@ public class TeleOpKickerPIDPinpointVelocityPID extends OpMode {
 
             telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
 
-            leftTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,2));
-            rightTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,2));
+            leftTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,2)+turretCorrection);
+            rightTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight,2)+turretCorrection);
         }
         if (gamepad1.x){
+            turretCorrection = 0;
             if(allianceColor.equals("Blue")){
                 pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,-65, AngleUnit.DEGREES,0));
             }else if(allianceColor.equals("Red")){
@@ -498,28 +518,17 @@ public class TeleOpKickerPIDPinpointVelocityPID extends OpMode {
             double py = pose2d.getY(DistanceUnit.METER);
 
             leftTurretServo.setPosition(
-                    vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),allianceColor)
+                    vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),allianceColor) + turretCorrection
             );
             rightTurretServo.setPosition(
-                    vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),allianceColor)
+                    vision.pinpointTurret(pinpoint,leftTurretServo.getPosition(),allianceColor) + turretCorrection
             );
         }
 
         // tipping
-        if (!yPressed && gamepad1.y) {
-            yPressed = true;
-            if (!tipped) {
-                leftTipper.setPosition(Globals.tipperExtended);
-                rightTipper.setPosition(Globals.tipperExtended);
-                tipped = true;
-            } else {
-                leftTipper.setPosition(Globals.tipperRetracted);
-                rightTipper.setPosition(Globals.tipperRetracted);
-                tipped = false;
-
-            }
-        } else {
-            yPressed = false;
+        if ( gamepad1.y) {
+            leftTipper.setPosition(Globals.tipperExtended);
+            rightTipper.setPosition(Globals.tipperExtended);
         }
 
         telemetry.addData("looptime", timer.milliseconds());

@@ -16,7 +16,6 @@ import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -32,14 +31,13 @@ import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
-import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController;
 
 import java.util.function.Function;
 
-@Disabled
+//@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class BlueFarAutoCyclingVelocityPID extends LinearOpMode {
+public class BlueFarAutoCyclingSlow extends LinearOpMode {
 
     // Initialize all hardware
     Limelight3A limelight;
@@ -77,11 +75,11 @@ public class BlueFarAutoCyclingVelocityPID extends LinearOpMode {
     public static double maxAccelDrive = 70;
 
     public static double shooterStartDelay = 0.3;
-    public static double shootingDelay = 3;
+    public static double shootingDelay = 3.2;
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.387;
+    public static double turretStartPos = 0.385;
     public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
@@ -95,21 +93,12 @@ public class BlueFarAutoCyclingVelocityPID extends LinearOpMode {
     public static double kickerTarget = Globals.KICKER_IDLE;
 
     // Stall detection
-    public static double stallWindowMs   = 200;   // how long we wait to see movement
+    public static double stallWindowMs   = 500;   // how long we wait to see movement
     public static double stallMinDelta   = 0.1;  // minimum encoder change to consider "moving"
     public static double stallRecoveryMs = 1000;   // how long to hold in IDLE before resuming shot
 
-    public static double stallGraceMs    = 300;  // ms
+    public static double stallGraceMs    = 800;  // ms
 
-    public static boolean shooterVelPIDEnabled = true;
-    public static double shooterTargetVelocity = 0;
-
-    // Max TPS (Ticks per second) = 2800  0.9 * 5800 * (28/60) =
-    public static double shooterFarVelocity = -2150;
-    public static double shooterKp = 0.001;
-    public static double shooterKi = 0.0053;
-    public static double shooterKd = 0.0;
-    public static double shooterKv = 0.0;
 
     int obeliskID = -1;
 
@@ -121,7 +110,6 @@ public class BlueFarAutoCyclingVelocityPID extends LinearOpMode {
     CRAxonPDController kickerPID = new CRAxonPDController();
     DroidForceMethods DFM = new DroidForceMethods();
 
-    private PIDVelocityController velocityPID;
 
     @Override
     public void runOpMode() {
@@ -162,8 +150,8 @@ public class BlueFarAutoCyclingVelocityPID extends LinearOpMode {
         leftShooterMotor = hardwareMap.get(DcMotorEx.class, "leftShooterMotor");
         rightShooterMotor = hardwareMap.get(DcMotorEx.class, "rightShooterMotor");
         rightShooterMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftShooterMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightShooterMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftShooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightShooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         leftTipper = hardwareMap.get(ServoImplEx.class, "leftTipper");
         rightTipper = hardwareMap.get(ServoImplEx.class, "rightTipper");
@@ -177,10 +165,6 @@ public class BlueFarAutoCyclingVelocityPID extends LinearOpMode {
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
         rightHood.setDirection(ServoImplEx.Direction.REVERSE);
-
-        velocityPID = new PIDVelocityController(shooterKp, shooterKi, shooterKd, shooterKv, shooterTargetVelocity);
-        velocityPID.setGains(shooterKp, shooterKi, shooterKd);
-        velocityPID.setFeedforward(shooterKv);
 
         //Limelight
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
@@ -232,7 +216,7 @@ public class BlueFarAutoCyclingVelocityPID extends LinearOpMode {
                 // Thread 1: Pathing + General Robot
                 new SequentialAction(
 
-                        new setShooterTargetVelocity(shooterFarVelocity),
+                        new setShooter(leftShooterMotor, rightShooterMotor, Globals.defaultFarZonePowerAuto),
                         new SleepAction(2),
                         new kickerShoot(),
 
@@ -440,11 +424,6 @@ public class BlueFarAutoCyclingVelocityPID extends LinearOpMode {
                 // Thread 3: Turret Tracking
                 new SequentialAction(
                         // new startTurretTracking(leftTurretServo, rightTurretServo, limelight, vision)
-                ),
-
-                // Thread 4: shooterVelocityPID
-                new SequentialAction(
-                        new startShooterVelocityPID(leftShooterMotor, rightShooterMotor)
                 )
 
         ));
@@ -476,71 +455,6 @@ public class BlueFarAutoCyclingVelocityPID extends LinearOpMode {
                 inner = actionFactory.apply(now);
             }
             return inner.run(telemetryPacket);
-        }
-    }
-
-    public class startShooterVelocityPID implements Action {
-        private final DcMotorEx left;
-        private final DcMotorEx right;
-        private boolean wasRunning = false;
-
-        public startShooterVelocityPID(DcMotorEx left, DcMotorEx right) {
-            this.left = left;
-            this.right = right;
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            if (velocityPID == null || !shooterVelPIDEnabled || Math.abs(shooterTargetVelocity) <= 1.0) {
-                left.setPower(0.0);
-                right.setPower(0.0);
-                if (wasRunning && velocityPID != null) {
-                    velocityPID.reset();
-                }
-                wasRunning = false;
-                return true;
-            }
-
-            wasRunning = true;
-
-            double currentVelocity = (left.getVelocity() + right.getVelocity()) / 2.0;
-
-            velocityPID.setTargetVelocity(shooterTargetVelocity);
-            velocityPID.setGains(shooterKp, shooterKi, shooterKd);
-            velocityPID.setFeedforward(shooterKv);
-
-            double power = velocityPID.update(currentVelocity);
-
-            left.setPower(power);
-            right.setPower(power);
-
-            return true;
-        }
-    }
-
-    public class setShooterTargetVelocity implements Action {
-
-        private final double target;
-
-        public setShooterTargetVelocity(double target) {
-            this.target = target;
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            shooterTargetVelocity = target;
-            shooterVelPIDEnabled = true;
-
-            if (velocityPID != null) {
-                velocityPID.reset();
-                velocityPID.setTargetVelocity(target);
-                velocityPID.setGains(shooterKp, shooterKi, shooterKd);
-                velocityPID.setFeedforward(shooterKv);
-            }
-
-            return false;
         }
     }
 
@@ -665,6 +579,8 @@ public class BlueFarAutoCyclingVelocityPID extends LinearOpMode {
             return true;  // keep this action running for the entire auto
         }
     }
+
+
 
     public class updatePose implements Action {
 
@@ -976,7 +892,7 @@ public class BlueFarAutoCyclingVelocityPID extends LinearOpMode {
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
             kickerPIDEnabled = false;
-            plainKickerPower = Globals.kickerShoot * 0.3;
+            plainKickerPower = Globals.kickerShoot * 0.15;
             frontIntakeMotor.setPower(-0.7); //-1.0
             backIntakeMotor.setPower(-0.7); //-1.0
 

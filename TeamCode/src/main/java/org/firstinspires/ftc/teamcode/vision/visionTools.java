@@ -506,8 +506,15 @@ public class visionTools {
             goalY = 1.6288;
         }
 
-        if(curX > 1.5){
-            goalX = 1.5288;
+        if(curX > 1.2){
+            goalX = 1.4288;
+        }
+        if(curX > 0){
+            goalX = 1.8288;
+            goalY = 1.8288;
+        }
+        if((curY<0 &&alliance.equals("Blue")||(curY>0 && alliance.equals("Red")))){
+            goalX = 1.6288;
         }
 
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));

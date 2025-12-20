@@ -16,6 +16,7 @@ import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -34,6 +35,7 @@ import org.firstinspires.ftc.teamcode.vision.visionTools;
 
 import java.util.function.Function;
 
+//@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
 public class BlueFarAutoCycling extends LinearOpMode {
@@ -74,16 +76,16 @@ public class BlueFarAutoCycling extends LinearOpMode {
     public static double maxAccelDrive = 70;
 
     public static double shooterStartDelay = 0.3;
-    public static double shootingDelay = 3;
+    public static double shootingDelay = 3.2;
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.387;
+    public static double turretStartPos = 0.385;
     public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
 
-    public static double recyclingDelay = 1900;
+    public static double recyclingDelay = 2000;
     public static double recyclingIntakeDelay = 500;
     public static double recyclingKickerUpDelay = 500;
 
@@ -96,7 +98,7 @@ public class BlueFarAutoCycling extends LinearOpMode {
     public static double stallMinDelta   = 0.1;  // minimum encoder change to consider "moving"
     public static double stallRecoveryMs = 1000;   // how long to hold in IDLE before resuming shot
 
-    public static double stallGraceMs    = 300;  // ms
+    public static double stallGraceMs    = 400;  // ms
 
 
     int obeliskID = -1;
