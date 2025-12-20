@@ -343,7 +343,7 @@ public class visionTools {
     }
     public double closeZoneflywheelspeed(Limelight3A limelight, double currentVelocity, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
         double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
-        double speed = -1 * (0.57 + 0.1 * groundDistance);
+        double speed = -1 * (0.42 + 0.08 * groundDistance);
         if (groundDistance > 3.3){
             speed += -1 * (0.12 * (groundDistance - 3.2));
         }
@@ -353,6 +353,18 @@ public class visionTools {
             return speed;
         }
     }
+    /*public double closeZoneflywheelspeed(Limelight3A limelight, double currentVelocity, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
+        double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
+        double speed = -1 * (0.57 + 0.1 * groundDistance);
+        if (groundDistance > 3.3){
+            speed += -1 * (0.12 * (groundDistance - 3.2));
+        }
+        if (groundDistance == -1) {
+            return currentVelocity;
+        } else {
+            return speed;
+        }
+    }*/
 
     public double closeZonehood(Limelight3A limelight, double currentHood, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
         double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
@@ -508,12 +520,14 @@ public class visionTools {
 
         if(curX > 1.2){
             goalX = 1.4288;
-        }
-        if(curX > 0){
+        }else if(curX > 0){
             goalX = 1.8288;
+        if(alliance.equals("Blue")) {
             goalY = 1.8288;
+        }else{
+            goalY = -1.8288;
         }
-        if((curY<0 &&alliance.equals("Blue")||(curY>0 && alliance.equals("Red")))){
+        }if((curY<0 &&alliance.equals("Blue")||(curY>0 && alliance.equals("Red")))){
             goalX = 1.6288;
         }
 

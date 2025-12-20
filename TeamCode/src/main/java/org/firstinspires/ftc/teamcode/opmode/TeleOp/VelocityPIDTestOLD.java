@@ -6,31 +6,35 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController;
+import org.firstinspires.ftc.teamcode.hardware.Globals;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
 @Config
-@TeleOp(name = "Velocity PID Example")
-public class VelocityPIDTest extends LinearOpMode {
-
+@TeleOp(name = "Velocity PID Example OLD")
+public class VelocityPIDTestOLD extends LinearOpMode {
+    DcMotorEx frontIntakeMotor;
+    DcMotorEx backIntakeMotor;
+    CRServoImplEx leftKickerServo;
+    CRServoImplEx rightKickerServo;
+    CRServoImplEx leftBackRoller;
+    CRServoImplEx rightBackRoller;
     private DcMotorEx leftShooterMotor;
     private DcMotorEx rightShooterMotor;
-
-    private PIDVelocityController2 velocityPID;
-
-    // Dashboard tunables
-    public static double TargetVelocity = 900;   // ticks/sec
-    public static double Kp = 8;
-    public static double Ki = 0.0;
-    public static double Kd = 0.08;
-
-    public static double kS = 0.059;
-    public static double kV = 0.00035;
+    private PIDVelocityController velocityPID;
+    public static double currentVelocity;
+    public static double TargetVelocity = 900;
+    public static double Kp = 0.00107;
+    public static double Ki = 0;
+    public static double Kd = 0.000007;
+    public static double Kv = 0.000627;
 
     private static final double STDEV_WINDOW_SECONDS = 5.0;
     private final ArrayList<Double> errorSamples = new ArrayList<>();
@@ -41,41 +45,45 @@ public class VelocityPIDTest extends LinearOpMode {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
 
+        frontIntakeMotor = hardwareMap.get(DcMotorEx.class, "frontIntakeMotor");
+        leftKickerServo = hardwareMap.get(CRServoImplEx.class, "leftKickerServo");
+        rightKickerServo = hardwareMap.get(CRServoImplEx.class, "rightKickerServo");
+        rightKickerServo.setDirection(CRServoImplEx.Direction.REVERSE);
+        backIntakeMotor = hardwareMap.get(DcMotorEx.class, "backIntakeMotor");
+        backIntakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBackRoller = hardwareMap.get(CRServoImplEx.class, "leftBackRoller");
+        rightBackRoller = hardwareMap.get(CRServoImplEx.class, "rightBackRoller");
+        rightBackRoller.setDirection(DcMotorSimple.Direction.REVERSE);
         leftShooterMotor = hardwareMap.get(DcMotorEx.class, "leftShooterMotor");
         rightShooterMotor = hardwareMap.get(DcMotorEx.class, "rightShooterMotor");
-
-        rightShooterMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-
         leftShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
         rightShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        leftShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        rightShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        rightShooterMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        velocityPID = new   PIDVelocityController(Kp, Ki, Kd, Kv, TargetVelocity);
+        velocityPID.setGains(Kp, Ki, Kd);
+        velocityPID.setFeedforward(Kv);
 
-        leftShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
-        rightShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        velocityPID = new PIDVelocityController2(
-                Kp, Ki, Kd,
-                kS, kV,
-                TargetVelocity
-        );
 
         waitForStart();
 
         while (opModeIsActive()) {
+            currentVelocity = leftShooterMotor.getVelocity();
 
-            double currentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity())/2;
-
-            // Update tunables
-            velocityPID.setPID(Kp, Ki, Kd);
-            velocityPID.setFeedforward(kS, kV);
             velocityPID.setTargetVelocity(TargetVelocity);
 
             double power = velocityPID.update(currentVelocity);
+            velocityPID.setGains(Kp, Ki, Kd);
+            velocityPID.setFeedforward(Kv);
 
             leftShooterMotor.setPower(power);
             rightShooterMotor.setPower(power);
 
-            double error = TargetVelocity - currentVelocity;
+            double error = currentVelocity - TargetVelocity;
             double now = getRuntime();
 
             errorSamples.add(error);
@@ -102,7 +110,7 @@ public class VelocityPIDTest extends LinearOpMode {
             telemetry.addData("Current Velocity", currentVelocity);
             telemetry.addData("Error", error);
             telemetry.addData("Velocity StDev (5s)", stdev);
-            telemetry.addData("Motor Power", power);
+            telemetry.addData("Samples", errorSamples.size());
             telemetry.update();
         }
     }
