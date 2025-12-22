@@ -19,10 +19,19 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class visionTools {
+    public int[] rampOrder = new int[9];
     ElapsedTime timer = new ElapsedTime();
     double hueThresholdPurple = 200;
     double hueThresholdGreen = 100;
@@ -311,6 +320,137 @@ public class visionTools {
         LLResult results = limelight.getLatestResult();
         return results.getPythonOutput()[3];
     }
+    //TODO, use pinpoint pos to change size filtering for balls
+    public double ballinRampOpenCVCloseZone(Mat frame) {
+
+        Mat hsv = new Mat();
+        Mat greenMask = new Mat();
+        Mat purpleMask = new Mat();
+
+        Scalar GREEN_LOWER = new Scalar(69, 111, 71);
+        Scalar GREEN_UPPER = new Scalar(97, 255, 255);
+
+        Scalar PURPLE_LOWER = new Scalar(125, 71, 101);
+        Scalar PURPLE_UPPER = new Scalar(146, 232, 255);
+
+        int RAMP_SIZE_THRESHOLD = 40;
+
+        Imgproc.cvtColor(frame, hsv, Imgproc.COLOR_BGR2HSV);
+        Core.inRange(hsv, GREEN_LOWER, GREEN_UPPER, greenMask);
+        Core.inRange(hsv, PURPLE_LOWER, PURPLE_UPPER, purpleMask);
+
+        class Detection {
+            int x;
+            int type;
+            Detection(int x, int type) {
+                this.x = x;
+                this.type = type;
+            }
+        }
+
+        ArrayList<Detection> detections = new ArrayList<>();
+
+        ArrayList<MatOfPoint> greenContours = new ArrayList<>();
+        Imgproc.findContours(greenMask, greenContours, new Mat(),
+                Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        for (MatOfPoint c : greenContours) {
+            Rect r = Imgproc.boundingRect(c);
+            if (r.width > RAMP_SIZE_THRESHOLD && r.height > RAMP_SIZE_THRESHOLD) {
+                detections.add(new Detection(r.x, 1));
+                Imgproc.rectangle(frame, r, new Scalar(0, 255, 0), 2);
+            }
+        }
+
+        ArrayList<MatOfPoint> purpleContours = new ArrayList<>();
+        Imgproc.findContours(purpleMask, purpleContours, new Mat(),
+                Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        for (MatOfPoint c : purpleContours) {
+            Rect r = Imgproc.boundingRect(c);
+            if (r.width > RAMP_SIZE_THRESHOLD && r.height > RAMP_SIZE_THRESHOLD) {
+                detections.add(new Detection(r.x, 2));
+                Imgproc.rectangle(frame, r, new Scalar(255, 0, 255), 2);
+            }
+        }
+
+        detections.sort(Comparator.comparingInt(d -> d.x));
+
+        for (int i = 0; i < rampOrder.length; i++) {
+            rampOrder[i] = 0;
+        }
+
+        int start = Math.max(0, rampOrder.length - detections.size());
+        for (int i = 0; i < detections.size() && i < rampOrder.length; i++) {
+            rampOrder[start + i] = detections.get(i).type;
+        }
+
+        return detections.size();
+    }
+
+    public double ballinRampOpenCVFarZone(Mat frame) {
+
+        Mat hsv = new Mat();
+        Mat greenMask = new Mat();
+        Mat purpleMask = new Mat();
+
+        Scalar GREEN_LOWER = new Scalar(69, 111, 71);
+        Scalar GREEN_UPPER = new Scalar(97, 255, 255);
+
+        Scalar PURPLE_LOWER = new Scalar(125, 71, 101);
+        Scalar PURPLE_UPPER = new Scalar(146, 232, 255);
+
+        int RAMP_SIZE_THRESHOLD = 40;
+
+        Imgproc.cvtColor(frame, hsv, Imgproc.COLOR_BGR2HSV);
+        Core.inRange(hsv, GREEN_LOWER, GREEN_UPPER, greenMask);
+        Core.inRange(hsv, PURPLE_LOWER, PURPLE_UPPER, purpleMask);
+
+        class Detection {
+            int y;
+            int type;
+            Detection(int y, int type) {
+                this.y = y;
+                this.type = type;
+            }
+        }
+
+        ArrayList<Detection> detections = new ArrayList<>();
+
+        ArrayList<MatOfPoint> greenContours = new ArrayList<>();
+        Imgproc.findContours(greenMask, greenContours, new Mat(),
+                Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        for (MatOfPoint c : greenContours) {
+            Rect r = Imgproc.boundingRect(c);
+            if (r.width > RAMP_SIZE_THRESHOLD && r.height > RAMP_SIZE_THRESHOLD) {
+                detections.add(new Detection(r.y, 1));
+                Imgproc.rectangle(frame, r, new Scalar(0, 255, 0), 2);
+            }
+        }
+
+        ArrayList<MatOfPoint> purpleContours = new ArrayList<>();
+        Imgproc.findContours(purpleMask, purpleContours, new Mat(),
+                Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        for (MatOfPoint c : purpleContours) {
+            Rect r = Imgproc.boundingRect(c);
+            if (r.width > RAMP_SIZE_THRESHOLD && r.height > RAMP_SIZE_THRESHOLD) {
+                detections.add(new Detection(r.y, 2));
+                Imgproc.rectangle(frame, r, new Scalar(255, 0, 255), 2);
+            }
+        }
+
+        detections.sort(Comparator.comparingInt(d -> d.y));
+
+        for (int i = 0; i < rampOrder.length; i++) {
+            rampOrder[i] = 0;
+        }
+
+        int start = Math.max(0, rampOrder.length - detections.size());
+        for (int i = 0; i < detections.size() && i < rampOrder.length; i++) {
+            rampOrder[start + i] = detections.get(i).type;
+        }
+
+        return detections.size();
+    }
+
     public double distance (Limelight3A limelight) {
         //limelight to apriltag distance
         limelight.pipelineSwitch(9);
