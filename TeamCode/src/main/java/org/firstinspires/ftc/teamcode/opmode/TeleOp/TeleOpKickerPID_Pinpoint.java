@@ -443,9 +443,9 @@ public class TeleOpKickerPID_Pinpoint extends OpMode {
 
         if (leftBumperTrue && !rightBumperTrue) {
             kickerKP = 3;
-            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
-            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
-            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor);
+            leftShooterMotor.setPower(vision.closeZoneFlywheelSpeed(limelight,currentSpeed,pinpoint,allianceColor));
+            rightShooterMotor.setPower(vision.closeZoneFlywheelSpeed(limelight,currentSpeed,pinpoint,allianceColor));
+            currentSpeed = vision.closeZoneFlywheelSpeed(limelight,currentSpeed,pinpoint,allianceColor);
             leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             telemetry.addData("flywheel", leftShooterMotor.getVelocity());

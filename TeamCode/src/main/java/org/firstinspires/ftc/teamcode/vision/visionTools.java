@@ -2,13 +2,11 @@ package org.firstinspires.ftc.teamcode.vision;
 
 import static java.lang.Thread.sleep;
 
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -19,6 +17,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 
 import java.util.List;
@@ -341,11 +340,15 @@ public class visionTools {
         }
         return  groundDistance - 0.465;
     }
-    public double closeZoneflywheelspeed(Limelight3A limelight, double currentVelocity, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
+    public double closeZoneFlywheelSpeed(Limelight3A limelight, double currentVelocity, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
         double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
-        double speed = -1 * (0.42 + 0.08 * groundDistance);
-        if (groundDistance > 3.3){
-            speed += -1 * (0.12 * (groundDistance - 3.2));
+        //double speed = -1 * (0.42 + 0.1505  * groundDistance);
+        double speed = -1 * (0.5015  + 0.114 * (groundDistance - 1));
+        if (groundDistance > 3.1){
+            speed += 1 * (0.1 * (groundDistance - 3.1));
+        }
+        if(groundDistance > 3.4){
+            speed-= 1 * (0.1 * (groundDistance - 3.4));
         }
         if (groundDistance == -1) {
             return currentVelocity;
@@ -368,7 +371,7 @@ public class visionTools {
 
     public double closeZonehood(Limelight3A limelight, double currentHood, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
         double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
-        double hood = 0.05 + 0.1 * groundDistance;
+        double hood = 0.1 * groundDistance;
         if (groundDistance == -1) {
             return currentHood;
         } else {
@@ -527,6 +530,44 @@ public class visionTools {
         }else{
             goalY = -1.8288;
         }
+        }if((curY<0 &&alliance.equals("Blue")||(curY>0 && alliance.equals("Red")))){
+            goalX = 1.6288;
+        }
+
+        double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
+        double turretOffset = turretAngle - curYaw;
+        double turretPos = 0.5 + (turretOffset * 2.53846153846 / 1800.0);
+
+        return Range.clip(turretPos, 0.35, 0.85);
+    }
+    public double pinpointTurretMoving(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos, String alliance){
+        double sec = 1;
+        pinpoint.update();
+        Pose2D pose2d = pinpoint.getPosition();
+
+        double curX = pose2d.getX(DistanceUnit.METER)+ sec*pinpoint.getVelX(DistanceUnit.METER);
+        double curY = pose2d.getY(DistanceUnit.METER)+ sec*pinpoint.getVelY(DistanceUnit.METER);
+        double curYaw = pose2d.getHeading(AngleUnit.DEGREES)+ sec*pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
+
+        double goalX = 0;
+        double goalY = 0;
+        if(alliance.equals("Red")){
+            goalX = 1.6288;
+            goalY = -1.6288;
+        } else if(alliance.equals("Blue")){
+            goalX = 1.6288;
+            goalY = 1.6288;
+        }
+
+        if(curX > 1.2){
+            goalX = 1.4288;
+        }else if(curX > 0){
+            goalX = 1.8288;
+            if(alliance.equals("Blue")) {
+                goalY = 1.8288;
+            }else{
+                goalY = -1.8288;
+            }
         }if((curY<0 &&alliance.equals("Blue")||(curY>0 && alliance.equals("Red")))){
             goalX = 1.6288;
         }

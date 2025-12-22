@@ -32,7 +32,6 @@ import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
-
 import java.util.List;
 
 @TeleOp
@@ -65,9 +64,9 @@ public class TeleOpKickerPIDPinpointVelocityPIDF extends OpMode {
     private PIDVelocityController2 velocityPID;
     public static double currentVelocity;
     public static double TargetVelocity = 900;
-    public static double VKp = 5;
-    public static double VKi = 0.05;
-    public static double VKd = 0.08;
+    public static double VKp = 8;
+    public static double VKi = 0.1;
+    public static double VKd = 0.1;
     public static double VkS = 0.059;
     public static double VkV = 0.00035;
     double closezone = 1;
@@ -491,7 +490,7 @@ public class TeleOpKickerPIDPinpointVelocityPIDF extends OpMode {
 
             double flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity())/2;
 
-            double variableFlywheelSpeed = vision.closeZoneflywheelspeed(limelight, flywheelCurrentVelocity, pinpoint, allianceColor);
+            double variableFlywheelSpeed = vision.closeZoneFlywheelSpeed(limelight, flywheelCurrentVelocity, pinpoint, allianceColor);
             double targetVelocity = (variableFlywheelSpeed * 5800) * (28.0 / 60.0);
 
             velocityPID.setTargetVelocity(targetVelocity);

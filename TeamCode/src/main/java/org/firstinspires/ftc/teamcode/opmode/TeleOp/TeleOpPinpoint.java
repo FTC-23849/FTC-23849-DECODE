@@ -12,7 +12,6 @@ import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.PwmControl;
@@ -371,9 +370,9 @@ public class TeleOpPinpoint extends OpMode {
             }
         }
         if (leftBumperTrue && !rightBumperTrue) {
-            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
-            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
-            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor);
+            leftShooterMotor.setPower(vision.closeZoneFlywheelSpeed(limelight,currentSpeed,pinpoint,allianceColor));
+            rightShooterMotor.setPower(vision.closeZoneFlywheelSpeed(limelight,currentSpeed,pinpoint,allianceColor));
+            currentSpeed = vision.closeZoneFlywheelSpeed(limelight,currentSpeed,pinpoint,allianceColor);
             leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             telemetry.addData("flywheel", leftShooterMotor.getVelocity());

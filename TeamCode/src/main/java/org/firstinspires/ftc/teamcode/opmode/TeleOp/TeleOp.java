@@ -12,14 +12,12 @@ import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.vision.visionTools;
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 
 import java.util.List;
@@ -353,9 +351,9 @@ public class TeleOp extends OpMode {
         }
         if (leftBumperTrue && !rightBumperTrue) {
             String allianceColor = "Red";
-            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
-            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor));
-            currentSpeed = vision.closeZoneflywheelspeed(limelight,currentSpeed,pinpoint,allianceColor);
+            leftShooterMotor.setPower(vision.closeZoneFlywheelSpeed(limelight,currentSpeed,pinpoint,allianceColor));
+            rightShooterMotor.setPower(vision.closeZoneFlywheelSpeed(limelight,currentSpeed,pinpoint,allianceColor));
+            currentSpeed = vision.closeZoneFlywheelSpeed(limelight,currentSpeed,pinpoint,allianceColor);
             leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             telemetry.addData("flywheel", leftShooterMotor.getVelocity());

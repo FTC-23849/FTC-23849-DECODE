@@ -482,15 +482,15 @@ public class TeleOpKickerPIDPinpointVelocityPID extends OpMode {
         if (leftBumperTrue && !rightBumperTrue) {
             kickerKP = 3;
             double flywheelCurrentVelocity = leftShooterMotor.getVelocity();
-            double variableFlywheelSpeed = vision.closeZoneflywheelspeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor);
+            double variableFlywheelSpeed = vision.closeZoneFlywheelSpeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor);
             velocityPID.setTargetVelocity((variableFlywheelSpeed*5800)*(28.0/60.0));
             double power = velocityPID.update(currentVelocity);
             velocityPID.setGains(VKp, VKi, VKd);
             velocityPID.setFeedforward(VKv);
 
-            leftShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor));
-            rightShooterMotor.setPower(vision.closeZoneflywheelspeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor));
-            currentSpeed = vision.closeZoneflywheelspeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor);
+            leftShooterMotor.setPower(vision.closeZoneFlywheelSpeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor));
+            rightShooterMotor.setPower(vision.closeZoneFlywheelSpeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor));
+            currentSpeed = vision.closeZoneFlywheelSpeed(limelight,flywheelCurrentVelocity,pinpoint,allianceColor);
             leftHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             rightHood.setPosition(vision.closeZonehood(limelight,leftHood.getPosition(),pinpoint,allianceColor));
             telemetry.addData("flywheel", leftShooterMotor.getVelocity());
