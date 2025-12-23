@@ -66,6 +66,7 @@ public class PinpointMT2DriveTest extends LinearOpMode {
             double[] MT2 = new double[]{-7,-7,-7};
             limelight.updateRobotOrientation(robotYaw);
             LLResult result = limelight.getLatestResult();
+            limelight.updateRobotOrientation(robotYaw);
             if (result != null && result.isValid()) {
                 Pose3D botpose_mt2 = result.getBotpose_MT2();
                 if (botpose_mt2 != null) {
@@ -79,7 +80,9 @@ public class PinpointMT2DriveTest extends LinearOpMode {
             } else {
                 MT2 = new double[]{-2000, -2000, -2000};
             }
-
+            double mt1x = result.getBotpose().getPosition().x;
+            double mt1y = result.getBotpose().getPosition().y;
+            double mt1heading = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);
 
             telemetry.addData("px", px);
             telemetry.addData("py", py);
@@ -93,6 +96,9 @@ public class PinpointMT2DriveTest extends LinearOpMode {
             telemetry.addData("ay", AMT2[1]);
             telemetry.addData("aheading", Math.toDegrees(AMT2[2]));
             telemetry.update();
+            telemetry.addData("m1x", mt1x);
+            telemetry.addData("m1y", mt1y);
+            telemetry.addData("m1heading", mt1heading);
         }
     }
 }
