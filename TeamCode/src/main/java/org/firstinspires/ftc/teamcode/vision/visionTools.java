@@ -320,7 +320,7 @@ public class visionTools {
         LLResult results = limelight.getLatestResult();
         return results.getPythonOutput()[3];
     }
-    //TODO, use pinpoint pos to change size filtering for balls
+    //TODO: use pinpoint pos to change size filtering for balls
     public double ballinRampOpenCVCloseZone(Mat frame) {
 
         Mat hsv = new Mat();
