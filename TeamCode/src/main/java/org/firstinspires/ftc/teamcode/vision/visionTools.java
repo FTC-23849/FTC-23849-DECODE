@@ -490,6 +490,33 @@ public class visionTools {
         if(groundDistance > 3.4){
             speed-= 1 * (0.1 * (groundDistance - 3.4));
         }
+        pinpoint.update();
+
+        double vx = pinpoint.getVelX(DistanceUnit.METER);
+        double vy = pinpoint.getVelY(DistanceUnit.METER);
+
+        double x = pinpoint.getPosX(DistanceUnit.METER);
+        double y = pinpoint.getPosY(DistanceUnit.METER);
+
+        double heading = pinpoint.getHeading(AngleUnit.RADIANS); // radians
+
+        double v = Math.sqrt(vx * vx + vy * vy);
+
+        double goalX = 1.8288;
+        double goalY = allianceColor.equals("Red") ? -1.8288 : 1.8288;
+
+        double dx = goalX - x;
+        double dy = goalY - y;
+
+        double fieldVx = vx * Math.cos(heading) - vy * Math.sin(heading);
+        double fieldVy = vx * Math.sin(heading) + vy * Math.cos(heading);
+
+        double dot = dx * fieldVx + dy * fieldVy;
+
+        int direction = dot >= 0 ? 1 : -1;
+
+        speed += v * 0.05 * direction;
+
         if (groundDistance == -1) {
             return currentVelocity;
         } else {
@@ -572,6 +599,8 @@ public class visionTools {
         return false;
     }
     public double[] getMT2(Limelight3A limelight, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint){
+        limelight.pipelineSwitch(9);
+        limelight.start();
         pinpoint.update();
         Pose2D pose2d = pinpoint.getPosition();
         double robotYaw = pose2d.getHeading(AngleUnit.DEGREES);
@@ -618,7 +647,22 @@ public class visionTools {
 
         return new double[]{adjustedX, adjustedY, robotHeading};
     }
+    public double mt1pinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, Limelight3A limelight){
+        limelight.pipelineSwitch(9);
+        limelight.start();
+        LLResult result = limelight.getLatestResult();
 
+        if(result != null && result.isValid() && result.getBotpose() != null){
+            double mt1x = result.getBotpose().getPosition().x;
+            double mt1y = result.getBotpose().getPosition().y;
+            double mt1heading = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);
+            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mt1x*-1,mt1y*-1,AngleUnit.DEGREES,mt1heading-180 + 2/*2 deg right*/));
+            return 1;
+        }else{
+            return 0;
+        }
+
+    }
     public double updatePinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, Limelight3A limelight, double turretAngle){
         double[] mt2 = getMT2(limelight, pinpoint);
         double x = mt2[0];
@@ -680,14 +724,13 @@ public class visionTools {
 
         return Range.clip(turretPos, 0.35, 0.85);
     }
-    public double pinpointTurretMoving(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos, String alliance){
-        double sec = 1;
+    public double pinpointTurretMoving(double sec,org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos, String alliance){
         pinpoint.update();
         Pose2D pose2d = pinpoint.getPosition();
 
         double curX = pose2d.getX(DistanceUnit.METER)+ sec*pinpoint.getVelX(DistanceUnit.METER);
         double curY = pose2d.getY(DistanceUnit.METER)+ sec*pinpoint.getVelY(DistanceUnit.METER);
-        double curYaw = pose2d.getHeading(AngleUnit.DEGREES)+ sec*pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
+    double curYaw = pose2d.getHeading(AngleUnit.DEGREES)+ (sec*0.3)*pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
 
         double goalX = 0;
         double goalY = 0;
