@@ -16,7 +16,7 @@ import org.firstinspires.ftc.robotcore.external.navigation. YawPitchRollAngles;
 public class LimelightTest extends OpMode {
     private Limelight3A limelight;
     private IMU imu;
-
+    visionTools vision = new visionTools();
     @Override
     public void init() {
 
@@ -40,6 +40,7 @@ public class LimelightTest extends OpMode {
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
         limelight.updateRobotOrientation(orientation.getYaw());
         LLResult llResult = limelight.getLatestResult();
+        telemetry.addData("filled ramp?", vision.RampIsFull(limelight));
         if (llResult != null && llResult.isValid()) {
             Pose3D botPose = llResult.getBotpose();
             telemetry.addData("Tx", llResult.getTx());
