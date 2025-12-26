@@ -39,7 +39,7 @@ import java.util.function.Function;
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
 public class BlueFarAutoCyclingRamp extends LinearOpMode {
     //TODO: find the actual pos
-    public static Pose2d GATE_POSE = new Pose2d(60, -70, Math.toRadians(270));
+    public static Pose2d GATE_POSE = new Pose2d(2.5, -56.8, Math.toRadians(270));
 
     volatile boolean forceGate = false;
     volatile boolean gatePathStarted = false;
