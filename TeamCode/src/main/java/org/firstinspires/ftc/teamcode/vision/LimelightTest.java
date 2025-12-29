@@ -21,11 +21,12 @@ public class LimelightTest extends OpMode {
     public void init() {
 
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
-        limelight.pipelineSwitch(9);
+        limelight.pipelineSwitch(2);
         imu = hardwareMap.get(IMU.class, "imu");
         RevHubOrientationOnRobot revHubOrientationOnRobot = new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.UP,
                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD);
         imu.initialize(new IMU.Parameters(revHubOrientationOnRobot));
+        limelight.setPollRateHz(20);
     }
 
     @Override
@@ -40,12 +41,21 @@ public class LimelightTest extends OpMode {
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
         limelight.updateRobotOrientation(orientation.getYaw());
         LLResult llResult = limelight.getLatestResult();
-        telemetry.addData("filled ramp?", vision.RampIsFull(limelight));
+        //telemetry.addData("filled ramp?", vision.RampIsFull(limelight));
+        telemetry.addData("null",llResult != null);
+        telemetry.addData("valid",llResult.isValid());
+        telemetry.addData("both",llResult != null && llResult.isValid());
+        double[] pythonOutputs = llResult.getPythonOutput();
+        telemetry.addData("Tx",pythonOutputs[0]);
+        telemetry.addData("Ty",pythonOutputs[1]);
+        telemetry.addData("Tz",pythonOutputs[2]);
+        telemetry.addData("Ta",pythonOutputs[3]);
+        telemetry.addData("Tb",pythonOutputs[4]);
+
         if (llResult != null && llResult.isValid()) {
             Pose3D botPose = llResult.getBotpose();
-            telemetry.addData("Tx", llResult.getTx());
-            telemetry.addData("Ty", llResult.getTy());
-            telemetry.addData("Ta", llResult.getTa());
+            telemetry.addData("Tx",llResult.getPythonOutput()[2]);
+
         }
     }
 }

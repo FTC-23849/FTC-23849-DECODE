@@ -7,6 +7,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
@@ -27,10 +28,12 @@ public class PinpointMT2DriveTest extends LinearOpMode {
     ServoImplEx rightTurretServo;
     GoBildaPinpointDriver pinpoint;
     Limelight3A limelight;
+    AnalogInput encoder;
     visionTools vision = new visionTools();
 
     @Override
     public void runOpMode() throws InterruptedException {
+        encoder = hardwareMap.get(AnalogInput.class, "turretEncoder");
         leftTurretServo = hardwareMap.get(ServoImplEx.class, "leftTurretServo");
         rightTurretServo = hardwareMap.get(ServoImplEx.class, "rightTurretServo");
         fl = hardwareMap.get(DcMotorEx.class, "LF");
@@ -46,8 +49,10 @@ public class PinpointMT2DriveTest extends LinearOpMode {
         limelight.start();
         leftTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
         rightTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
-        leftTurretServo.setPosition(0.5);
+        /*
         rightTurretServo.setPosition(0.5);
+        leftTurretServo.setPosition(0.5);
+        */
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
         pinpoint.setOffsets(96.6511963161, -2.55558368232, DistanceUnit.MM);
@@ -62,8 +67,9 @@ public class PinpointMT2DriveTest extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            leftTurretServo.setPosition(0.5);
-            rightTurretServo.setPosition(0.5);
+            double position = encoder.getVoltage() / 3.2 * 360;
+            //leftTurretServo.setPosition(0.5);
+            //rightTurretServo.setPosition(0.5);
             double y = -gamepad1.left_stick_y;
             double x = -gamepad1.left_stick_x;
             double rx = -gamepad1.right_stick_x;
@@ -84,7 +90,7 @@ public class PinpointMT2DriveTest extends LinearOpMode {
             double my = 0;
             double myaw = 0;
             double[] MT2 = new double[]{-7,-7,-7};
-            limelight.updateRobotOrientation(robotYaw);
+            limelight.updateRobotOrientation(robotYaw+170);
             LLResult result = limelight.getLatestResult();
             if (result != null) {
                 telemetry.addData("result null?", false);
@@ -126,9 +132,10 @@ public class PinpointMT2DriveTest extends LinearOpMode {
             telemetry.addData("aheading", AMT2[2]);
             telemetry.addData("m1x", mt1x);
             telemetry.addData("m1y", mt1y);
-            telemetry.addData("m1heading", mt1heading);
+            telemetry.addData("m1heading", mt1heading+180);
             telemetry.addData("x diff", px-MT2[0]);
-            telemetry.addData("y diff", py-MT2[1    ]);
+            telemetry.addData("y diff", py-MT2[1]);
+            telemetry.addData("pos", position*(19.0/99.0));
             telemetry.update();
         }
     }

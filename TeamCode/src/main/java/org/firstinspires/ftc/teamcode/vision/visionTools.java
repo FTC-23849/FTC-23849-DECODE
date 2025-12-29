@@ -322,8 +322,9 @@ public class visionTools {
     }
     public double RampIsFull (Limelight3A limelight){
         limelight.pipelineSwitch(2);
+        limelight.start();
         LLResult results = limelight.getLatestResult();
-        return results.getPythonOutput()[3];
+        return results.getPythonOutput()[0];
     }
 
     //TODO: use pinpoint pos to change size filtering for balls
@@ -486,10 +487,11 @@ public class visionTools {
         }
         return  groundDistance - 0.465;
     }
-    public double closeZoneFlywheelSpeed(Limelight3A limelight, double currentVelocity, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
+    public double FlywheelSpeed(Limelight3A limelight, double currentVelocity, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
         double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
         //double speed = -1 * (0.42 + 0.1505  * groundDistance);
-        double speed = -1 * (0.5015  + 0.114 * (groundDistance - 1));
+        //distance speed function
+        double speed = -1 * (0.4415  + 0.114 * (groundDistance - 1));
         if (groundDistance > 3.1){
             speed += 1 * (0.1 * (groundDistance - 3.1));
         }
@@ -497,6 +499,55 @@ public class visionTools {
             speed-= 1 * (0.1 * (groundDistance - 3.4));
         }
         pinpoint.update();
+
+        double vx = pinpoint.getVelX(DistanceUnit.METER);
+        double vy = pinpoint.getVelY(DistanceUnit.METER);
+
+        double x = pinpoint.getPosX(DistanceUnit.METER);
+        double y = pinpoint.getPosY(DistanceUnit.METER);
+
+        double heading = pinpoint.getHeading(AngleUnit.RADIANS); // radians
+
+        double v = Math.sqrt(vx * vx + vy * vy);
+
+        double goalX = 1.8288;
+        double goalY = allianceColor.equals("Red") ? -1.8288 : 1.8288;
+
+        double dx = goalX - x;
+        double dy = goalY - y;
+
+        double fieldVx = vx * Math.cos(heading) - vy * Math.sin(heading);
+        double fieldVy = vx * Math.sin(heading) + vy * Math.cos(heading);
+
+        double dot = dx * fieldVx + dy * fieldVy;
+
+        int direction = dot >= 0 ? 1 : -1;
+
+        speed += v * 0.05 * direction;
+
+        if (groundDistance == -1) {
+            return currentVelocity;
+        } else {
+            return speed;
+        }
+    }
+
+    public double FlywheelSpeedRegressor(Limelight3A limelight, double currentVelocity,
+    org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
+        pinpoint.update();
+        double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
+        //double speed = -1 * (0.42 + 0.1505  * groundDistance);
+        //distance speed function(regressor)
+        double speed = 0.5;
+        if(groundDistance < 2.5){
+            //close zone(first 2.5 m with hood down)
+             speed = 174.5691*Math.pow(groundDistance,4)-1277.3888*Math.pow(groundDistance,3)
+                    + 3230.1580* Math.pow(groundDistance,2)-3618.1964*groundDistance+290.022;
+        }else{
+            //far zone (every distance > 2.5 m with hood at 0.25)
+            speed = 93.023*Math.pow(groundDistance,3)
+            -1104.4957*Math.pow(groundDistance,2)+3869.6698*groundDistance-5858.7137;
+        }
 
         double vx = pinpoint.getVelX(DistanceUnit.METER);
         double vy = pinpoint.getVelY(DistanceUnit.METER);
@@ -542,7 +593,7 @@ public class visionTools {
         }
     }*/
 
-    public double closeZonehood(Limelight3A limelight, double currentHood, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
+    public double hoodHeight(Limelight3A limelight, double currentHood, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
         double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
         double hood = 0.1 * groundDistance;
         if (groundDistance == -1) {
@@ -554,6 +605,17 @@ public class visionTools {
                 return hood;
             }
         }
+    }
+
+    public double hoodHeightRegressor(Limelight3A limelight, double currentHood, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
+        double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
+        if (groundDistance == -1) {
+            return currentHood;
+        }
+
+        if (groundDistance>2.5){
+            return 0.25;
+        }else return 0;
     }
 
     public boolean recycleToColor(String targetColor,
@@ -669,6 +731,26 @@ public class visionTools {
         }
 
     }
+
+    public double mt2pinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, Limelight3A limelight){
+        limelight.pipelineSwitch(9);
+        limelight.start();
+        Pose2D pose2d = pinpoint.getPosition();
+        double robotYaw = pose2d.getHeading(AngleUnit.DEGREES);
+        limelight.updateRobotOrientation(robotYaw+180);
+        LLResult result = limelight.getLatestResult();
+        double mx,my,myaw = 0;
+        if(result != null && result.isValid() && result.getBotpose() != null){
+            Pose3D botpose_mt2 = result.getBotpose_MT2();
+            mx = botpose_mt2.getPosition().x;
+            my = botpose_mt2.getPosition().y;
+            myaw = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);
+            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mx*-1,my*-1,AngleUnit.DEGREES,myaw-180 + 2/*2 deg right*/));
+
+        }
+        return 0;
+    }
+
     public double updatePinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, Limelight3A limelight, double turretAngle){
         double[] mt2 = getMT2(limelight, pinpoint);
         double x = mt2[0];
@@ -741,11 +823,11 @@ public class visionTools {
         double goalX = 0;
         double goalY = 0;
         if(alliance.equals("Red")){
-            goalX = 1.6288;
-            goalY = -1.6288;
+            goalX = 1.8288;
+            goalY = -1.8288;
         } else if(alliance.equals("Blue")){
-            goalX = 1.6288;
-            goalY = 1.6288;
+            goalX = 1.8288;
+            goalY = 1.8288;
         }
 
         if(curX > 1.2){

@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -12,7 +13,6 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
@@ -32,6 +32,7 @@ public class DistanceTestVelocityPID extends LinearOpMode {
     CRServoImplEx rightKickerServo;
     private DcMotorEx leftShooterMotor;
     private DcMotorEx rightShooterMotor;
+    Limelight3A limelight;
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;
     DcMotorEx leftBackMotor;
@@ -44,12 +45,12 @@ public class DistanceTestVelocityPID extends LinearOpMode {
     visionTools vision = new visionTools();
     // Dashboard tunables
     public static double TargetVelocity = 900;   // ticks/sec
-    public static double Kp = 8;
-    public static double Ki = 0.1;
-    public static double Kd = 0.1;
+    public static double Kp = 1.8;
+    public static double Ki = 0.01;
+    public static double Kd = 0.7;
     public static double height = 0.1;
-    public static double kS = 0.059;
-    public static double kV = 0.00035;
+    public static double kS = 0;
+    public static double kV = 0.000365;
     public static String alliance = "Blue";
     public static double distance = 0;
     private static final double STDEV_WINDOW_SECONDS = 5.0;
@@ -60,7 +61,7 @@ public class DistanceTestVelocityPID extends LinearOpMode {
     public void runOpMode() {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
-
+        limelight = hardwareMap.get(Limelight3A.class, "Limelight");
         leftTurretServo = hardwareMap.get(ServoImplEx.class, "leftTurretServo");
         rightTurretServo = hardwareMap.get(ServoImplEx.class, "rightTurretServo");
         leftKickerServo = hardwareMap.get(CRServoImplEx.class, "leftKickerServo");
@@ -108,6 +109,7 @@ public class DistanceTestVelocityPID extends LinearOpMode {
         leftTurretServo.setPosition(0.5);
         rightTurretServo.setPosition(0.5);
         rightHood.setDirection(ServoImplEx.Direction.REVERSE);
+        vision.mt2pinpoint(pinpoint,limelight);
         while (opModeIsActive()) {
             leftHood.setPosition(height);
             rightHood.setPosition(height);
@@ -148,6 +150,9 @@ public class DistanceTestVelocityPID extends LinearOpMode {
                 }else if(alliance.equals("Red")){
                     alliance = "Blue";
                 }
+            }
+            if(gamepad1.y){
+                vision.mt2pinpoint(pinpoint,limelight);
             }
             double currentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity())/2;
 

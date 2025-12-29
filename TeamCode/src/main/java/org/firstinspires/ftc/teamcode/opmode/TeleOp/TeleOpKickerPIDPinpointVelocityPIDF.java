@@ -490,7 +490,7 @@ public class TeleOpKickerPIDPinpointVelocityPIDF extends OpMode {
 
             double flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity())/2;
 
-            double variableFlywheelSpeed = vision.closeZoneFlywheelSpeed(limelight, flywheelCurrentVelocity, pinpoint, allianceColor);
+            double variableFlywheelSpeed = vision.FlywheelSpeed(limelight, flywheelCurrentVelocity, pinpoint, allianceColor);
             double targetVelocity = (variableFlywheelSpeed * 5800) * (28.0 / 60.0);
 
             velocityPID.setTargetVelocity(targetVelocity);
@@ -504,8 +504,8 @@ public class TeleOpKickerPIDPinpointVelocityPIDF extends OpMode {
 
             currentSpeed = variableFlywheelSpeed;
 
-            leftHood.setPosition(vision.closeZonehood(limelight, leftHood.getPosition(), pinpoint, allianceColor));
-            rightHood.setPosition(vision.closeZonehood(limelight, leftHood.getPosition(), pinpoint, allianceColor));
+            leftHood.setPosition(vision.hoodHeight(limelight, leftHood.getPosition(), pinpoint, allianceColor));
+            rightHood.setPosition(vision.hoodHeight(limelight, leftHood.getPosition(), pinpoint, allianceColor));
 
             telemetry.addData("flywheel", flywheelCurrentVelocity);
             telemetry.addData("targetVelocity", targetVelocity);

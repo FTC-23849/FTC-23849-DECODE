@@ -23,7 +23,6 @@ import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DroidLib.CRAxonPDController;
@@ -65,11 +64,12 @@ public class TeleOpKickerPIDPinpointVelocityPIDFShootingWhileMoving extends OpMo
     private PIDVelocityController2 velocityPID;
     public static double currentVelocity;
     public static double TargetVelocity = 900;
-    public static double VKp = 8;
-    public static double VKi = 0.1;
-    public static double VKd = 0.1;
-    public static double VkS = 0.059;
-    public static double VkV = 0.00035;
+    //TODO: TUNE VPID
+    public static double VKp = 1.8;
+    public static double VKi = 0;
+    public static double VKd = 0.7;
+    public static double VkS = 0;
+    public static double VkV = 0.000365;
     public static double sec = 0.8;
     double closezone = 1;
     String allianceColor = "Red";
@@ -475,7 +475,7 @@ public class TeleOpKickerPIDPinpointVelocityPIDFShootingWhileMoving extends OpMo
         }
         if (gamepad1.x){
             turretCorrection = 0;
-            vision.mt1pinpoint(pinpoint,limelight);
+            vision.mt2pinpoint(pinpoint,limelight);
             /*if(allianceColor.equals("Blue")){
                 pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,-65, AngleUnit.DEGREES,0));
             }else if(allianceColor.equals("Red")){
@@ -493,8 +493,8 @@ public class TeleOpKickerPIDPinpointVelocityPIDFShootingWhileMoving extends OpMo
 
             double flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity())/2;
 
-            double variableFlywheelSpeed = vision.closeZoneFlywheelSpeed(limelight, flywheelCurrentVelocity, pinpoint, allianceColor);
-            double targetVelocity = (variableFlywheelSpeed * 5800) * (28.0 / 60.0);
+            double targetVelocity = vision.FlywheelSpeedRegressor(limelight, flywheelCurrentVelocity, pinpoint, allianceColor);
+
 
             velocityPID.setTargetVelocity(targetVelocity);
             velocityPID.setPID(VKp, VKi, VKd);
@@ -505,10 +505,10 @@ public class TeleOpKickerPIDPinpointVelocityPIDFShootingWhileMoving extends OpMo
             leftShooterMotor.setPower(power);
             rightShooterMotor.setPower(power);
 
-            currentSpeed = variableFlywheelSpeed;
+            currentSpeed = targetVelocity;
 
-            leftHood.setPosition(vision.closeZonehood(limelight, leftHood.getPosition(), pinpoint, allianceColor));
-            rightHood.setPosition(vision.closeZonehood(limelight, leftHood.getPosition(), pinpoint, allianceColor));
+            leftHood.setPosition(vision.hoodHeightRegressor(limelight, leftHood.getPosition(), pinpoint, allianceColor));
+            rightHood.setPosition(vision.hoodHeightRegressor(limelight, leftHood.getPosition(), pinpoint, allianceColor));
 
             telemetry.addData("flywheel", flywheelCurrentVelocity);
             telemetry.addData("targetVelocity", targetVelocity);
