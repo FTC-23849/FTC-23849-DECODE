@@ -42,6 +42,9 @@ public class Globals {
     public static double KICKER_IDLE = 0.07;
     public static double KICKER_RECYCLE = 0.31;
 
+    //new kicker
+    public static double kickerStartDelay = 200;
+
 
     // Shooter
     public static double defaultCloseZonePower = -0.67;

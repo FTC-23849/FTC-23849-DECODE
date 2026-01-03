@@ -119,6 +119,8 @@ public class TeleOpNewKickerPinpointVelocityPIDFShootingWhileMoving extends OpMo
     double kickerUpDelayMs = recyclingKickerUpDelay;
 
     ElapsedTime recyclerTimer = new ElapsedTime();
+
+    ElapsedTime kickerStartDelayTimer = new ElapsedTime();
     boolean started = false;
     boolean intakeStarted = false;
     boolean recyclerIsRunning = false;
@@ -291,6 +293,13 @@ public class TeleOpNewKickerPinpointVelocityPIDFShootingWhileMoving extends OpMo
 
 
         // Normal intake/shoot/recycle logic
+        if(gamepad1.left_trigger < 0.1){
+            kickerStartDelayTimer.reset();
+        }
+        else{
+            // do nothing
+        }
+
         if (gamepad1.right_trigger > 0.1) {
             frontIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             frontIntakeMotor.setPower(-Globals.frontIntakeIntakeSpeed);
@@ -308,11 +317,15 @@ public class TeleOpNewKickerPinpointVelocityPIDFShootingWhileMoving extends OpMo
             rightTongueServo.setPosition(Globals.tongueShoot);
 
             if(rightBumperTrue) {
-                leftKickerServo.setPower(Globals.rollerKickerShoot);
-                rightKickerServo.setPower(Globals.rollerKickerShoot);
+                if(kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
+                    leftKickerServo.setPower(Globals.rollerKickerShoot);
+                    rightKickerServo.setPower(Globals.rollerKickerShoot);
+                }
             } else {
-                leftKickerServo.setPower(Globals.rollerKickerShoot);
-                rightKickerServo.setPower(Globals.rollerKickerShoot);
+                if(kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
+                    leftKickerServo.setPower(Globals.rollerKickerShoot);
+                    rightKickerServo.setPower(Globals.rollerKickerShoot);
+                }
             }
 
             backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
