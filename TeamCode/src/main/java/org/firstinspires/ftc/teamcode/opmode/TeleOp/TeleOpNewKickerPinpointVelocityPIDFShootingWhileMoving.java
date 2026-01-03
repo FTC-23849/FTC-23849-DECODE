@@ -320,17 +320,26 @@ public class TeleOpNewKickerPinpointVelocityPIDFShootingWhileMoving extends OpMo
                 if(kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
                     leftKickerServo.setPower(Globals.rollerKickerShoot);
                     rightKickerServo.setPower(Globals.rollerKickerShoot);
+                    frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
+                }
+                else{
+                    frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    frontIntakeMotor.setPower(0.7);
                 }
             } else {
                 if(kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
                     leftKickerServo.setPower(Globals.rollerKickerShoot);
                     rightKickerServo.setPower(Globals.rollerKickerShoot);
+                    frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
+                }
+                else{
+                    frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    frontIntakeMotor.setPower(0.5);
                 }
             }
-
             backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
-            frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
             shooting = true;
 
         } else if (gamepad1.dpad_up && !recyclerIsRunning) {
