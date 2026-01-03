@@ -20,6 +20,12 @@ public class Globals {
     public static double backRollersReverse = -1;
 
     // Kicker
+    public static double rollerKickerShoot = -1.0;
+    public static double rollerKickerRecycle = 1.0;
+    public static double tongueIntake = 0.03;
+    public static double tongueShoot = 0.0;
+    public static double toungeRecycle = 0.2;
+
     public static double kickerShoot = -0.6;
     public static double kickerRecycle = 0.4;
 
