@@ -16,35 +16,82 @@ public class MeepMeepTesting {
                 .setDimensions(14, 17)
                 .build();
 
-        myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(63, -14.5, Math.toRadians(270)) /*new Pose2d(-54.5, -45, Math.toRadians(225))*/)
-                    .strafeToLinearHeading(new Vector2d(36, -28), Math.toRadians(270))
-                    .strafeToLinearHeading(new Vector2d(36, -60), Math.toRadians(270))
-                    .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
+        myBot.runAction(myBot.getDrive().actionBuilder(/*new Pose2d(63, -14.5, Math.toRadians(270))*/ new Pose2d(-54.5, -45, Math.toRadians(225)) /*new Pose2d(0, 0, Math.toRadians(0))*/)
 
-//                                .strafeToLinearHeading()
-//                                .strafeToLinearHeading()
-                    .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+//                .setTangent(-Math.PI/2)
+//                .splineToConstantHeading(new Vector2d(-48, -48), (-Math.PI))
 
-                    .strafeToLinearHeading(new Vector2d(62, -50), Math.toRadians(270))
-                    .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
 
-                    .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
+                .strafeToSplineHeading(new Vector2d(-12, -15), Math.toRadians(270))
+                .strafeToConstantHeading(new Vector2d(-12, -53))
+                .strafeToConstantHeading(new Vector2d(-12, -15))
 
-                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+                .setTangent(0)
+                .splineToConstantHeading(new Vector2d(13, -63), (-Math.PI/2))
+                .setTangent(Math.PI/2)
+                .splineToConstantHeading(new Vector2d(-12, -15), (Math.PI))
 
-                .strafeToLinearHeading(new Vector2d(62, -50), Math.toRadians(270))
-                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+                .setTangent(0)
+                .splineToLinearHeading(new Pose2d(8, -56, Math.toRadians(225)), (-Math.PI/2))
+                .strafeToConstantHeading(new Vector2d(15, -60))
+                .setTangent(Math.PI/2)
+                .splineTo(new Vector2d(-12, -15), (Math.PI))
 
-                .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
+                .setTangent(0)
+                .splineToSplineHeading(new Pose2d(35.5, -35, Math.toRadians(270)), (-Math.PI/2))
+                .strafeToConstantHeading(new Vector2d(35.5, -63))
+                .strafeToSplineHeading(new Vector2d(-12, -15), Math.toRadians(315))
 
-                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+                .setTangent(-Math.PI/2)
+                .splineToSplineHeading(new Pose2d(60, -63, Math.toRadians(0)), (0))
+                .strafeToSplineHeading(new Vector2d(-12, -15), Math.toRadians(315))
 
-                .strafeToLinearHeading(new Vector2d(62, -50), Math.toRadians(270))
-                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(13, -25), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(13, -63), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(13, -52), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270))
+//
+//                .strafeToLinearHeading(new Vector2d(35, -25), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(35, -63), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270))
+//
+//                .strafeToLinearHeading(new Vector2d(-22, -58), Math.toRadians(270))
 
-                .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
 
-                    .strafeToLinearHeading(new Vector2d(57, -30), Math.toRadians(270))
+
+
+
+//                    .strafeToLinearHeading(new Vector2d(36, -28), Math.toRadians(270))
+//                    .strafeToLinearHeading(new Vector2d(36, -60), Math.toRadians(270))
+//                    .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
+//
+////                                .strafeToLinearHeading()
+////                                .strafeToLinearHeading()
+//                    .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+//
+//                    .strafeToLinearHeading(new Vector2d(62, -50), Math.toRadians(270))
+//                    .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+//
+//                    .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
+//
+//                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+//
+//                .strafeToLinearHeading(new Vector2d(62, -50), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+//
+//                .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
+//
+//                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+//
+//                .strafeToLinearHeading(new Vector2d(62, -50), Math.toRadians(270))
+//                .strafeToLinearHeading(new Vector2d(62, -59), Math.toRadians(270))
+//
+//                .strafeToLinearHeading(new Vector2d(62, -15), Math.toRadians(270))
+//
+//                    .strafeToLinearHeading(new Vector2d(57, -30), Math.toRadians(270))
+
+
+
 
 //                .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270))
 //                .strafeToLinearHeading(new Vector2d(-12, -25), Math.toRadians(270))
