@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
@@ -41,16 +42,19 @@ public class DistanceTestVelocityPID extends LinearOpMode {
     DcMotorEx backIntakeMotor;
     ServoImplEx leftTurretServo;
     ServoImplEx rightTurretServo;
+    ServoImplEx leftTongueServo;
+    ServoImplEx rightTongueServo;
+    ElapsedTime timer = new ElapsedTime();
     private PIDVelocityController2 velocityPID;
     visionTools vision = new visionTools();
     // Dashboard tunables
     public static double TargetVelocity = 900;   // ticks/sec
-    public static double Kp = 1.8;
-    public static double Ki = 0.01;
-    public static double Kd = 0.7;
+    public static double Kp = 8.5;
+    public static double Ki = 0;
+    public static double Kd = 0.07;
     public static double height = 0.1;
     public static double kS = 0;
-    public static double kV = 0.000365;
+    public static double kV = 0.0004;
     public static String alliance = "Blue";
     public static double distance = 0;
     private static final double STDEV_WINDOW_SECONDS = 5.0;
@@ -83,7 +87,10 @@ public class DistanceTestVelocityPID extends LinearOpMode {
         rightFrontMotor = hardwareMap.get(DcMotorEx.class, "RF");
         leftBackMotor = hardwareMap.get(DcMotorEx.class, "LB");
         rightBackMotor = hardwareMap.get(DcMotorEx.class, "RB");
-
+        leftTongueServo = hardwareMap.get(ServoImplEx.class, "leftGateServo");
+        rightTongueServo = hardwareMap.get(ServoImplEx.class, "rightGateServo");
+        leftTongueServo.setDirection(ServoImplEx.Direction.REVERSE);
+        ElapsedTime kickerStartDelayTimer = new ElapsedTime();
         leftFrontMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         leftBackMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -103,6 +110,7 @@ public class DistanceTestVelocityPID extends LinearOpMode {
         );
         pinpoint.setEncoderResolution(19.970472542,DistanceUnit.MM);
         pinpoint.resetPosAndIMU();
+        kickerStartDelayTimer.reset();
         waitForStart();
         leftTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
         rightTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
@@ -111,6 +119,7 @@ public class DistanceTestVelocityPID extends LinearOpMode {
         rightHood.setDirection(ServoImplEx.Direction.REVERSE);
         vision.mt2pinpoint(pinpoint,limelight);
         while (opModeIsActive()) {
+            timer.reset();
             leftHood.setPosition(height);
             rightHood.setPosition(height);
             leftTurretServo.setPosition(0.5);
@@ -130,6 +139,8 @@ public class DistanceTestVelocityPID extends LinearOpMode {
             distance = vision.groundDistancePinpoint(pinpoint,alliance);
             vision.groundDistancePinpoint(pinpoint,alliance);
             if(gamepad1.a){
+                leftTongueServo.setPosition(Globals.tongueIntake);
+                rightTongueServo.setPosition(Globals.tongueIntake);
                 frontIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 frontIntakeMotor.setPower(-Globals.frontIntakeIntakeSpeed);
                 backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
@@ -137,9 +148,28 @@ public class DistanceTestVelocityPID extends LinearOpMode {
                 frontIntakeMotor.setPower(0);
                 backIntakeMotor.setPower(0);
             }
+            if(!gamepad1.x){
+                kickerStartDelayTimer.reset();
+            }
+            else{
+                // do nothing
+            }
             if(gamepad1.x){
-                leftKickerServo.setPower(-0.6);
-                rightKickerServo.setPower(-0.6);
+                leftTongueServo.setPosition(Globals.tongueShoot);
+                rightTongueServo.setPosition(Globals.tongueShoot);
+
+                    if(kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
+                        leftKickerServo.setPower(Globals.rollerKickerShoot);
+                        rightKickerServo.setPower(Globals.rollerKickerShoot);
+                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                        frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
+                    }
+                    else{
+                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                        frontIntakeMotor.setPower(0.7);
+                    }
+
+                backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
             }else{
                 leftKickerServo.setPower(0);
                 rightKickerServo.setPower(0);
@@ -152,7 +182,7 @@ public class DistanceTestVelocityPID extends LinearOpMode {
                 }
             }
             if(gamepad1.y){
-                vision.mt2pinpoint(pinpoint,limelight);
+                vision.mt1pinpoint(pinpoint,limelight);
             }
             double currentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity())/2;
 
@@ -195,6 +225,7 @@ public class DistanceTestVelocityPID extends LinearOpMode {
             telemetry.addData("Motor Power", power);
             telemetry.addData("Distance",distance);
             telemetry.addData("hood height", height);
+            telemetry.addData("looptime", timer.milliseconds());
             telemetry.update();
         }
     }

@@ -61,15 +61,15 @@ public class PinpointMT2DriveTest extends LinearOpMode {
                 GoBildaPinpointDriver.EncoderDirection.REVERSED
         );
         pinpoint.setEncoderResolution(19.970472542,DistanceUnit.MM);
-        pinpoint.resetPosAndIMU();
+        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,-65, AngleUnit.DEGREES,0));
         limelight.pipelineSwitch(9);
         limelight.start();
         waitForStart();
 
         while (opModeIsActive()) {
             double position = encoder.getVoltage() / 3.2 * 360;
-            //leftTurretServo.setPosition(0.5);
-            //rightTurretServo.setPosition(0.5);
+            leftTurretServo.setPosition(0.5);
+            rightTurretServo.setPosition(0.5);
             double y = -gamepad1.left_stick_y;
             double x = -gamepad1.left_stick_x;
             double rx = -gamepad1.right_stick_x;
@@ -90,7 +90,7 @@ public class PinpointMT2DriveTest extends LinearOpMode {
             double my = 0;
             double myaw = 0;
             double[] MT2 = new double[]{-7,-7,-7};
-            limelight.updateRobotOrientation(robotYaw+170);
+            limelight.updateRobotOrientation(robotYaw+178);
             LLResult result = limelight.getLatestResult();
             if (result != null) {
                 telemetry.addData("result null?", false);
@@ -101,7 +101,7 @@ public class PinpointMT2DriveTest extends LinearOpMode {
                 telemetry.addData("result null?", true);
             }
 
-            if (result != null && result.isValid() && result.getBotpose_MT2() != null) {
+            if (result != null  && result.getBotpose_MT2() != null) {
                 Pose3D botpose_mt2 = result.getBotpose_MT2();
                 mx = botpose_mt2.getPosition().x;
                 my = botpose_mt2.getPosition().y;
@@ -114,7 +114,7 @@ public class PinpointMT2DriveTest extends LinearOpMode {
             double mt1x = -2000;
             double mt1y = -2000;
             double mt1heading = -2000;
-            if (result != null && result.isValid() && result.getBotpose() != null) {
+            if (result != null && result.getBotpose() != null) {
                 mt1x = result.getBotpose().getPosition().x;
                 mt1y = result.getBotpose().getPosition().y;
                 mt1heading = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);

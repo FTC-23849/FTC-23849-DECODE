@@ -541,12 +541,22 @@ public class visionTools {
         double speed = 0.5;
         if(groundDistance < 2.5){
             //close zone(first 2.5 m with hood down)
-             speed = 174.5691*Math.pow(groundDistance,4)-1277.3888*Math.pow(groundDistance,3)
-                    + 3230.1580* Math.pow(groundDistance,2)-3618.1964*groundDistance+290.022;
+            //−17.1364x4+155.8192x3−471.9196x2+276.0946x−1321.3433
+             speed = -210.6462 * Math.pow(groundDistance, 4)
+                     + 1303.6487 * Math.pow(groundDistance, 3)
+                     - 2922.8138 * Math.pow(groundDistance, 2)
+                     + 2496.6165 * groundDistance
+                     - 1959.7428;
+
         }else{
             //far zone (every distance > 2.5 m with hood at 0.25)
-            speed = 93.023*Math.pow(groundDistance,3)
-            -1104.4957*Math.pow(groundDistance,2)+3869.6698*groundDistance-5858.7137;
+            //−102.8806x^4+1241.4264x^3−5505.1432x^2+10360.9329x−8624.4939
+            speed = -102.8806 * Math.pow(groundDistance, 4)
+                    + 1241.4264 * Math.pow(groundDistance, 3)
+                    - 5505.1432 * Math.pow(groundDistance, 2)
+                    + 10360.9329 * groundDistance
+                    - 8564.4939;
+
         }
 
         double vx = pinpoint.getVelX(DistanceUnit.METER);
@@ -614,7 +624,9 @@ public class visionTools {
         }
 
         if (groundDistance>2.5){
-            return 0.25;
+            if(groundDistance> 3.4) {
+            return 0.4;
+            }else return 0.25;
         }else return 0;
     }
 
@@ -737,7 +749,7 @@ public class visionTools {
         limelight.start();
         Pose2D pose2d = pinpoint.getPosition();
         double robotYaw = pose2d.getHeading(AngleUnit.DEGREES);
-        limelight.updateRobotOrientation(robotYaw+180);
+        limelight.updateRobotOrientation(robotYaw+178);
         LLResult result = limelight.getLatestResult();
         double mx,my,myaw = 0;
         if(result != null && result.isValid() && result.getBotpose() != null){
@@ -745,7 +757,8 @@ public class visionTools {
             mx = botpose_mt2.getPosition().x;
             my = botpose_mt2.getPosition().y;
             myaw = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);
-            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mx*-1,my*-1,AngleUnit.DEGREES,myaw-180 + 2/*2 deg right*/));
+            //mx: 1.6364918134117126 my: -0.265005594950676
+            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mx-1,my*-1,AngleUnit.DEGREES,myaw-178/*2 deg right*/));
 
         }
         return 0;

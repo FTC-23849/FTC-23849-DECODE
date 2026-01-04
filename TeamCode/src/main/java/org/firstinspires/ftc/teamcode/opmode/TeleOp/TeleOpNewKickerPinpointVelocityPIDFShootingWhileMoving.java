@@ -65,11 +65,11 @@ public class TeleOpNewKickerPinpointVelocityPIDFShootingWhileMoving extends OpMo
     public static double currentVelocity;
     public static double TargetVelocity = 900;
     //TODO: TUNE VPID
-    public static double VKp = 1.8;
-    public static double VKi = 0;
+    public static double VKp = 15;
+    public static double VKi = 0.5;
     public static double VKd = 0.7;
     public static double VkS = 0;
-    public static double VkV = 0.000365;
+    public static double VkV = 0.0004;
     public static double sec = 0.8;
     double closezone = 1;
     String allianceColor = "Red";
@@ -434,7 +434,7 @@ public class TeleOpNewKickerPinpointVelocityPIDFShootingWhileMoving extends OpMo
         }
         if (gamepad1.x){
             turretCorrection = 0;
-            vision.mt2pinpoint(pinpoint,limelight);
+            vision.mt1pinpoint(pinpoint,limelight);
             /*if(allianceColor.equals("Blue")){
                 pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,-65, AngleUnit.DEGREES,0));
             }else if(allianceColor.equals("Red")){
@@ -470,6 +470,7 @@ public class TeleOpNewKickerPinpointVelocityPIDFShootingWhileMoving extends OpMo
 
             telemetry.addData("flywheel", flywheelCurrentVelocity);
             telemetry.addData("targetVelocity", targetVelocity);
+            telemetry.addData("Error", flywheelCurrentVelocity-targetVelocity);
             telemetry.addData("PIDF Power", power);
         }
 

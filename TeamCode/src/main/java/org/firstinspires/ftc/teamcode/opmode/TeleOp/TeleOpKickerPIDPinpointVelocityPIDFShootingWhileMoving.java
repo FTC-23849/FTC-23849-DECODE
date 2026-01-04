@@ -65,11 +65,11 @@ public class TeleOpKickerPIDPinpointVelocityPIDFShootingWhileMoving extends OpMo
     public static double currentVelocity;
     public static double TargetVelocity = 900;
     //TODO: TUNE VPID
-    public static double VKp = 1.8;
+    public static double VKp = 8.5;
     public static double VKi = 0;
-    public static double VKd = 0.7;
+    public static double VKd = 0.07;
     public static double VkS = 0;
-    public static double VkV = 0.000365;
+    public static double VkV = 0.0004;
     public static double sec = 0.8;
     double closezone = 1;
     String allianceColor = "Red";
@@ -475,7 +475,7 @@ public class TeleOpKickerPIDPinpointVelocityPIDFShootingWhileMoving extends OpMo
         }
         if (gamepad1.x){
             turretCorrection = 0;
-            vision.mt2pinpoint(pinpoint,limelight);
+            vision.mt1pinpoint(pinpoint,limelight);
             /*if(allianceColor.equals("Blue")){
                 pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,-65, AngleUnit.DEGREES,0));
             }else if(allianceColor.equals("Red")){
@@ -770,3 +770,43 @@ public class TeleOpKickerPIDPinpointVelocityPIDFShootingWhileMoving extends OpMo
     }
 
 }
+
+/*
+for tuning:
+
+VPID: use VelocityPID + Distance Test file , & set everything to 0, then
+
+set tvelocity to -1500 & slowly increase KV until it gets to 95% of target velocity
+
+If you want to make sure it works with intake, then run the intake and the kickers at the same time, and tune up KV until it goes back to around 0. i did this step last, but idt it matters.
+
+set tvelocity to -900 & slowly increase KS until it gets to 95% of target(you can ignore if u want)
+
+set tvelocity to 0, then set it to -1500. keep increasing KP until the recovery is fast. dont increase it any more than that, or it gets inconsistent.
+
+set tvelocity to -1500, increase KD until there isnt much oscillation. if there isnt an effect, just remove it.
+
+replace battery, make sure it still works, and then let it run at -1500 for a long time, until voltage drops to like 12-12.5 v, and then tune up KI until it goes back to oscillating around 0. Make sure this i term value works with a fully charged battery as well. if you cant find a value that works for fully charged and 12-12.5 v, just remove it.
+
+Try shooting a few balls, and see if it recovers fast enough. if not, P probably needs to be higher
+
+Distance Test:
+After the VPID
+
+set the hood height to 0
+
+run distance test+VPID file
+
+y to relocalize, if it doesn't work js start program at middle
+
+start at 0.9 m, and record values at intervals of 0.3 m (you can do shorter intervals if u have time)
+
+go up to 2.5 meters
+
+plug data into https://stats.blue/Stats_Suite/polynomial_regression_calculator.html
+
+set hood height to 0.25
+
+repeat process for 2.5 - 4 m
+
+ */
