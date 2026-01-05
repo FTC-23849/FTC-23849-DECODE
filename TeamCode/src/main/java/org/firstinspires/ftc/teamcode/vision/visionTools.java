@@ -498,7 +498,7 @@ public class visionTools {
         if(groundDistance > 3.4){
             speed-= 1 * (0.1 * (groundDistance - 3.4));
         }
-        pinpoint.update();
+        //pinpoint.update();
 
         double vx = pinpoint.getVelX(DistanceUnit.METER);
         double vy = pinpoint.getVelY(DistanceUnit.METER);
@@ -534,7 +534,7 @@ public class visionTools {
 
     public double FlywheelSpeedRegressor(Limelight3A limelight, double currentVelocity,
     org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
-        pinpoint.update();
+        //pinpoint.update();
         double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
         //double speed = -1 * (0.42 + 0.1505  * groundDistance);
         //distance speed function(regressor)
@@ -681,7 +681,7 @@ public class visionTools {
     public double[] getMT2(Limelight3A limelight, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint){
         limelight.pipelineSwitch(9);
         limelight.start();
-        pinpoint.update();
+        //pinpoint.update();
         Pose2D pose2d = pinpoint.getPosition();
         double robotYaw = pose2d.getHeading(AngleUnit.DEGREES);
         double x = 0;
@@ -789,7 +789,7 @@ public class visionTools {
 
     public double pinpointTurret(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos, String alliance){
 
-        pinpoint.update();
+        //pinpoint.update();
         Pose2D pose2d = pinpoint.getPosition();
 
         double curX = pose2d.getX(DistanceUnit.METER);
@@ -826,7 +826,7 @@ public class visionTools {
         return Range.clip(turretPos, 0.35, 0.85);
     }
     public double pinpointTurretMoving(double sec,org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos, String alliance){
-        pinpoint.update();
+        //pinpoint.update();
         Pose2D pose2d = pinpoint.getPosition();
 
         double curX = pose2d.getX(DistanceUnit.METER)+ sec*pinpoint.getVelX(DistanceUnit.METER);
@@ -860,7 +860,7 @@ public class visionTools {
         double turretOffset = turretAngle - curYaw;
         double turretPos = 0.5 + (turretOffset * 2.53846153846 / 1800.0);
 
-        return Range.clip(turretPos, 0.35, 0.85);
+        return Range.clip(turretPos, 0.25, 0.625);
     }
 
 

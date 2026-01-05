@@ -8,6 +8,7 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -26,8 +27,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.teamcode.DroidLib.CRAxonPDController;
-import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
@@ -37,7 +36,8 @@ import java.util.List;
 
 @TeleOp
 @Config
-public class TeleOpRecyclingNewKickerPinpointVelocityPIDFShootingWhileMoving extends OpMode {
+public class TeleOpRecyclingNewKickerPinpointVelocityPIDFShootingWhileMovingBulkRead extends OpMode {
+    List<LynxModule> hubs;
     Limelight3A limelight;
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;
@@ -164,6 +164,11 @@ public class TeleOpRecyclingNewKickerPinpointVelocityPIDFShootingWhileMoving ext
 
     @Override
     public void init() {
+        hubs = hardwareMap.getAll(LynxModule.class);
+
+        for (LynxModule hub : hubs) {
+            hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
+        }
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
         limelight.pipelineSwitch(9);
 
@@ -273,13 +278,15 @@ public class TeleOpRecyclingNewKickerPinpointVelocityPIDFShootingWhileMoving ext
 
     @Override
     public void loop() {
+        for (LynxModule hub : hubs) {
+            hub.clearBulkCache();
+        }
         pinpoint.update();
         timer.reset();
 
         telemetry.addData("last loop time", runTime.milliseconds() - lastLoopTime);
         telemetry.addData("average loop time", runTime.milliseconds() / loops);
         telemetry.addData("loops", loops);
-        telemetry.addData("turret",leftTurretServo.getPosition());
         loops = loops + 1;
         lastLoopTime = runTime.milliseconds();
         telemetry.addData("tipped", tipped);
@@ -320,13 +327,13 @@ public class TeleOpRecyclingNewKickerPinpointVelocityPIDFShootingWhileMoving ext
         // -----------------------------------------------------------------
 
         // -------------------- TAG TELEMETRY (allowed) --------------------
-        LLResult result = limelight.getLatestResult();
-        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
-        int tagID = 0;
-        for (LLResultTypes.FiducialResult fiducial : fiducials) {
-            tagID = fiducial.getFiducialId();
-        }
-        telemetry.addData("Tag ID", tagID);
+//        LLResult result = limelight.getLatestResult();
+//        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+//        int tagID = 0;
+//        for (LLResultTypes.FiducialResult fiducial : fiducials) {
+//            tagID = fiducial.getFiducialId();
+//        }
+//        telemetry.addData("Tag ID", tagID);
 
         // -------------------- INTAKE / KICKERS / TONGUE -------------------
         // Disabled ONLY when recycle owns these actuators
@@ -457,9 +464,9 @@ public class TeleOpRecyclingNewKickerPinpointVelocityPIDFShootingWhileMoving ext
         }
         if (gamepad2.a){
             if(allianceColor.equals("Blue")){
-                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,65, AngleUnit.DEGREES,0));
-            }else if(allianceColor.equals("Red")){
                 pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,-65, AngleUnit.DEGREES,0));
+            }else if(allianceColor.equals("Red")){
+                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,65, AngleUnit.DEGREES,0));
             }
         }
 
