@@ -66,11 +66,11 @@ public class TeleOpRecyclingNewKickerPinpointVelocityPIDFShootingWhileMovingBulk
     public static double currentVelocity;
     public static double TargetVelocity = 900;
     //TODO: TUNE VPID
-    public static double VKp = 15;
-    public static double VKi = 0.5;
-    public static double VKd = 0.7;
+    public static double VKp = 2;
+    public static double VKi = 1.5;
+    public static double VKd = 0;
     public static double VkS = 0;
-    public static double VkV = 0.0004;
+    public static double VkV = 0.00045;
     public static double sec = 0.8;
     double closezone = 1;
     String allianceColor = "Red";

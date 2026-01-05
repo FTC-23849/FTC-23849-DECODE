@@ -49,12 +49,12 @@ public class DistanceTestVelocityPID extends LinearOpMode {
     visionTools vision = new visionTools();
     // Dashboard tunables
     public static double TargetVelocity = 900;   // ticks/sec
-    public static double Kp = 8.5;
-    public static double Ki = 0;
-    public static double Kd = 0.07;
+    public static double Kp = 2;
+    public static double Ki = 1.5;
+    public static double Kd = 0;
     public static double height = 0.1;
     public static double kS = 0;
-    public static double kV = 0.0004;
+    public static double kV = 0.00045;
     public static String alliance = "Blue";
     public static double distance = 0;
     private static final double STDEV_WINDOW_SECONDS = 5.0;

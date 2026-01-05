@@ -546,7 +546,7 @@ public class visionTools {
                      + 1303.6487 * Math.pow(groundDistance, 3)
                      - 2922.8138 * Math.pow(groundDistance, 2)
                      + 2496.6165 * groundDistance
-                     - 1959.7428;
+                     - 2019.7428;
 
         }else{
             //far zone (every distance > 2.5 m with hood at 0.25)
@@ -555,7 +555,7 @@ public class visionTools {
                     + 1241.4264 * Math.pow(groundDistance, 3)
                     - 5505.1432 * Math.pow(groundDistance, 2)
                     + 10360.9329 * groundDistance
-                    - 8564.4939;
+                    - 8624.4939;
 
         }
 
