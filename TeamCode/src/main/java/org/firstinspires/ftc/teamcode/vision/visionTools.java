@@ -542,19 +542,27 @@ public class visionTools {
         if(groundDistance < 2.5){
             //close zone(first 2.5 m with hood down)
             //−17.1364x4+155.8192x3−471.9196x2+276.0946x−1321.3433
-             speed = -210.6462 * Math.pow(groundDistance, 4)
-                     + 1303.6487 * Math.pow(groundDistance, 3)
-                     - 2922.8138 * Math.pow(groundDistance, 2)
-                     + 2496.6165 * groundDistance
+            double x = groundDistance;
+            double x2 = x * x;
+            double x3 = x2 * x;
+            double x4 = x3 * x;
+             speed = -210.6462 * x4
+                     + 1303.6487 * x3
+                     - 2922.8138 * x2
+                     + 2496.6165 * x
                      - 2019.7428;
 
         }else{
             //far zone (every distance > 2.5 m with hood at 0.25)
             //−102.8806x^4+1241.4264x^3−5505.1432x^2+10360.9329x−8624.4939
-            speed = -102.8806 * Math.pow(groundDistance, 4)
-                    + 1241.4264 * Math.pow(groundDistance, 3)
-                    - 5505.1432 * Math.pow(groundDistance, 2)
-                    + 10360.9329 * groundDistance
+            double x = groundDistance;
+            double x2 = x * x;
+            double x3 = x2 * x;
+            double x4 = x3 * x;
+            speed = -102.8806 * x4
+                    + 1241.4264 * x3
+                    - 5505.1432 * x2
+                    + 10360.9329 * x
                     - 8624.4939;
 
         }
