@@ -487,6 +487,16 @@ public class visionTools {
         }
         return  groundDistance - 0.465;
     }
+    public double groundDistancePinpoint(double x, double y, String allianceColor){
+        //method overrload
+        double groundDistance = 0;
+        if (allianceColor.equals("Red")) {
+            groundDistance = Math.sqrt(((1.8288 - x) * (1.8288 - x)) + ((-1.8288 - y) * (-1.8288 - y)));
+        }if (allianceColor.equals("Blue")) {
+            groundDistance = Math.sqrt(((1.8288 - x) * (1.8288 - x)) + ((1.8288 - y) * (1.8288 - y)));
+        }
+        return  groundDistance - 0.465;
+    }
     public double FlywheelSpeed(Limelight3A limelight, double currentVelocity, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
         double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
         //double speed = -1 * (0.42 + 0.1505  * groundDistance);
@@ -532,10 +542,16 @@ public class visionTools {
         }
     }
 
-    public double FlywheelSpeedRegressor(Limelight3A limelight, double currentVelocity,
+    public double FlywheelSpeedRegressor(double sec,Limelight3A limelight, double currentVelocity,
     org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
         //pinpoint.update();
-        double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
+        double vx = pinpoint.getVelX(DistanceUnit.METER);
+        double vy = pinpoint.getVelY(DistanceUnit.METER);
+
+        double ax = pinpoint.getPosX(DistanceUnit.METER)+vx*sec;
+        double ay = pinpoint.getPosY(DistanceUnit.METER)+vy*sec;
+
+        double groundDistance = groundDistancePinpoint(ax,ay,allianceColor);
         //double speed = -1 * (0.42 + 0.1505  * groundDistance);
         //distance speed function(regressor)
         double speed = 0.5;
@@ -566,31 +582,6 @@ public class visionTools {
                     - 8624.4939;
 
         }
-
-        double vx = pinpoint.getVelX(DistanceUnit.METER);
-        double vy = pinpoint.getVelY(DistanceUnit.METER);
-
-        double x = pinpoint.getPosX(DistanceUnit.METER);
-        double y = pinpoint.getPosY(DistanceUnit.METER);
-
-        double heading = pinpoint.getHeading(AngleUnit.RADIANS); // radians
-
-        double v = Math.sqrt(vx * vx + vy * vy);
-
-        double goalX = 1.8288;
-        double goalY = allianceColor.equals("Red") ? -1.8288 : 1.8288;
-
-        double dx = goalX - x;
-        double dy = goalY - y;
-
-        double fieldVx = vx * Math.cos(heading) - vy * Math.sin(heading);
-        double fieldVy = vx * Math.sin(heading) + vy * Math.cos(heading);
-
-        double dot = dx * fieldVx + dy * fieldVy;
-
-        int direction = dot >= 0 ? 1 : -1;
-
-        speed += v * 0.05 * direction;
 
         if (groundDistance == -1) {
             return currentVelocity;

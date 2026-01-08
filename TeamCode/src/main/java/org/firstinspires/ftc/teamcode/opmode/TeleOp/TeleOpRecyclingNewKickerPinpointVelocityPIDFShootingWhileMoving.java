@@ -473,7 +473,7 @@ public class TeleOpRecyclingNewKickerPinpointVelocityPIDFShootingWhileMoving ext
 
             double flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
 
-            double targetVelocity = vision.FlywheelSpeedRegressor(limelight, flywheelCurrentVelocity, pinpoint, allianceColor);
+            double targetVelocity = vision.FlywheelSpeedRegressor(0.8,limelight, flywheelCurrentVelocity, pinpoint, allianceColor);
 
             velocityPID.setTargetVelocity(targetVelocity);
             velocityPID.setPID(VKp, VKi, VKd);
