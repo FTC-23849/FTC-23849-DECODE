@@ -63,12 +63,12 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
     private PIDVelocityController2 velocityPID;
     public static double currentVelocity;
     public static double TargetVelocity = 900;
-    public static double VKp = 2;
-    public static double VKi = 1.5;
+    public static double VKp = 0.002;
+    public static double VKi = 0.003;
     public static double VKd = 0;
     public static double VkS = 0;
-    public static double VkV = 0.00045;
-    public static double sec = 0.8;
+    public static double VkV = 0.00042;
+    public static double sec = 1.4;
     double closezone = 1;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
@@ -254,8 +254,8 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
         initSensor(colorLeft);
         initSensor(colorRight);
 
-        leftShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-        rightShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        //leftShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        //rightShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
         leftShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
         rightShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
@@ -284,9 +284,9 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
             hub.clearBulkCache();
         }
         double now = runTime.milliseconds();
-
+        pinpoint.update();
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
-            pinpoint.update();
+            //pinpoint.update();
             lastPinpointUpdate = now;
         }
         timer.reset();
@@ -531,7 +531,12 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
             leftTipper.setPosition(Globals.tipperExtended);
             rightTipper.setPosition(Globals.tipperExtended);
         }
+        telemetry.addData("Error", flywheelCurrentVelocity-targetVelocity );
+        telemetry.update();
         if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {
+            telemetry.addData("leftservo",leftTurretServo.getPosition());
+            telemetry.addData("rightservo",rightTurretServo.getPosition());
+            telemetry.addData("pinpoint turret",vision.pinpointTurretMoving(sec, pinpoint, leftTurretServo.getPosition(), allianceColor));
             telemetry.addData("flywheel", flywheelCurrentVelocity);
             telemetry.addData("targetVelocity", targetVelocity);
             telemetry.addData("Error", flywheelCurrentVelocity - targetVelocity);

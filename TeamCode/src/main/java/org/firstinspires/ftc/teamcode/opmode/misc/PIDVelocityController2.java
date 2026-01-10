@@ -5,14 +5,18 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class PIDVelocityController2 {
 
     private double Kp, Ki, Kd;
-    private double kS;
-    private double kV;
+    private double kS, kV;
+
     private double targetVelocity;
+    private double lastTargetVelocity;
+
     private double integralSum = 0;
-    private double lastError = 0;
+    private double lastVelocity = 0;
+
+    private double maxIntegral = 0.2;
+    private double velocityDeadband = 10;
+
     private ElapsedTime timer = new ElapsedTime();
-    private double maxVelocity = 2000;
-    private double maxIntegral = 1.0;
 
     public PIDVelocityController2(
             double Kp, double Ki, double Kd,
@@ -25,6 +29,7 @@ public class PIDVelocityController2 {
         this.kS = kS;
         this.kV = kV;
         this.targetVelocity = targetVelocity;
+        this.lastTargetVelocity = targetVelocity;
         timer.reset();
     }
 
@@ -33,24 +38,40 @@ public class PIDVelocityController2 {
         timer.reset();
         if (dt <= 0) dt = 1e-6;
 
-        double error = targetVelocity - currentVelocity;
-        double normalizedError = error / maxVelocity;
-        integralSum += normalizedError * dt;
-        integralSum = Math.max(-maxIntegral, Math.min(maxIntegral, integralSum));
-        double derivative = (normalizedError - lastError) / dt;
-        lastError = normalizedError;
+        if (targetVelocity != lastTargetVelocity) {
+            integralSum = 0;
+            lastTargetVelocity = targetVelocity;
+        }
 
-        double pidOutput = (Kp * normalizedError) + (Ki * integralSum) + (Kd * derivative);
-        double sign = Math.signum(targetVelocity);
-        double feedforward = (kS * sign) + (kV * targetVelocity);
-        double output = pidOutput + feedforward;
+        double error = targetVelocity - currentVelocity;
+        if (Math.abs(error) < velocityDeadband) error = 0;
+
+        double derivative = -(currentVelocity - lastVelocity) / dt;
+        lastVelocity = currentVelocity;
+
+        double pid = (Kp * error) + (Kd * derivative);
+
+        double ff = 0;
+        if (targetVelocity != 0) {
+            ff = (kV * targetVelocity) + (kS * Math.signum(targetVelocity));
+        }
+
+        double output = pid + ff;
+
+        if (Math.abs(output) < 1.0) {
+            integralSum += error * dt;
+            integralSum = Math.max(-maxIntegral, Math.min(maxIntegral, integralSum));
+        }
+
+        output += Ki * integralSum;
 
         return Math.max(-1.0, Math.min(1.0, output));
     }
 
     public void reset() {
         integralSum = 0;
-        lastError = 0;
+        lastVelocity = 0;
+        lastTargetVelocity = targetVelocity;
         timer.reset();
     }
 
@@ -73,11 +94,11 @@ public class PIDVelocityController2 {
         this.kV = kV;
     }
 
-    public void setMaxVelocity(double maxVelocity) {
-        this.maxVelocity = maxVelocity;
-    }
-
     public void setMaxIntegral(double maxIntegral) {
         this.maxIntegral = maxIntegral;
+    }
+
+    public void setVelocityDeadband(double velocityDeadband) {
+        this.velocityDeadband = velocityDeadband;
     }
 }

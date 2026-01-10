@@ -555,7 +555,7 @@ public class visionTools {
         //double speed = -1 * (0.42 + 0.1505  * groundDistance);
         //distance speed function(regressor)
         double speed = 0.5;
-        if(groundDistance < 2.5){
+        /*if(groundDistance < 2.5){
             //close zone(first 2.5 m with hood down)
             //−17.1364x4+155.8192x3−471.9196x2+276.0946x−1321.3433
             double x = groundDistance;
@@ -568,20 +568,22 @@ public class visionTools {
                      + 2496.6165 * x
                      - 2019.7428;
 
-        }else{
+        }else{}*/
             //far zone (every distance > 2.5 m with hood at 0.25)
             //−102.8806x^4+1241.4264x^3−5505.1432x^2+10360.9329x−8624.4939
-            double x = groundDistance;
-            double x2 = x * x;
-            double x3 = x2 * x;
-            double x4 = x3 * x;
-            speed = -102.8806 * x4
-                    + 1241.4264 * x3
-                    - 5505.1432 * x2
-                    + 10360.9329 * x
-                    - 8624.4939;
+        double x = groundDistance;
+        double x2 = x * x;
+        double x3 = x2 * x;
+        double x4 = x3 * x;
+        double x5 = x4 * x;
 
-        }
+        speed = 26.2827 * x5
+                - 337.8205 * x4
+                + 1651.8877 * x3
+                - 3767.1536 * x2
+                + 3661.4842 * x
+                - 2523.5832;
+
 
         if (groundDistance == -1) {
             return currentVelocity;
@@ -620,13 +622,11 @@ public class visionTools {
         double groundDistance = groundDistancePinpoint(pinpoint,allianceColor);
         if (groundDistance == -1) {
             return currentHood;
-        }
+        }else{
+         double height = 0.1*(groundDistance - 0.8);
+         return Range.clip(height,0,0.4);
 
-        if (groundDistance>2.5){
-            if(groundDistance> 3.4) {
-            return 0.4;
-            }else return 0.25;
-        }else return 0;
+        }
     }
 
     public boolean recycleToColor(String targetColor,
@@ -824,13 +824,68 @@ public class visionTools {
 
         return Range.clip(turretPos, 0.35, 0.85);
     }
-    public double pinpointTurretMoving(double sec,org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos, String alliance){
-        //pinpoint.update();
-        Pose2D pose2d = pinpoint.getPosition();
 
-        double curX = pose2d.getX(DistanceUnit.METER)+ sec*pinpoint.getVelX(DistanceUnit.METER);
-        double curY = pose2d.getY(DistanceUnit.METER)+ sec*pinpoint.getVelY(DistanceUnit.METER);
-    double curYaw = pose2d.getHeading(AngleUnit.DEGREES)+ (sec*0.3)*pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
+    private double vxEstimate = 0;
+    private double vyEstimate = 0;
+    private double vxErrCov = 1;
+    private double vyErrCov = 1;
+    private final double kalmanR = 0.1;
+    private final double kalmanQ = 0.01;
+
+    private double getFilteredVelocityX(double measuredVx){
+        vxErrCov += kalmanQ;
+        double K = vxErrCov / (vxErrCov + kalmanR);
+        vxEstimate = vxEstimate + K * (measuredVx - vxEstimate);
+        vxErrCov = (1 - K) * vxErrCov;
+        return vxEstimate;
+    }
+
+    private double getFilteredVelocityY(double measuredVy){
+        vyErrCov += kalmanQ;
+        double K = vyErrCov / (vyErrCov + kalmanR);
+        vyEstimate = vyEstimate + K * (measuredVy - vyEstimate);
+        vyErrCov = (1 - K) * vyErrCov;
+        return vyEstimate;
+    }
+
+    public double FlywheelSpeedRegressor(double sec, double currentVelocity,
+                                         org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
+        double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
+        double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
+
+        double ax = pinpoint.getPosX(DistanceUnit.METER) + vx * sec;
+        double ay = pinpoint.getPosY(DistanceUnit.METER) + vy * sec;
+
+        double groundDistance = groundDistancePinpoint(ax, ay, allianceColor);
+
+        double x = groundDistance;
+        double x2 = x * x;
+        double x3 = x2 * x;
+        double x4 = x3 * x;
+        double x5 = x4 * x;
+
+        double speed = 26.2827 * x5
+                - 337.8205 * x4
+                + 1651.8877 * x3
+                - 3767.1536 * x2
+                + 3661.4842 * x
+                - 2523.5832;
+
+        if (groundDistance == -1) {
+            return currentVelocity;
+        } else {
+            return speed;
+        }
+    }
+
+    public double pinpointTurretMoving(double sec, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos, String alliance){
+        Pose2D pose2d = pinpoint.getPosition();
+        double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
+        double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
+
+        double curX = pose2d.getX(DistanceUnit.METER) + vx * sec;
+        double curY = pose2d.getY(DistanceUnit.METER) + vy * sec;
+        double curYaw = pose2d.getHeading(AngleUnit.DEGREES) + (sec * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
 
         double goalX = 0;
         double goalY = 0;
@@ -861,6 +916,7 @@ public class visionTools {
 
         return Range.clip(turretPos, 0.25, 0.625);
     }
+
 
 
 

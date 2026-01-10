@@ -79,8 +79,8 @@ public class DistanceTestVelocityPID extends LinearOpMode {
         frontIntakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backIntakeMotor = hardwareMap.get(DcMotorEx.class, "backIntakeMotor");
         backIntakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-        rightShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        //leftShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        //rightShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
         leftFrontMotor = hardwareMap.get(DcMotorEx.class, "LF");
