@@ -68,7 +68,8 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
     public static double VKd = 0;
     public static double VkS = 0;
     public static double VkV = 0.00042;
-    public static double sec = 0.2;
+    public static double sec = 0.5;
+    public static double moveAway = 1.5;
     double closezone = 1;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
@@ -487,7 +488,7 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
 
             flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
 
-            targetVelocity = vision.FlywheelSpeedRegressor(sec, flywheelCurrentVelocity, pinpoint, allianceColor);
+            targetVelocity = vision.FlywheelSpeedRegressor(moveAway,sec, flywheelCurrentVelocity, pinpoint, allianceColor);
 
             velocityPID.setTargetVelocity(targetVelocity);
             velocityPID.setPID(VKp, VKi, VKd);
