@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.Auto;
+package org.firstinspires.ftc.teamcode.opmode.Auto.AutoArchive;
 
 import androidx.annotation.NonNull;
 
@@ -16,6 +16,7 @@ import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -26,25 +27,19 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DroidLib.CRAxonPDController;
 import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 
-import java.util.function.Function;
-import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
-
-import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
-
+@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class AutoAutoAimTest extends LinearOpMode {
+public class BlueCloseAuto9SortedWrong extends LinearOpMode {
 
     // Initialize all hardware
+    Limelight3A limelight;
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;
     DcMotorEx leftBackMotor;
@@ -59,33 +54,32 @@ public class AutoAutoAimTest extends LinearOpMode {
     DcMotorEx rightShooterMotor;
     ServoImplEx leftTipper;
     ServoImplEx rightTipper;
+    CRServoImplEx leftBackRoller;
+    CRServoImplEx rightBackRoller;
     AnalogInput kickerEncoder;
     AnalogInput turretEncoder;
     NormalizedColorSensor leftIntakeColorSensor;
     NormalizedColorSensor rightIntakeColorSensor;
 
-    Limelight3A limelight;
-
     ServoImplEx leftHood;
     ServoImplEx rightHood;
 
-    private GoBildaPinpointDriver pinpoint;
 
     // Initialize all parameters
     public static double minVelIntaking = 40;
     public static double minAccelIntaking = -40;
     public static double maxAccelIntaking = 40;
 
-    public static double minVelDrive = 80;
-    public static double minAccelDrive = -70;
-    public static double maxAccelDrive = 70;
+    public static double minVelDrive = 70;
+    public static double minAccelDrive = -60;
+    public static double maxAccelDrive = 60;
 
     public static double shooterStartDelay = 0.3;
-    public static double shootingDelay = 3;
+    public static double shootingDelay = 2;
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.422;
+    public static double turretStartPos = 0.34;
     public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
@@ -98,34 +92,6 @@ public class AutoAutoAimTest extends LinearOpMode {
 
     public static double kickerTarget = Globals.KICKER_IDLE;
 
-    public static String allianceColor = "Blue";
-
-    double flywheelCurrentVelocity;
-    double currentSpeed;
-    double variableFlywheelSpeed;
-    double targetVelocity;
-    double power;
-
-    // vPID
-
-    private PIDVelocityController2 velocityPID;
-    public static double currentVelocity;
-    public static double TargetVelocity = 900;
-    public static double VKp = 0.002;
-    public static double VKi = 0.003;
-    public static double VKd = 0;
-    public static double VkS = 0;
-    public static double VkV = 0.00042;
-    public static double sec = 0.2;
-
-    // Stall detection
-    public static double stallWindowMs   = 200;   // how long we wait to see movement
-    public static double stallMinDelta   = 0.1;  // minimum encoder change to consider "moving"
-    public static double stallRecoveryMs = 1000;   // how long to hold in IDLE before resuming shot
-
-    public static double stallGraceMs    = 400;  // ms
-
-
     int obeliskID = -1;
 
     // Initialize any instances of classes
@@ -136,13 +102,13 @@ public class AutoAutoAimTest extends LinearOpMode {
     CRAxonPDController kickerPID = new CRAxonPDController();
     DroidForceMethods DFM = new DroidForceMethods();
 
-
     @Override
     public void runOpMode() {
 
         // Instantiate MecanumDrive
         Pose2d startPose = new Pose2d(-54.5, -45, Math.toRadians(225));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
+
 
         // Map motors and servos
         leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"leftIntakeColorSensor");
@@ -161,7 +127,10 @@ public class AutoAutoAimTest extends LinearOpMode {
         rightBackMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontIntakeMotor = hardwareMap.get(DcMotorEx.class, "frontIntakeMotor");
         frontIntakeMotor.setDirection(DcMotorEx.Direction.REVERSE);
-        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        leftKickerServo = hardwareMap.get(CRServoImplEx.class, "leftKickerServo");
+        rightKickerServo = hardwareMap.get(CRServoImplEx.class, "rightKickerServo");
+        rightKickerServo.setDirection(CRServoImplEx.Direction.REVERSE);
 
         leftTurretServo = hardwareMap.get(ServoImplEx.class, "leftTurretServo");
         rightTurretServo = hardwareMap.get(ServoImplEx.class, "rightTurretServo");
@@ -178,50 +147,56 @@ public class AutoAutoAimTest extends LinearOpMode {
         leftTipper = hardwareMap.get(ServoImplEx.class, "leftTipper");
         rightTipper = hardwareMap.get(ServoImplEx.class, "rightTipper");
 
+        leftBackRoller = hardwareMap.get(CRServoImplEx.class, "leftBackRoller");
+        rightBackRoller = hardwareMap.get(CRServoImplEx.class, "rightBackRoller");
+        rightBackRoller.setDirection(DcMotorSimple.Direction.REVERSE);
+
         kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
 
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
         rightHood.setDirection(ServoImplEx.Direction.REVERSE);
 
-        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+        //Limelight
+        limelight = hardwareMap.get(Limelight3A.class, "Limelight");
+        limelight.pipelineSwitch(8);
 
-        pinpoint.setOffsets(96.6511963161, -2.55558368232, DistanceUnit.MM);
-        pinpoint.setEncoderDirections(
-                GoBildaPinpointDriver.EncoderDirection.FORWARD,
-                GoBildaPinpointDriver.EncoderDirection.REVERSED
-        );
-        pinpoint.setEncoderResolution(19.970472542, DistanceUnit.MM);
-        pinpoint.resetPosAndIMU();
-//        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,54.5, 45, AngleUnit.DEGREES, 45));
-//        pinpoint.update();
+        limelight.setPollRateHz(100);
+        limelight.start();
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        pinpoint.resetPosAndIMU();
+        // Pre-Auto robot initlization. MUST BE LAST
+        leftHood.setPosition(0.25);
+        rightHood.setPosition(0.25);
 
-        boolean poseApplied = false;
+        leftTurretServo.setPosition(turretStartPos);
+        rightTurretServo.setPosition(turretStartPos);
 
-        while (!isStarted() && !isStopRequested()) {
-            pinpoint.update();
+        plainKickerPower = 0.0;
+        kickerPIDEnabled = true;
 
-            telemetry.addData("Pinpoint status", pinpoint.getDeviceStatus());
-            telemetry.addData("Pinpoint pose", pinpoint.getPosition());
+        // Set kickers during init
+        while(!opModeIsActive() && !isStopRequested()) {
 
-            if (!poseApplied && pinpoint.getDeviceStatus() == GoBildaPinpointDriver.DeviceStatus.READY) {
-                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 54.5, 45, AngleUnit.DEGREES, 45));
-                poseApplied = true;
+            kickerTarget = Globals.KICKER_IDLE;
+
+            // TODO: Remove this if/else statement to prevent accidental PID initialization failure
+
+            if (kickerPIDEnabled /* kickerPIDEnabled SHOULD BE TRUE HERE */) {
+                double encoderVoltage = kickerEncoder.getVoltage();
+                double processedEncoderValue = DFM.zeroAndNormalizeAxonEncoder(encoderVoltage, Globals.KICKER_ZERO);
+
+                double power = kickerPID.Output(Globals.KICKER_kP, Globals.KICKER_kD, kickerTarget, processedEncoderValue);
+
+                leftKickerServo.setPower(power);
+                rightKickerServo.setPower(power);
+            } else {
+                leftKickerServo.setPower(plainKickerPower);
+                rightKickerServo.setPower(plainKickerPower);
             }
 
-            telemetry.update();
         }
-
-        // Pre-Auto robot initlization. MUST BE LAST
-//        leftHood.setPosition(0.25);
-//        rightHood.setPosition(0.25);
-
-//        leftTurretServo.setPosition(turretStartPos);
-//        rightTurretServo.setPosition(turretStartPos);
 
         waitForStart();
 
@@ -231,187 +206,187 @@ public class AutoAutoAimTest extends LinearOpMode {
 
         Actions.runBlocking(new ParallelAction(
 
-                // Thread 2: Turret Tracking
+                // Thread 1: Pathing + General Robot
                 new SequentialAction(
-                        new startTurretTracking()
+
+                        // Preloads
+                        new ParallelAction(
+                                // Preload Path
+                                drive.actionBuilder(startPose)
+                                        .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)).build(),
+
+                                new setShooter(leftShooterMotor, rightShooterMotor, Globals.defaultCloseZonePowerAuto)
+                        ),
+                        new getObeliskID(),
+                        new SleepAction(0.3),
+                        new setTurret(turretShootPos),
+                        new recycle("PPG", frontIntakeMotor),
+                        new SleepAction(0.3),
+                        new kickerShoot(),
+                        new SleepAction(shootingDelay),
+
+                        // Spike 1
+                        new ParallelAction(
+                                // Intake Spike 1 Path
+                                drive.actionBuilder(drive.localizer.getPose())
+                                        .strafeToLinearHeading(new Vector2d(-11, -60), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking)).build(),
+
+                                new kickerIdle(false)
+                                //new setIntake(frontIntakeMotor, backIntakeMotor, 0.75)
+                        ),
+
+                        new ParallelAction(
+                                // Score Spike 1 Path
+                                drive.actionBuilder(drive.localizer.getPose())
+                                        .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)).build(),
+
+                                new SequentialAction(
+                                        new SleepAction(intakeStopDelay),
+                                        new recycle("PPG", frontIntakeMotor)
+                                )
+                        ),
+                        new SleepAction(shooterStartDelay),
+                        new kickerShoot(),
+                        new SleepAction(shootingDelay),
+
+                        // Spike 2
+                        new ParallelAction(
+                                // Go to intake Spike 2 Path
+                                drive.actionBuilder(drive.localizer.getPose())
+                                        .strafeToLinearHeading(new Vector2d(12.5, -25), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)).build(),
+
+
+                                new kickerIdle(false)
+                                //new setIntake(frontIntakeMotor, backIntakeMotor, 0.75)
+                        ),
+
+                        // Intake Spike 2 Path
+                        drive.actionBuilder(drive.localizer.getPose()).strafeToLinearHeading(new Vector2d(12.5, -66), Math.toRadians(270),
+                                        new TranslationalVelConstraint(minVelIntaking), new ProfileAccelConstraint(minAccelIntaking, maxAccelIntaking)).build(),
+
+                        new ParallelAction(
+                                // Score Spike 2 Path
+                                drive.actionBuilder(drive.localizer.getPose())
+                                        .strafeToLinearHeading(new Vector2d(11.5, -52), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive))
+                                        .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)).build(),
+
+                                new SequentialAction(
+                                        new SleepAction(intakeStopDelay),
+                                        new recycle("PGP", frontIntakeMotor)
+                                )
+                        ),
+                        new SleepAction(shooterStartDelay = 0.2),
+                        new kickerShoot(),
+                        new SleepAction(shootingDelay),
+
+                        // Spike 3
+
+
+                        // Park
+                        new ParallelAction(
+                                // Park Path
+                                drive.actionBuilder(drive.localizer.getPose())
+                                        .strafeToLinearHeading(new Vector2d(-22, -58), Math.toRadians(270),
+                                                new TranslationalVelConstraint(100), new ProfileAccelConstraint(-100, 100)).build(),
+
+                                new setShooter(leftShooterMotor, rightShooterMotor, 0.0),
+                                new kickerIdle(true)
+                        )
+
+
                 ),
 
-                // Thread 3: Flywheel Speed Updating
+                // Thread 2: Kicker PID
                 new SequentialAction(
-                        //new startVelPID()
+                        new startKickerPID(leftKickerServo, rightKickerServo)
                 ),
 
-                // Thread 4: Hood Height Updating
+                // Thread 3: Turret Tracking
                 new SequentialAction(
-//                        new startHoodTracking()
+                        //new startTurretTracking(leftTurretServo, rightTurretServo, limelight, vision)
                 )
 
         ));
+
 
         sleep(1000);
 
     }
 
-    /**
-     * Lazy action that, on first run, builds a real RR Action
-     * from the *current* pose using the provided factory.
-     *
-     * This avoids any type issues with specific builder classes.
-     */
-    public class PathFromCurrentPose implements Action {
-        private final MecanumDrive drive;
-        private final Function<Pose2d, Action> actionFactory;
-        private Action inner = null;
-
-        public PathFromCurrentPose(MecanumDrive drive, Function<Pose2d, Action> actionFactory) {
-            this.drive = drive;
-            this.actionFactory = actionFactory;
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            if (inner == null) {
-                Pose2d now = drive.localizer.getPose();
-                inner = actionFactory.apply(now);
-            }
-            return inner.run(telemetryPacket);
-        }
-    }
+    // Action classes
 
     public class startKickerPID implements Action {
 
         private final CRServoImplEx leftKickerServo;
         private final CRServoImplEx rightKickerServo;
 
-        // Stall detection state
-        private final ElapsedTime stallTimer = new ElapsedTime();
-        private boolean stallSampleValid = false;
-        private double stallSampleTimeMs = 0.0;
-        private double stallSamplePos = 0.0;
-
-        private boolean recoveringFromStall = false;
-        private double lastShootPower = 0.0; // remember what power we were shooting with
-        private double recoveryStartTimeMs = 0.0;
-
-        // Grace-period tracking
-        private boolean wasShootingOpenLoop = false;
-        private double openLoopStartTimeMs = 0.0;
-
         public startKickerPID(CRServoImplEx leftKickerServo, CRServoImplEx rightKickerServo){
             this.leftKickerServo = leftKickerServo;
             this.rightKickerServo = rightKickerServo;
-            stallTimer.reset();
         }
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
-            double nowMs = stallTimer.milliseconds();
-            double encoderVoltage = kickerEncoder.getVoltage();
-            double processedEncoderValue =
-                    DFM.zeroAndNormalizeAxonEncoder(encoderVoltage, Globals.KICKER_ZERO);
-
-            // Are we currently shooting open-loop?
-            boolean shootingOpenLoop = !kickerPIDEnabled && Math.abs(plainKickerPower) > 0.01;
-
-            // Just entered open-loop: start grace timer and clear sample
-            if (shootingOpenLoop && !wasShootingOpenLoop) {
-                openLoopStartTimeMs = nowMs;
-                stallSampleValid = false;
-            }
-
-            // ---------- STALL RECOVERY STATE MACHINE ----------
-
-            if (recoveringFromStall) {
-                // Hold at IDLE with PID for stallRecoveryMs
-                kickerPIDEnabled = true;
-                kickerTarget = Globals.KICKER_IDLE;
-                plainKickerPower = 0.0;
-
-                if (nowMs - recoveryStartTimeMs >= stallRecoveryMs) {
-                    // Done recovering: restart open-loop shooting
-                    recoveringFromStall = false;
-                    stallSampleValid = false; // new window for next stall detection
-
-                    kickerPIDEnabled = false;
-                    plainKickerPower = lastShootPower;
-                }
-
-            } else {
-                // Only detect stall while shooting open-loop *after* grace period
-                if (shootingOpenLoop && (nowMs - openLoopStartTimeMs) >= stallGraceMs) {
-
-                    if (!stallSampleValid) {
-                        // Take first sample
-                        stallSampleValid = true;
-                        stallSampleTimeMs = nowMs;
-                        stallSamplePos = processedEncoderValue;
-                    } else {
-                        double dt = nowMs - stallSampleTimeMs;
-                        if (dt >= stallWindowMs) {
-                            double dPos = Math.abs(processedEncoderValue - stallSamplePos);
-                            if (dPos < stallMinDelta) {
-                                // ----- STALL DETECTED -----
-                                recoveringFromStall = true;
-                                recoveryStartTimeMs = nowMs;
-
-                                lastShootPower = plainKickerPower; // remember shoot power
-
-                                kickerPIDEnabled = true;
-                                kickerTarget = Globals.KICKER_IDLE;
-                                plainKickerPower = 0.0;
-
-                                stallSampleValid = false;
-                            } else {
-                                // Still moving: refresh sample window
-                                stallSampleTimeMs = nowMs;
-                                stallSamplePos = processedEncoderValue;
-                            }
-                        }
-                    }
-                } else if (!shootingOpenLoop) {
-                    // Not in open-loop shooting mode, don't track stall
-                    stallSampleValid = false;
-                }
-            }
-
-            // Remember last open-loop state
-            wasShootingOpenLoop = shootingOpenLoop;
-
-            // ---------- DRIVE THE SERVOS ----------
-
             if (kickerPIDEnabled) {
-                double power = kickerPID.Output(
-                        Globals.KICKER_kP,
-                        Globals.KICKER_kD,
-                        kickerTarget,
-                        processedEncoderValue
-                );
+                double encoderVoltage = kickerEncoder.getVoltage();
+                double processedEncoderValue = DFM.zeroAndNormalizeAxonEncoder(encoderVoltage, Globals.KICKER_ZERO);
+
+                double power = kickerPID.Output(Globals.KICKER_kP, Globals.KICKER_kD, kickerTarget, processedEncoderValue);
 
                 leftKickerServo.setPower(power);
                 rightKickerServo.setPower(power);
+
+//                telemetry.addData("Normalized Encoder Value", processedEncoderValue);
+//                telemetry.update();
             } else {
-                // Open-loop mode: use plainKickerPower
                 leftKickerServo.setPower(plainKickerPower);
                 rightKickerServo.setPower(plainKickerPower);
             }
 
-            return true;  // keep this action running for the entire auto
+            return true;
         }
     }
 
+    public class updatePose implements Action {
 
-//    public class getObeliskID implements Action {
-//
-//        @Override
-//        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-//
-//            obeliskID = vision.ObeliskID(limelight);
-//
-//            return false;
-//
-//        }
-//    }
+        private MecanumDrive drive = null;
+
+        public updatePose(MecanumDrive drive){
+
+            this.drive = drive;
+
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+
+            drive.updatePoseEstimate();
+            drive.localizer.update();
+
+            return false;
+
+        }
+    }
+
+    public class getObeliskID implements Action {
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+
+            obeliskID = vision.ObeliskID(limelight);
+
+            return false;
+
+        }
+    }
+
 
     // DO NOT USE FOR REGULAR USE. THIS IS A TEST METHOD
     public class debugTelemetry implements Action {
@@ -440,9 +415,9 @@ public class AutoAutoAimTest extends LinearOpMode {
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
-            if ("Enabled".equals(status)) {
+            if (status == "Enabled") {
                 kickerPIDEnabled = true;
-            } else if ("Disabled".equals(status)) {
+            } else if (status == "Disabled") {
                 kickerPIDEnabled = false;
             }
 
@@ -479,6 +454,7 @@ public class AutoAutoAimTest extends LinearOpMode {
                 initialized = true;
 
                 if (currentPattern.equals("PPG")) {
+                    // Map obeliskID -> number of recycleArtifact runs
                     if (obeliskID == 23) {
                         cyclesToRun = 0;
                     } else if (obeliskID == 22) {
@@ -486,9 +462,11 @@ public class AutoAutoAimTest extends LinearOpMode {
                     } else if (obeliskID == 21) {
                         cyclesToRun = 2;
                     } else {
+                        // Unknown / -1 / anything else -> do nothing
                         cyclesToRun = 0;
                     }
                 } else if (currentPattern.equals("PGP")) {
+                    // Map obeliskID -> number of recycleArtifact runs
                     if (obeliskID == 23) {
                         cyclesToRun = 2;
                     } else if (obeliskID == 22) {
@@ -496,9 +474,11 @@ public class AutoAutoAimTest extends LinearOpMode {
                     } else if (obeliskID == 21) {
                         cyclesToRun = 1;
                     } else {
+                        // Unknown / -1 / anything else -> do nothing
                         cyclesToRun = 0;
                     }
                 } else if (currentPattern.equals("GPP")) {
+                    // Map obeliskID -> number of recycleArtifact runs
                     if (obeliskID == 23) {
                         cyclesToRun = 1;
                     } else if (obeliskID == 22) {
@@ -506,6 +486,7 @@ public class AutoAutoAimTest extends LinearOpMode {
                     } else if (obeliskID == 21) {
                         cyclesToRun = 0;
                     } else {
+                        // Unknown / -1 / anything else -> do nothing
                         cyclesToRun = 0;
                     }
                 }
@@ -544,6 +525,7 @@ public class AutoAutoAimTest extends LinearOpMode {
         }
     }
 
+
     public class recycleArtifact implements Action {
 
         private final DcMotorEx frontIntakeMotor;
@@ -552,28 +534,29 @@ public class AutoAutoAimTest extends LinearOpMode {
         private final double totalMs;
         // Delay between commanding KICKER_RECYCLE and starting intake (ms)
         private final double intakeDelayMs;
-        // Delay between intake starting and kicker going back up (ms)
+        // NEW: delay between intake starting and kicker going back up (ms)
         private final double kickerUpDelayMs;
 
         private final ElapsedTime recyclerTimer = new ElapsedTime();
         private boolean started = false;
         private boolean intakeStarted = false;
 
-        // Default timings constructor
+        // Default timings constructor (no this() call)
         public recycleArtifact(DcMotorEx frontIntakeMotor) {
             this.frontIntakeMotor = frontIntakeMotor;
 
-            this.totalMs = recyclingDelay;
-            this.intakeDelayMs = recyclingIntakeDelay;
-            this.kickerUpDelayMs = recyclingKickerUpDelay;
+            // default values; tweak if you want
+            this.totalMs = recyclingDelay;              // whole recycle action
+            this.intakeDelayMs = recyclingIntakeDelay;  // intake starts x seconds after kicker moves
+            this.kickerUpDelayMs = recyclingKickerUpDelay; // NEW: kicker goes up this long after intake starts
         }
 
-        // Optional: custom timings constructor
+        // Optional: custom timings constructor (also no this() call)
         public recycleArtifact(DcMotorEx frontIntakeMotor, double totalMs, double intakeDelayMs) {
             this.frontIntakeMotor = frontIntakeMotor;
             this.totalMs = totalMs;
             this.intakeDelayMs = intakeDelayMs;
-            this.kickerUpDelayMs = recyclingKickerUpDelay;
+            this.kickerUpDelayMs = recyclingKickerUpDelay; // same default 3rd delay
         }
 
         @Override
@@ -584,6 +567,7 @@ public class AutoAutoAimTest extends LinearOpMode {
                 started = true;
                 recyclerTimer.reset();
 
+                // Tell your PID loop where to go
                 kickerTarget = Globals.KICKER_RECYCLE; // kicker down
                 frontIntakeMotor.setPower(0.0);        // don't start intake yet
             }
@@ -591,6 +575,8 @@ public class AutoAutoAimTest extends LinearOpMode {
             double t = recyclerTimer.milliseconds();
 
             // --- KICKER TIMING ---
+            // Kicker down from 0 → (intakeDelayMs + kickerUpDelayMs)
+            // Kicker up from (intakeDelayMs + kickerUpDelayMs) → totalMs
             double kickerUpTime = intakeDelayMs + kickerUpDelayMs;
             if (t < kickerUpTime) {
                 kickerTarget = Globals.KICKER_RECYCLE;
@@ -599,20 +585,23 @@ public class AutoAutoAimTest extends LinearOpMode {
             }
 
             // --- INTAKE TIMING ---
+            // After the intake delay, start the intake (once)
             if (!intakeStarted && t >= intakeDelayMs) {
-                frontIntakeMotor.setPower(-1.0);
+                frontIntakeMotor.setPower(1.0);
                 intakeStarted = true;
             }
 
             // After totalMs, stop everything and finish the action
             if (t >= totalMs) {
-                kickerTarget = Globals.KICKER_IDLE;
-                frontIntakeMotor.setPower(0.0);
+                kickerTarget = Globals.KICKER_IDLE;    // ensure we end idle
+                frontIntakeMotor.setPower(0.0);        // stop intake
 
+                // Road Runner 1.0: return FALSE when action is finished
                 return false;
             }
 
-            return true;
+            // Still running
+            return true; // keep running
         }
     }
 
@@ -636,90 +625,30 @@ public class AutoAutoAimTest extends LinearOpMode {
 
     public class startTurretTracking implements Action {
 
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+        private final ServoImplEx leftTurretServo;
+        private final ServoImplEx rightTurretServo;
+        private final Limelight3A limelight;
 
-            pinpoint.update();
-            leftTurretServo.setPosition(vision.pinpointTurretMoving(0.8, pinpoint, leftTurretServo.getPosition(), allianceColor));
-            rightTurretServo.setPosition(vision.pinpointTurretMoving(0.8, pinpoint, leftTurretServo.getPosition(), allianceColor));
+        private final visionTools visionTools;
 
-            return true;
+        public startTurretTracking(ServoImplEx leftTurretServo, ServoImplEx rightTurretServo, Limelight3A limelight, visionTools visionTools){
+            this.leftTurretServo = leftTurretServo;
+            this.rightTurretServo = rightTurretServo;
+            this.limelight = limelight;
+            this.visionTools = visionTools;
         }
-    }
-
-    public class startHoodTracking implements Action {
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            pinpoint.update();
-            double leftHoodCurr = leftHood.getPosition();
-            leftHood.setPosition(vision.hoodHeightRegressor(limelight, leftHoodCurr, pinpoint, allianceColor));
-            rightHood.setPosition(vision.hoodHeightRegressor(limelight, leftHoodCurr, pinpoint, allianceColor));
-
-            return true;
-        }
-    }
-
-    public class startVelPID implements Action {
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
-            pinpoint.update();
+            double position = leftTurretServo.getPosition();
 
-            flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
-
-            targetVelocity = vision.FlywheelSpeedRegressor(sec, flywheelCurrentVelocity, pinpoint, allianceColor);
-
-            velocityPID.setTargetVelocity(targetVelocity);
-            velocityPID.setPID(VKp, VKi, VKd);
-            velocityPID.setFeedforward(VkS, VkV);
-
-            power = velocityPID.update(flywheelCurrentVelocity);
-
-            leftShooterMotor.setPower(power);
-            rightShooterMotor.setPower(power);
-
-            currentSpeed = targetVelocity;
+            leftTurretServo.setPosition(visionTools.adjustedTurretAngle(position, limelight,1));
+            rightTurretServo.setPosition(visionTools.adjustedTurretAngle(position, limelight,1));
 
             return true;
         }
     }
-
-//    public class startHoodTracking implements Action {
-//
-//        @Override
-//        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-//
-//            pinpoint.update();
-//            leftHood.setPosition(vision.closeZonehood(limelight, leftHood.getPosition(), pinpoint, allianceColor));
-//            rightHood.setPosition(vision.closeZonehood(limelight, leftHood.getPosition(), pinpoint, allianceColor));
-//            return true;
-//        }
-//    }
-
-//    public class startVelPID implements Action {
-//
-//        @Override
-//        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-//
-//            pinpoint.update();
-//            flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity())/2;
-//
-//            variableFlywheelSpeed = vision.closeZoneFlywheelSpeed(limelight, flywheelCurrentVelocity, pinpoint, allianceColor);
-//            targetVelocity = (variableFlywheelSpeed * 5800) * (28.0 / 60.0);
-//
-//            velocityPID.setTargetVelocity(targetVelocity);
-//
-//            power = velocityPID.update(flywheelCurrentVelocity);
-//
-//            leftShooterMotor.setPower(power);
-//            rightShooterMotor.setPower(power);
-//
-//            return true;
-//        }
-//    }
 
     public class setShooter implements Action {
 
@@ -744,29 +673,6 @@ public class AutoAutoAimTest extends LinearOpMode {
         }
     }
 
-    public class setShooterPID implements Action {
-
-        private final DcMotorEx topShooterMotor;
-        private final DcMotorEx bottomShooterMotor;
-
-        double power;
-
-        public setShooterPID(DcMotorEx topShooterMotor, DcMotorEx bottomShooterMotor, double power){
-            this.topShooterMotor = topShooterMotor;
-            this.bottomShooterMotor = bottomShooterMotor;
-            this.power = power;
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            topShooterMotor.setPower(power);
-            bottomShooterMotor.setPower(power);
-
-            return false;
-        }
-    }
-
     public class kickerShoot implements Action {
 
         @Override
@@ -774,8 +680,8 @@ public class AutoAutoAimTest extends LinearOpMode {
 
             kickerPIDEnabled = false;
             plainKickerPower = Globals.kickerShoot * 0.3;
-            frontIntakeMotor.setPower(-0.7); //-1.0
-            backIntakeMotor.setPower(-0.7); //-1.0
+            frontIntakeMotor.setPower(1.0);
+            backIntakeMotor.setPower(1.0);
 
             return false;
         }
@@ -786,7 +692,9 @@ public class AutoAutoAimTest extends LinearOpMode {
         private final boolean stopIntake;
 
         public kickerIdle(boolean stopIntake){
+
             this.stopIntake = stopIntake;
+
         }
 
         @Override
@@ -797,7 +705,6 @@ public class AutoAutoAimTest extends LinearOpMode {
 
             if (stopIntake) {
                 frontIntakeMotor.setPower(0.0);
-                backIntakeMotor.setPower(0.0);
             }
 
             return false;
@@ -823,7 +730,7 @@ public class AutoAutoAimTest extends LinearOpMode {
             if (power != 0.0) {
                 frontIntakeMotor.setPower(power);
                 backIntakeMotor.setPower(1);
-            } else {
+            } else if (power == 0.0) {
                 frontIntakeMotor.setPower(0.0);
                 backIntakeMotor.setPower(0.0);
             }

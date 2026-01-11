@@ -72,16 +72,16 @@ public class RedFarAutoCyclingNewKicker extends LinearOpMode {
     public static double minAccelIntaking = -40;
     public static double maxAccelIntaking = 40;
 
-    public static double minVelDrive = 80;
-    public static double minAccelDrive = -70;
-    public static double maxAccelDrive = 70;
+    public static double minVelDrive = 90;
+    public static double minAccelDrive = -80;
+    public static double maxAccelDrive = 80;
 
     public static double shooterStartDelay = 0.3;
     public static double shootingDelay = 3.2;
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.62;
+    public static double turretStartPos = 0.621; /*0.62*/
     //public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
@@ -105,7 +105,7 @@ public class RedFarAutoCyclingNewKicker extends LinearOpMode {
 
     public static double kickerSpeed = -0.5;
 
-    public static double shootingSpeed = -0.8;
+    public static double shootingSpeed = -0.75;
 
     public static boolean kickersStarted = false;
 
@@ -232,7 +232,7 @@ public class RedFarAutoCyclingNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(36, 60), Math.toRadians(90),
+                                                new Vector2d(36, 58), Math.toRadians(90),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -257,6 +257,17 @@ public class RedFarAutoCyclingNewKicker extends LinearOpMode {
                                 )
                         ),
 
+                        // repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(62, 15), Math.toRadians(90),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
 
                         new kickerShoot(),
@@ -269,7 +280,7 @@ public class RedFarAutoCyclingNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 62), Math.toRadians(90),
+                                                        new Vector2d(62, 60), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -279,7 +290,7 @@ public class RedFarAutoCyclingNewKicker extends LinearOpMode {
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 62), Math.toRadians(90),
+                                                        new Vector2d(62, 60), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -303,6 +314,17 @@ public class RedFarAutoCyclingNewKicker extends LinearOpMode {
                                         new SleepAction(1),
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
+                        ),
+
+                        // repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(62, 15), Math.toRadians(90),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
                         ),
 
                         new SleepAction(shooterStartDelay),
@@ -317,7 +339,7 @@ public class RedFarAutoCyclingNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 62), Math.toRadians(90),
+                                                        new Vector2d(62, 60), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -327,7 +349,7 @@ public class RedFarAutoCyclingNewKicker extends LinearOpMode {
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 62), Math.toRadians(90),
+                                                        new Vector2d(62, 60), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -351,6 +373,17 @@ public class RedFarAutoCyclingNewKicker extends LinearOpMode {
                                         new SleepAction(1),
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
+                        ),
+
+                        // repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(62, 15), Math.toRadians(90),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
                         ),
 
                         new SleepAction(shooterStartDelay),
@@ -359,53 +392,22 @@ public class RedFarAutoCyclingNewKicker extends LinearOpMode {
 
                         new SleepAction(shootingDelay),
 
-                        //Intake Cycle 3
+                        //Park
 
                         new ParallelAction(
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
-                                                .strafeToLinearHeading(
-                                                        new Vector2d(62, 62), Math.toRadians(90),
-                                                        new TranslationalVelConstraint(minVelDrive),
-                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                )
                                                 .strafeToLinearHeading(
                                                         new Vector2d(62, 50), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
-                                                .strafeToLinearHeading(
-                                                        new Vector2d(62, 62), Math.toRadians(90),
-                                                        new TranslationalVelConstraint(minVelDrive),
-                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                )
                                                 .build()
                                 ),
-                                new kickerIdle(false),
-                                new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
-                        ),
-
-                        new ParallelAction(
-                                new PathFromCurrentPose(drive, pose ->
-                                        drive.actionBuilder(pose)
-                                                .strafeToLinearHeading(
-                                                        new Vector2d(62, 15), Math.toRadians(90),
-                                                        new TranslationalVelConstraint(minVelDrive),
-                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                )
-                                                .build()
-                                ),
-                                new SequentialAction(
-                                        new SleepAction(1),
-                                        new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
-                                )
-                        ),
-
-                        new SleepAction(shooterStartDelay),
-
-                        new kickerShoot(),
-
-                        new SleepAction(shootingDelay)
+                                new kickerIdle(true),
+                                new setIntake(frontIntakeMotor, backIntakeMotor, 0.0),
+                                new setShooter(leftShooterMotor, rightShooterMotor, 0.0)
+                        )
 
                 )
 

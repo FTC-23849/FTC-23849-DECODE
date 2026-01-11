@@ -75,13 +75,13 @@ public class BlueCloseAuto12NonSortedNewKicker extends LinearOpMode {
     public static double minAccelDrive = -70;
     public static double maxAccelDrive = 70;
 
-    public static double shooterStartDelay = 0.3;
-    public static double shootingDelay = 3;
+    public static double shooterStartDelay = 0.1;
+    public static double shootingDelay = 1.2;
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.422;
-    public static double turretShootPos = 0.422;
+    public static double turretStartPos = 0.422; /*0.422*/ // 0.3 0.17
+    //public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
 
@@ -102,7 +102,7 @@ public class BlueCloseAuto12NonSortedNewKicker extends LinearOpMode {
 
     public static boolean kickersStarted = false;
 
-    public static double shootingSpeed = -0.67;
+    public static double shootingSpeed = -0.62;
 
     int obeliskID = -1;
 
@@ -218,6 +218,18 @@ public class BlueCloseAuto12NonSortedNewKicker extends LinearOpMode {
 
                                 new setShooter(leftShooterMotor, rightShooterMotor, shootingSpeed)
                         ),
+
+                        //repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
                         new kickerShoot(),
                         new SleepAction(shootingDelay),
@@ -254,6 +266,18 @@ public class BlueCloseAuto12NonSortedNewKicker extends LinearOpMode {
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
                         ),
+
+                        //repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
                         new kickerShoot(),
                         new SleepAction(shootingDelay),
@@ -306,6 +330,18 @@ public class BlueCloseAuto12NonSortedNewKicker extends LinearOpMode {
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
                         ),
+
+                        //repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
                         new kickerShoot(),
                         new SleepAction(shootingDelay),
@@ -354,6 +390,18 @@ public class BlueCloseAuto12NonSortedNewKicker extends LinearOpMode {
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
                         ),
+
+                        //repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
                         new kickerShoot(),
                         new SleepAction(shootingDelay),
