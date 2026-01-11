@@ -958,7 +958,7 @@ public class visionTools {
 
         if(dist > 3.0) {
             goalX = 1.6288;
-            goalY = (alliance.equals("Blue")) ? 1.0288 : -1.0288;
+            goalY = (alliance.equals("Blue")) ? 1.4288 : -1.4288;
         }
 
         if(curX > 1.2){
