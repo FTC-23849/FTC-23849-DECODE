@@ -908,9 +908,9 @@ public class visionTools {
         if(groundDistancePinpoint(pinpoint,alliance) > 3.0) {
             goalX = 1.6288;
             if (alliance.equals("Blue")) {
-                goalY = 1.0288;
+                goalY = 1.4288;
             } else {
-                goalY = -1.0288;
+                goalY = -1.4288;
             }
         }
 
