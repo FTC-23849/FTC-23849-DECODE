@@ -855,9 +855,18 @@ public class visionTools {
         sec = sec * groundDistancePinpoint(pinpoint,allianceColor);
         double ax = pinpoint.getPosX(DistanceUnit.METER) + vx * sec;
         double ay = pinpoint.getPosY(DistanceUnit.METER) + vy * sec;
+        double px = pinpoint.getPosX(DistanceUnit.METER) + vx;
+        double py = pinpoint.getPosY(DistanceUnit.METER) + vy ;
 
         double groundDistance = groundDistancePinpoint(ax, ay, allianceColor);
-
+        double oldGroundDistance = groundDistancePinpoint(px,py,allianceColor);
+        if (groundDistance > oldGroundDistance) {
+            sec += 0.5;
+            sec = sec * groundDistancePinpoint(pinpoint, allianceColor);
+            ax = pinpoint.getPosX(DistanceUnit.METER) + vx * sec;
+            ay = pinpoint.getPosY(DistanceUnit.METER) + vy * sec;
+            groundDistance = groundDistancePinpoint(ax, ay, allianceColor);
+        }
         double x = groundDistance;
         double x2 = x * x;
         double x3 = x2 * x;
@@ -897,11 +906,11 @@ public class visionTools {
             goalY = 1.8288;
         }
         if(curX < -1.5) {
-            goalX = 1.8288;
+            goalX = 1.6288;
             if (alliance.equals("Blue")) {
-                goalY = 1.6288;
+                goalY = 1.0288;
             } else {
-                goalY = -1.6288;
+                goalY = -1.0288;
             }
         }
 
