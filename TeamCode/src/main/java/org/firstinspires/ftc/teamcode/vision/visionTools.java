@@ -735,7 +735,7 @@ public class visionTools {
             double mt1x = result.getBotpose().getPosition().x;
             double mt1y = result.getBotpose().getPosition().y;
             double mt1heading = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);
-            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mt1x*-1,mt1y*-1,AngleUnit.DEGREES,mt1heading-180 + 2/*2 deg right*/));
+            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mt1x*-1,mt1y*-1,AngleUnit.DEGREES,mt1heading-180 /*2 deg right*/));
             return 1;
         }else{
             return 0;
@@ -748,7 +748,7 @@ public class visionTools {
         limelight.start();
         Pose2D pose2d = pinpoint.getPosition();
         double robotYaw = pose2d.getHeading(AngleUnit.DEGREES);
-        limelight.updateRobotOrientation(robotYaw+178);
+        limelight.updateRobotOrientation(robotYaw+180);
         LLResult result = limelight.getLatestResult();
         double mx,my,myaw = 0;
         if(result != null && result.isValid() && result.getBotpose() != null){
@@ -757,7 +757,7 @@ public class visionTools {
             my = botpose_mt2.getPosition().y;
             myaw = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);
             //mx: 1.6364918134117126 my: -0.265005594950676
-            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mx-1,my*-1,AngleUnit.DEGREES,myaw-178/*2 deg right*/));
+            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mx-1,my*-1,AngleUnit.DEGREES,myaw-180/*2 deg right*/));
 
         }
         return 0;
@@ -849,10 +849,10 @@ public class visionTools {
     }
 
     public double FlywheelSpeedRegressor(double sec, double currentVelocity,
-                                         org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
+        org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
         double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
         double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
-
+        sec = sec * groundDistancePinpoint(pinpoint,allianceColor);
         double ax = pinpoint.getPosX(DistanceUnit.METER) + vx * sec;
         double ay = pinpoint.getPosY(DistanceUnit.METER) + vy * sec;
 
@@ -882,7 +882,7 @@ public class visionTools {
         Pose2D pose2d = pinpoint.getPosition();
         double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
         double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
-
+        sec = sec * groundDistancePinpoint(pinpoint,alliance);
         double curX = pose2d.getX(DistanceUnit.METER) + vx * sec;
         double curY = pose2d.getY(DistanceUnit.METER) + vy * sec;
         double curYaw = pose2d.getHeading(AngleUnit.DEGREES) + (sec * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
@@ -895,6 +895,14 @@ public class visionTools {
         } else if(alliance.equals("Blue")){
             goalX = 1.8288;
             goalY = 1.8288;
+        }
+        if(curX < -1.5) {
+            goalX = 1.8288;
+            if (alliance.equals("Blue")) {
+                goalY = 1.6288;
+            } else {
+                goalY = -1.6288;
+            }
         }
 
         if(curX > 1.2){
@@ -912,7 +920,7 @@ public class visionTools {
 
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;
-        double turretPos = 0.5 + (turretOffset * 2.53846153846 / 1800.0);
+        double turretPos =  0.5 + (turretOffset * 2.53846153846 / 1800.0);;
 
         return Range.clip(turretPos, 0.25, 0.625);
     }
