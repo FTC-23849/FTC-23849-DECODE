@@ -80,7 +80,7 @@ public class BlueFarAutoCyclingNewKicker extends LinearOpMode {
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.39;
+    public static double turretStartPos = 0.385; /*0.39*/
     //public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
@@ -104,7 +104,7 @@ public class BlueFarAutoCyclingNewKicker extends LinearOpMode {
 
     public static double kickerSpeed = -0.5;
 
-    public static double shootingSpeed = -0.8;
+    public static double shootingSpeed = -0.75;
 
     public static boolean kickersStarted;
 
@@ -261,6 +261,17 @@ public class BlueFarAutoCyclingNewKicker extends LinearOpMode {
                                 )
                         ),
 
+                        // repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(62, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
 
                         new kickerShoot(),
@@ -307,6 +318,17 @@ public class BlueFarAutoCyclingNewKicker extends LinearOpMode {
                                         new SleepAction(1),
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
+                        ),
+
+                        // repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(62, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
                         ),
 
                         new SleepAction(shooterStartDelay),
@@ -357,6 +379,17 @@ public class BlueFarAutoCyclingNewKicker extends LinearOpMode {
                                 )
                         ),
 
+                        // repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(62, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
 
                         new kickerShoot(),
@@ -403,6 +436,17 @@ public class BlueFarAutoCyclingNewKicker extends LinearOpMode {
                                         new SleepAction(1),
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
+                        ),
+
+                        // repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(62, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
                         ),
 
                         new SleepAction(shooterStartDelay),
