@@ -897,28 +897,28 @@ public class visionTools {
     public double FlywheelSpeedRegressor(double moveAwayAdjustment, double sec, double currentVelocity,
                                          org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
 
-        double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
-        double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
+//        double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
+//        double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
 
         double currentDist = groundDistancePinpoint(pinpoint, allianceColor);
-        double flightTime = sec * currentDist;
+//        double flightTime = sec * currentDist;
+//
+//        double ax = pinpoint.getPosX(DistanceUnit.METER) + (vx * flightTime);
+//        double ay = pinpoint.getPosY(DistanceUnit.METER) + (vy * flightTime);
 
-        double ax = pinpoint.getPosX(DistanceUnit.METER) + (vx * flightTime);
-        double ay = pinpoint.getPosY(DistanceUnit.METER) + (vy * flightTime);
+        double px = pinpoint.getPosX(DistanceUnit.METER) ;
+        double py = pinpoint.getPosY(DistanceUnit.METER) ;
 
-        double px = pinpoint.getPosX(DistanceUnit.METER) + vx;
-        double py = pinpoint.getPosY(DistanceUnit.METER) + vy ;
+        //double groundDistance = groundDistancePinpoint(ax, ay, allianceColor);
+        double groundDistance = groundDistancePinpoint(px, py, allianceColor);
 
-        double groundDistance = groundDistancePinpoint(ax, ay, allianceColor);
-        double oldGroundDistance = groundDistancePinpoint(px, py, allianceColor);
-
-        if (groundDistance > oldGroundDistance) {
-            double adjustedSec = sec + moveAwayAdjustment;
-            double extendedFlightTime = adjustedSec * currentDist;
-            ax = pinpoint.getPosX(DistanceUnit.METER) + vx * extendedFlightTime;
-            ay = pinpoint.getPosY(DistanceUnit.METER) + vy * extendedFlightTime;
-            groundDistance = groundDistancePinpoint(ax, ay, allianceColor);
-        }
+//        if (groundDistance > oldGroundDistance) {
+//            double adjustedSec = sec + moveAwayAdjustment;
+//            double extendedFlightTime = adjustedSec * currentDist;
+//            ax = pinpoint.getPosX(DistanceUnit.METER) + vx * extendedFlightTime;
+//            ay = pinpoint.getPosY(DistanceUnit.METER) + vy * extendedFlightTime;
+//            groundDistance = groundDistancePinpoint(ax, ay, allianceColor);
+//        }
 
         double x = groundDistance;
         double x2 = x * x;
@@ -948,29 +948,29 @@ public class visionTools {
         double dist = groundDistancePinpoint(pinpoint, alliance);
         double flightTime = sec * dist;
 
-        double curX = pose2d.getX(DistanceUnit.METER) + (vx * flightTime);
-        double curY = pose2d.getY(DistanceUnit.METER) + (vy * flightTime);
+        double curX = pose2d.getX(DistanceUnit.METER) /*+ (vx * flightTime)*/;
+        double curY = pose2d.getY(DistanceUnit.METER) /*+ (vy * flightTime)*/;
 
-        double curYaw = pose2d.getHeading(AngleUnit.DEGREES) + (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
+        double curYaw = pose2d.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
 
         double goalX = 1.8288;
         double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
 
         if(dist > 3.0) {
-            goalX = 1.6288;
-            goalY = (alliance.equals("Blue")) ? 1.0288 : -1.0288;
+            goalX = 1.4288;
+            goalY = (alliance.equals("Blue")) ? 1.4288 : -1.4288;
         }
 
         if(curX > 1.2){
             goalX = 1.4288;
         } else if(curX > 0){
             goalX = 1.8288;
-            goalY = (alliance.equals("Blue")) ? 1.8288 : -1.8288;
+            goalY = (alliance.equals("Blue")) ? 1.6288 : -1.6288;
         }
 
-        if((curY < 0 && alliance.equals("Blue")) || (curY > 0 && alliance.equals("Red"))){
+        /*if((curY < 0 && alliance.equals("Blue")) || (curY > 0 && alliance.equals("Red"))){
             goalX = 1.6288;
-        }
+        }*/
 
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;
