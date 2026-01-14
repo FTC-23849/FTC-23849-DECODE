@@ -640,8 +640,8 @@ public class AutoAutoAimTest extends LinearOpMode {
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
             pinpoint.update();
-            leftTurretServo.setPosition(vision.pinpointTurretMoving(0.8, pinpoint, leftTurretServo.getPosition(), allianceColor));
-            rightTurretServo.setPosition(vision.pinpointTurretMoving(0.8, pinpoint, leftTurretServo.getPosition(), allianceColor));
+            leftTurretServo.setPosition(vision.pinpointTurretMoving(0.8,sec, pinpoint, leftTurretServo.getPosition(), allianceColor));
+            rightTurretServo.setPosition(vision.pinpointTurretMoving(0.8,sec, pinpoint, leftTurretServo.getPosition(), allianceColor));
 
             return true;
         }

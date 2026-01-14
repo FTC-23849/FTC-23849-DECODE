@@ -258,7 +258,7 @@ public class visionTools {
                 correctPos = 0;
             }
 
-                double turnDeg = ((33.0 / 13.0) * error) / 1800.0;
+                double turnDeg = ((33.0 / 13.2) * error) / 1800.0;
 
                 if (Math.abs(turnDeg) <= errorMargin) {
                     correctPos = 1;
@@ -669,7 +669,11 @@ public class visionTools {
         if (groundDistance == -1) {
             return currentHood;
         }else{
-         double height = 0.1*(groundDistance - 0.8);
+         double height = 0.1*(groundDistance);
+         if(groundDistance > 2.5){
+             height = 0.4;
+         }
+
          return Range.clip(height,0,0.4);
 
         }
@@ -781,7 +785,7 @@ public class visionTools {
             double mt1x = result.getBotpose().getPosition().x;
             double mt1y = result.getBotpose().getPosition().y;
             double mt1heading = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);
-            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mt1x*-1,mt1y*-1,AngleUnit.DEGREES,mt1heading-180 /*2 deg right*/));
+            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mt1x*-1,mt1y*-1,AngleUnit.DEGREES,mt1heading-180-3 /*+2 = 2 deg right*/));
             return 1;
         }else{
             return 0;
@@ -844,29 +848,20 @@ public class visionTools {
         double goalX = 0;
         double goalY = 0;
         if(alliance.equals("Red")){
-            goalX = 1.6288;
-            goalY = -1.6288;
+            goalX = 1.8288;
+            goalY = -1.8288;
         } else if(alliance.equals("Blue")){
-            goalX = 1.6288;
-            goalY = 1.6288;
+            goalX = 1.8288;
+            goalY = 1.8288;
         }
 
         if(curX > 1.2){
-            goalX = 1.4288;
-        }else if(curX > 0){
             goalX = 1.8288;
-        if(alliance.equals("Blue")) {
-            goalY = 1.8288;
-        }else{
-            goalY = -1.8288;
-        }
-        }if((curY<0 &&alliance.equals("Blue")||(curY>0 && alliance.equals("Red")))){
-            goalX = 1.6288;
         }
 
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;
-        double turretPos = 0.5 + (turretOffset * 2.53846153846 / 1800.0);
+        double turretPos = 0.5 + (turretOffset * (33.0/13.0) / 1800.0);
 
         return Range.clip(turretPos, 0.35, 0.85);
     }
@@ -926,12 +921,13 @@ public class visionTools {
         double x4 = x3 * x;
         double x5 = x4 * x;
 
-        double speed = 26.2827 * x5
-                - 337.8205 * x4
-                + 1651.8877 * x3
-                - 3767.1536 * x2
-                + 3661.4842 * x
-                - 2523.5832;
+        double speed = -5.9073 * x5
+                + 60.2269 * x4
+                - 202.7965 * x3
+                + 229.3153 * x2
+                - 232.6236 * x
+                - 1064.7967;
+
 
         if (groundDistance == -1) {
             return currentVelocity;
@@ -939,7 +935,6 @@ public class visionTools {
             return speed;
         }
     }
-
     public double pinpointTurretMoving(double sec, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos, String alliance){
         Pose2D pose2d = pinpoint.getPosition();
         double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
@@ -957,15 +952,15 @@ public class visionTools {
         double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
 
         if(dist > 3.0) {
-            goalX = 1.4288;
-            goalY = (alliance.equals("Blue")) ? 1.4288 : -1.4288;
+            goalX = 1.8288;
+            goalY = (alliance.equals("Blue")) ? 1.8288 : -1.8288;
         }
 
         if(curX > 1.2){
             goalX = 1.4288;
         } else if(curX > 0){
             goalX = 1.8288;
-            goalY = (alliance.equals("Blue")) ? 1.6288 : -1.6288;
+            goalY = (alliance.equals("Blue")) ? 1.8288 : -1.8288;
         }
 
         /*if((curY < 0 && alliance.equals("Blue")) || (curY > 0 && alliance.equals("Red"))){
@@ -975,7 +970,46 @@ public class visionTools {
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;
 
-        double turretPos = 0.5 + (turretOffset * 2.53846153846 / 1800.0);
+        double turretPos = 0.5 + (turretOffset * (33.0/12.8) / 1800.0);
+
+        return Range.clip(turretPos, 0.25, 0.625);
+    }
+    public double pinpointTurretMoving(double gear,double sec, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos, String alliance){
+        Pose2D pose2d = pinpoint.getPosition();
+        double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
+        double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
+
+        double dist = groundDistancePinpoint(pinpoint, alliance);
+        double flightTime = sec * dist;
+
+        double curX = pose2d.getX(DistanceUnit.METER) /*+ (vx * flightTime)*/;
+        double curY = pose2d.getY(DistanceUnit.METER) /*+ (vy * flightTime)*/;
+
+        double curYaw = pose2d.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
+
+        double goalX = 1.8288;
+        double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
+
+        if(dist > 3.0) {
+            goalX = 1.8288;
+            goalY = (alliance.equals("Blue")) ? 1.8288 : -1.8288;
+        }
+
+        if(curX > 1.2){
+            goalX = 1.4288;
+        } else if(curX > 0){
+            goalX = 1.8288;
+            goalY = (alliance.equals("Blue")) ? 1.8288 : -1.8288;
+        }
+
+        /*if((curY < 0 && alliance.equals("Blue")) || (curY > 0 && alliance.equals("Red"))){
+            goalX = 1.6288;
+        }*/
+
+        double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
+        double turretOffset = turretAngle - curYaw;
+
+        double turretPos = 0.5 + (turretOffset * (33.0/gear) / 1800.0);
 
         return Range.clip(turretPos, 0.25, 0.625);
     }
