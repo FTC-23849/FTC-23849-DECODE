@@ -5,8 +5,9 @@ import android.graphics.Color;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -25,17 +26,19 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.DroidLib.CRAxonPDController;
+import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
+import org.firstinspires.ftc.teamcode.vision.WTIVisionTools;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 
 import java.util.List;
 
 @TeleOp
 @Config
-public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMovingBulkRead extends OpMode {
-    List<LynxModule> hubs;
+public class WTITeleop extends OpMode {
     Limelight3A limelight;
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;
@@ -63,13 +66,13 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
     private PIDVelocityController2 velocityPID;
     public static double currentVelocity;
     public static double TargetVelocity = 900;
+    //TODO: TUNE VPID
     public static double VKp = 0.01;
     public static double VKi = 0.003;
     public static double VKd = 0;
     public static double VkS = 0;
     public static double VkV = 0.00042;
-    public static double sec = 0.;
-    public static double moveAway = 0;
+    public static double sec = 0.0;
     double closezone = 1;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
@@ -85,7 +88,7 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
     NormalizedColorSensor rightIntakeColorSensor;
     double totalCurrent;
     boolean tipped = false;
-    visionTools vision = new visionTools();
+    WTIVisionTools vision = new WTIVisionTools();
     List currentBalls;
     public static double Kp = 0.001;
     public static double Ki = 0.0048;
@@ -108,14 +111,7 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
     public static double recyclingDelay = 2000;
     public static double recyclingIntakeDelay = 500;
     public static double recyclingKickerUpDelay = 500;
-    //throttling
-    double lastPinpointUpdate = 0;
-    double pinpointThrottleMS = 50;
-    double telemeteryThrottleMS = 100;
-    double lastTelemetryUpdate = 0;
-    double flywheelCurrentVelocity = 0;
-    double targetVelocity = 0;
-    double power = 0;
+
     // Total time to run the recycle sequence (ms)
     double totalMs = recyclingDelay;
     // Delay between commanding KICKER_RECYCLE and starting intake (ms)
@@ -136,9 +132,8 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
     // lock helper
     boolean cancelHeld = false;
     boolean lockIntakeKickerTongue = false;
-    double flywheelCorrection = 0;
-    boolean useTurret = true;
-    // Colstaic or Detection
+
+    // Color Detection
     // ---------- TUNABLES ----------
     public static float MIN_SATURATION   = 0.02f;   // only reject if BOTH sat & val are below these
     public static float MIN_VALUE        = 0.005f;
@@ -152,7 +147,6 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
     public static double LED_OFF_POS    = 0.00;
     public static double LED_GREEN_POS  = 0.50;
     public static double LED_PURPLE_POS = 0.70;
-
     // ------------------------------
 
     private enum ArtifactColor { GREEN, PURPLE, UNKNOWN }
@@ -171,11 +165,6 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
 
     @Override
     public void init() {
-        hubs = hardwareMap.getAll(LynxModule.class);
-
-        for (LynxModule hub : hubs) {
-            hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
-        }
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
         limelight.pipelineSwitch(9);
 
@@ -226,6 +215,7 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
         rightTipper = hardwareMap.get(ServoImplEx.class, "rightTipper");
 
         kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
+
         leftTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
         rightTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
         leftTurretServo.setPosition(0.5);
@@ -257,8 +247,8 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
         initSensor(colorLeft);
         initSensor(colorRight);
 
-        //leftShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-        //rightShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        leftShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        rightShooterMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
         leftShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
         rightShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
@@ -268,11 +258,12 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
                 TargetVelocity
         );
 
-        limelight.setPollRateHz(30);
+        limelight.setPollRateHz(100);
         limelight.start();
 
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
     }
 
     @Override
@@ -283,20 +274,13 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
 
     @Override
     public void loop() {
-        for (LynxModule hub : hubs) {
-            hub.clearBulkCache();
-        }
-        double now = runTime.milliseconds();
         pinpoint.update();
-        if (now - lastPinpointUpdate >= pinpointThrottleMS) {
-            //pinpoint.update();
-            lastPinpointUpdate = now;
-        }
         timer.reset();
 
         telemetry.addData("last loop time", runTime.milliseconds() - lastLoopTime);
         telemetry.addData("average loop time", runTime.milliseconds() / loops);
         telemetry.addData("loops", loops);
+        telemetry.addData("turret",leftTurretServo.getPosition());
         loops = loops + 1;
         lastLoopTime = runTime.milliseconds();
         telemetry.addData("tipped", tipped);
@@ -337,13 +321,13 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
         // -----------------------------------------------------------------
 
         // -------------------- TAG TELEMETRY (allowed) --------------------
-//        LLResult result = limelight.getLatestResult();
-//        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
-//        int tagID = 0;
-//        for (LLResultTypes.FiducialResult fiducial : fiducials) {
-//            tagID = fiducial.getFiducialId();
-//        }
-//        telemetry.addData("Tag ID", tagID);
+        LLResult result = limelight.getLatestResult();
+        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+        int tagID = 0;
+        for (LLResultTypes.FiducialResult fiducial : fiducials) {
+            tagID = fiducial.getFiducialId();
+        }
+        telemetry.addData("Tag ID", tagID);
 
         // -------------------- INTAKE / KICKERS / TONGUE -------------------
         // Disabled ONLY when recycle owns these actuators
@@ -378,7 +362,7 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
                         leftKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
                         rightKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
                         frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                        frontIntakeMotor.setPower(-1*Globals.frontIntakeShootSpeed);
+                        frontIntakeMotor.setPower(-0.5 *Globals.frontIntakeShootSpeed);
                     } else {
                         frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                         frontIntakeMotor.setPower(0.7);
@@ -427,37 +411,22 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
         }
         if (gamepad1.back) {
             if (leftTurretServo.getPosition() < 0.84) {
-                turretCorrection += 0.001;
+                turretCorrection += 0.0025;
             }
         }
         if (gamepad1.start) {
             if (leftTurretServo.getPosition() > 0.34) {
-                turretCorrection -= 0.001;
+                turretCorrection -= 0.0025;
             }
         }
-        if (gamepad2.dpad_up) {
-            flywheelCorrection -= 8;
-        }
-        if (gamepad2.dpad_down) {
-            flywheelCorrection += 8;
-        }
-        if (gamepad2.y){
-            flywheelCorrection = 0;
-        }
-        if (gamepad2.leftBumperWasReleased()){
-            useTurret = !useTurret;
-            leftTurretServo.setPosition(0.5);
-            rightTurretServo.setPosition(0.5);
-        }
-
 
         // close zone shoot
-        //telemetry.addData("left", leftBumperTrue);
-        //telemetry.addData("right", rightBumperTrue);
+        telemetry.addData("left", leftBumperTrue);
+        telemetry.addData("right", rightBumperTrue);
 
-//        if (gamepad1.rightBumperWasReleased()) {
-//            rightBumperTrue = !rightBumperTrue;
-//        }
+        if (gamepad1.rightBumperWasReleased()) {
+            rightBumperTrue = !rightBumperTrue;
+        }
 
         if (gamepad1.dpad_left) {
             allianceColor = "Blue";
@@ -466,32 +435,32 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
             allianceColor = "Red";
         }
 
-//        if (rightBumperTrue && !leftBumperTrue) {
-//            leftShooterMotor.setPower(Globals.defaultFarZonePower);
-//            rightShooterMotor.setPower(Globals.defaultFarZonePower);
-//
-//            leftHood.setPosition(0.4);
-//            rightHood.setPosition(0.4);
-//            telemetry.addData("flywheel", leftShooterMotor.getVelocity());
-//        }
-//        if (rightBumperTrue && !leftBumperTrue) {
-//            double errorMargin = 0.5;
-//            double position = leftTurretServo.getPosition();
-//
-//            telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
-//
-//            leftTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight, 2) + turretCorrection);
-//            rightTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight, 2) + turretCorrection);
-//        }
+        if (rightBumperTrue && !leftBumperTrue) {
+            leftShooterMotor.setPower(Globals.defaultFarZonePower);
+            rightShooterMotor.setPower(Globals.defaultFarZonePower);
+
+            leftHood.setPosition(0.4);
+            rightHood.setPosition(0.4);
+            telemetry.addData("flywheel", leftShooterMotor.getVelocity());
+        }
+        if (rightBumperTrue && !leftBumperTrue) {
+            double errorMargin = 0.5;
+            double position = leftTurretServo.getPosition();
+
+            telemetry.addData("Power", vision.TurretPower(limelight, errorMargin));
+
+            leftTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight, 2) + turretCorrection);
+            rightTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight, 2) + turretCorrection);
+        }
         if (gamepad1.x) {
             turretCorrection = 0;
             vision.mt1pinpoint(pinpoint, limelight);
         }
         if (gamepad2.a){
             if(allianceColor.equals("Blue")){
-                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,-65, AngleUnit.DEGREES,0));
-            }else if(allianceColor.equals("Red")){
                 pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,65, AngleUnit.DEGREES,0));
+            }else if(allianceColor.equals("Red")){
+                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,-63,-65, AngleUnit.DEGREES,0));
             }
         }
 
@@ -503,15 +472,15 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
 
         if (leftBumperTrue && !rightBumperTrue) {
 
-            flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
+            double flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
 
-            targetVelocity = flywheelCorrection + vision.FlywheelSpeedRegressor(moveAway,sec, flywheelCurrentVelocity, pinpoint, allianceColor);
+            double targetVelocity = vision.FlywheelSpeedRegressor(limelight, flywheelCurrentVelocity, pinpoint, allianceColor);
 
             velocityPID.setTargetVelocity(targetVelocity);
             velocityPID.setPID(VKp, VKi, VKd);
             velocityPID.setFeedforward(VkS, VkV);
 
-            power = velocityPID.update(flywheelCurrentVelocity);
+            double power = velocityPID.update(flywheelCurrentVelocity);
 
             leftShooterMotor.setPower(power);
             rightShooterMotor.setPower(power);
@@ -521,11 +490,14 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
             leftHood.setPosition(vision.hoodHeightRegressor(limelight, leftHood.getPosition(), pinpoint, allianceColor));
             rightHood.setPosition(vision.hoodHeightRegressor(limelight, leftHood.getPosition(), pinpoint, allianceColor));
 
-
+            telemetry.addData("flywheel", flywheelCurrentVelocity);
+            telemetry.addData("targetVelocity", targetVelocity);
+            telemetry.addData("Error", flywheelCurrentVelocity - targetVelocity);
+            telemetry.addData("PIDF Power", power);
         }
 
         if (!rightBumperTrue && !leftBumperTrue) {
-            //telemetry.addData("slowing down flywheel", 0);
+            telemetry.addData("slowing down flywheel", 0);
             leftTurretServo.setPosition(0.5);
             rightTurretServo.setPosition(0.5);
 
@@ -534,15 +506,14 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
         }
 
         if (leftBumperTrue && !rightBumperTrue) {
-            //telemetry.addData("Power", vision.TurretPower(limelight, 0.5));
-            if (useTurret) {
-                leftTurretServo.setPosition(
-                        vision.pinpointTurretMoving(sec, pinpoint, leftTurretServo.getPosition(), allianceColor) + turretCorrection
-                );
-                rightTurretServo.setPosition(
-                        vision.pinpointTurretMoving(sec, pinpoint, leftTurretServo.getPosition(), allianceColor) + turretCorrection
-                );
-            }
+            telemetry.addData("Power", vision.TurretPower(limelight, 0.5));
+
+            leftTurretServo.setPosition(
+                    vision.pinpointTurretMoving(sec, pinpoint, leftTurretServo.getPosition(), allianceColor) + turretCorrection
+            );
+            rightTurretServo.setPosition(
+                    vision.pinpointTurretMoving(sec, pinpoint, leftTurretServo.getPosition(), allianceColor) + turretCorrection
+            );
         }
 
         // tipping
@@ -550,27 +521,11 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
             leftTipper.setPosition(Globals.tipperExtended);
             rightTipper.setPosition(Globals.tipperExtended);
         }
-        telemetry.addData("Error", flywheelCurrentVelocity-targetVelocity );
-        telemetry.addData("Correction",flywheelCorrection);
-        telemetry.update();
-        if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {
-            telemetry.addData("correction",flywheelCorrection);
-            telemetry.addData("leftservo",leftTurretServo.getPosition());
-            telemetry.addData("rightservo",rightTurretServo.getPosition());
-            telemetry.addData("pinpoint turret",vision.pinpointTurretMoving(sec, pinpoint, leftTurretServo.getPosition(), allianceColor));
-            telemetry.addData("flywheel", flywheelCurrentVelocity);
-            telemetry.addData("targetVelocity", targetVelocity);
-            telemetry.addData("Error", flywheelCurrentVelocity - targetVelocity);
-            telemetry.addData("PIDF Power", power);
-            telemetry.addData("looptime", timer.milliseconds());
-            telemetry.addData("left kicker speed", leftKickerServo.getPower());
-            telemetry.addData("right kicker speed", rightKickerServo.getPower());
-            telemetry.addData("distance", vision.groundDistancePinpoint(pinpoint,allianceColor));
 
-            telemetry.update();
-            lastTelemetryUpdate = now;
-        }
-
+        telemetry.addData("looptime", timer.milliseconds());
+        telemetry.addData("left kicker speed", leftKickerServo.getPower());
+        telemetry.addData("right kicker speed", rightKickerServo.getPower());
+        telemetry.addData("distance", vision.groundDistancePinpoint(pinpoint,allianceColor));
         // --- color sensing ---
         Reading L = readAndClassify(colorLeft);
         Reading R = readAndClassify(colorRight);
@@ -578,7 +533,7 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
         ArtifactColor overall = combineByConfidence(L, R);
         showOnRgbLight(overall);
 
-
+        telemetry.update();
     }
 
     // --- TeleOp recycle state machine (ONLY owns tongue/kickers/intake while active) ---
