@@ -70,7 +70,7 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
     public static double VkV = 0.00042;
     public static double sec = 0.;
     public static double moveAway = 0;
-    public static double gear = 13.0;
+    public static double gear = 11.9;
     double closezone = 1;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
@@ -358,6 +358,11 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
                 frontIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 frontIntakeMotor.setPower(-Globals.frontIntakeIntakeSpeed);
                 backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
+                leftTongueServo.setPosition(Globals.tongueIntake);
+                rightTongueServo.setPosition(Globals.tongueIntake);
+                leftKickerServo.setPower(0.0);
+                rightKickerServo.setPower(0.0);
+
 
 
             }
