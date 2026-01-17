@@ -670,7 +670,7 @@ public class visionTools {
             return currentHood;
         }else{
          double height = 0.1*(groundDistance);
-         if(groundDistance > 2.5){
+         if(groundDistance > 3){
              height = 0.4;
          }
 
@@ -920,13 +920,23 @@ public class visionTools {
         double x3 = x2 * x;
         double x4 = x3 * x;
         double x5 = x4 * x;
-
-        double speed = -5.9073 * x5
-                + 60.2269 * x4
-                - 202.7965 * x3
-                + 229.3153 * x2
-                - 232.6236 * x
-                - 1064.7967;
+        double x6 = x5 * x;
+        double speed = currentVelocity;
+        if(groundDistance < 3.0){
+            speed = 230.1232 * x6
+                    - 2593.3794 * x5
+                    + 11696.9697 * x4
+                    - 26891.7749 * x3
+                    + 33072.9972 * x2
+                    - 20795.6573 * x
+                    + 3978.801;
+        }else{
+            speed = -1194.7012 * x4
+                    + 16697.1406 * x3
+                    - 87063.4798 * x2
+                    + 200501.6233 * x
+                    - 173785.1687;
+        }
 
 
         if (groundDistance == -1) {
@@ -946,7 +956,7 @@ public class visionTools {
         double curX = pose2d.getX(DistanceUnit.METER) /*+ (vx * flightTime)*/;
         double curY = pose2d.getY(DistanceUnit.METER) /*+ (vy * flightTime)*/;
 
-        double curYaw = pose2d.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
+        double curYaw = pose2d.getHeading(AngleUnit.DEGREES) /*+ (0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
 
         double goalX = 1.8288;
         double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
