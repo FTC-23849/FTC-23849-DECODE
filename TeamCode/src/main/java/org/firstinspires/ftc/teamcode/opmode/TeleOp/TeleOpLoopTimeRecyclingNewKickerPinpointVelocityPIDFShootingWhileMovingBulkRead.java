@@ -63,11 +63,11 @@ public class TeleOpLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMo
     private PIDVelocityController2 velocityPID;
     public static double currentVelocity;
     public static double TargetVelocity = 900;
-    public static double VKp = 0.02;
-    public static double VKi = 0.03;
+    public static double VKp = 0.035;
+    public static double VKi = 0.035;
     public static double VKd = 0;
     public static double VkS = 0;
-    public static double VkV = 0.00042;
+    public static double VkV = 0.0004;
     public static double sec = 0.;
     public static double moveAway = 0;
     public static double gear = 11.9;

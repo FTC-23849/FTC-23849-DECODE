@@ -575,14 +575,12 @@ public class visionTools {
         double x2 = x * x;
         double x3 = x2 * x;
         double x4 = x3 * x;
-        double x5 = x4 * x;
 
-        speed = 26.2827 * x5
-                - 337.8205 * x4
-                + 1651.8877 * x3
-                - 3767.1536 * x2
-                + 3661.4842 * x
-                - 2523.5832;
+        speed = 8.6069 * x4
+                - 81.3474 * x3
+                + 276.8600 * x2
+                - 635.6955 * x
+                - 864.6182;
 
 
         if (groundDistance == -1) {
@@ -622,14 +620,12 @@ public class visionTools {
         double x2 = x * x;
         double x3 = x2 * x;
         double x4 = x3 * x;
-        double x5 = x4 * x;
 
-        double speed = 26.2827 * x5
-                - 337.8205 * x4
-                + 1651.8877 * x3
-                - 3767.1536 * x2
-                + 3661.4842 * x
-                - 2523.5832;
+        double speed = 8.6069 * x4
+                - 81.3474 * x3
+                + 276.8600 * x2
+                - 635.6955 * x
+                - 864.6182;
 
         if (groundDistance == -1) {
             return currentVelocity;
@@ -670,7 +666,7 @@ public class visionTools {
             return currentHood;
         }else{
          double height = 0.1*(groundDistance);
-         if(groundDistance > 3){
+         if(groundDistance > 1.25){
              height = 0.4;
          }
 
@@ -919,24 +915,13 @@ public class visionTools {
         double x2 = x * x;
         double x3 = x2 * x;
         double x4 = x3 * x;
-        double x5 = x4 * x;
-        double x6 = x5 * x;
-        double speed = currentVelocity;
-        if(groundDistance < 3.0){
-            speed = 230.1232 * x6
-                    - 2593.3794 * x5
-                    + 11696.9697 * x4
-                    - 26891.7749 * x3
-                    + 33072.9972 * x2
-                    - 20795.6573 * x
-                    + 3978.801;
-        }else{
-            speed = -1194.7012 * x4
-                    + 16697.1406 * x3
-                    - 87063.4798 * x2
-                    + 200501.6233 * x
-                    - 173785.1687;
-        }
+
+
+        double speed = -1.8411 * x3
+                + 29.2526 * x2
+                - 344.1536 * x
+                - 962.8227;
+
 
 
         if (groundDistance == -1) {
@@ -997,19 +982,20 @@ public class visionTools {
 
         double curYaw = pose2d.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
 
-        double goalX = 1.8288;
-        double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
+        double goalX = 1.6288;
+        double goalY = (alliance.equals("Red")) ? -1.6288 : 1.6288;
 
         if(dist > 3.0) {
-            goalX = 1.8288;
-            goalY = (alliance.equals("Blue")) ? 1.8288 : -1.8288;
+            goalX = 1.6288;
+            goalY = (alliance.equals("Blue")) ? 1.6288 : -1.6288;
         }
 
         if(curX > 1.2){
-            goalX = 1.4288;
+            goalX = 1.5288;
+            goalY = (alliance.equals("Blue")) ? 1.5288 : -1.5288;
         } else if(curX > 0){
-            goalX = 1.8288;
-            goalY = (alliance.equals("Blue")) ? 1.8288 : -1.8288;
+            goalX = 1.7288;
+            goalY = (alliance.equals("Blue")) ? 1.7288 : -1.7288;
         }
 
         /*if((curY < 0 && alliance.equals("Blue")) || (curY > 0 && alliance.equals("Red"))){

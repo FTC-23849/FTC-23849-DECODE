@@ -29,13 +29,13 @@ import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
-
 import java.util.List;
-
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 @TeleOp
 @Config
 public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMovingBulkRead extends OpMode {
     List<LynxModule> hubs;
+    private VoltageSensor myControlHubVoltageSensor;
     Limelight3A limelight;
     DcMotorEx leftFrontMotor;
     DcMotorEx rightFrontMotor;
@@ -64,13 +64,14 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
     public static double currentVelocity;
     public static double TargetVelocity = 900;
     public static double VKp = 0.02;
-    public static double VKi = 0.03;
+    public static double VKi = 0.003;
     public static double VKd = 0;
     public static double VkS = 0;
     public static double VkV = 0.00042;
     public static double sec = 0.;
     public static double moveAway = 0;
     public static double gear = 11.9;
+    double presentVoltage;
     double closezone = 1;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
@@ -201,7 +202,7 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         leftBackMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFrontMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
+        myControlHubVoltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
         frontIntakeMotor = hardwareMap.get(DcMotorEx.class, "frontIntakeMotor");
         frontIntakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -298,7 +299,7 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         for (LynxModule hub : hubs) {
             hub.clearBulkCache();
         }
-
+        presentVoltage = myControlHubVoltageSensor.getVoltage();
         double now = runTime.milliseconds();
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
             if(leftBumperTrue){
@@ -470,10 +471,10 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
             }
         }
         if (gamepad2.dpad_up) {
-            flywheelCorrection -= 8;
+            flywheelCorrection -= 2;
         }
         if (gamepad2.dpad_down) {
-            flywheelCorrection += 8;
+            flywheelCorrection += 2;
         }
         if (gamepad2.y){
             flywheelCorrection = 0;
@@ -567,7 +568,7 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
                 velocityPID.setPID(VKp, VKi, VKd);
                 velocityPID.setFeedforward(VkS, VkV);
 
-                power = velocityPID.update(flywheelCurrentVelocity);
+                power = velocityPID.update(flywheelCurrentVelocity,presentVoltage);
 
                 leftShooterMotor.setPower(power);
                 rightShooterMotor.setPower(power);
@@ -610,6 +611,7 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         telemetry.addData("Error", flywheelCurrentVelocity-targetVelocity );
         telemetry.addData("Correction",flywheelCorrection);
         if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {
+            telemetry.addData("current voltage, ", presentVoltage);
             telemetry.addData("correction",flywheelCorrection);
             telemetry.addData("leftservo",leftTurretServo.getPosition());
             telemetry.addData("rightservo",rightTurretServo.getPosition());
