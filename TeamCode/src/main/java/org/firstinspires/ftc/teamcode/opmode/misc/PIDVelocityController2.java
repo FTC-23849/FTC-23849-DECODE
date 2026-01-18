@@ -16,6 +16,8 @@ public class PIDVelocityController2 {
     private double maxIntegral = 0.2;
     private double velocityDeadband = 10;
 
+    private static final double NOMINAL_VOLTAGE = 13.0;
+
     private ElapsedTime timer = new ElapsedTime();
 
     public PIDVelocityController2(
@@ -34,6 +36,48 @@ public class PIDVelocityController2 {
     }
 
     public double update(double currentVelocity) {
+
+        double dt = timer.seconds();
+        timer.reset();
+
+        if (dt <= 0) {
+            dt = 1e-6;
+        }
+
+        if (targetVelocity != lastTargetVelocity) {
+            integralSum = 0;
+            lastTargetVelocity = targetVelocity;
+        }
+
+        double error = targetVelocity - currentVelocity;
+
+        if (Math.abs(error) < velocityDeadband) {
+            error = 0;
+        }
+
+        double derivative = -(currentVelocity - lastVelocity) / dt;
+        lastVelocity = currentVelocity;
+
+        double pid = (Kp * error) + (Kd * derivative);
+
+        double ff = 0;
+        if (targetVelocity != 0) {
+            ff = (kV * targetVelocity) + (kS * Math.signum(targetVelocity));
+        }
+
+        double output = pid + ff;
+
+        if (Math.abs(output) < 1.0) {
+            integralSum += error * dt;
+            integralSum = Math.max(-maxIntegral, Math.min(maxIntegral, integralSum));
+        }
+
+        output += Ki * integralSum;
+
+        return Math.max(-1.0, Math.min(1.0, output));
+    }
+
+    public double update(double currentVelocity, double batteryVoltage) {
         double dt = timer.seconds();
         timer.reset();
         if (dt <= 0) dt = 1e-6;
@@ -64,6 +108,9 @@ public class PIDVelocityController2 {
         }
 
         output += Ki * integralSum;
+
+        double voltageComp = NOMINAL_VOLTAGE / batteryVoltage;
+        output *= voltageComp;
 
         return Math.max(-1.0, Math.min(1.0, output));
     }

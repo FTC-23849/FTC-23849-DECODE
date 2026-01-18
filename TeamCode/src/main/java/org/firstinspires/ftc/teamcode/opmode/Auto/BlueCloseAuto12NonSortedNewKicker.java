@@ -31,6 +31,7 @@ import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController;
+import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 
 import java.util.function.Function;
@@ -104,6 +105,25 @@ public class BlueCloseAuto12NonSortedNewKicker extends LinearOpMode {
 
     public static double shootingSpeed = -0.62;
 
+    public static double shootingSpeedPID = -700;
+
+    // vPID
+    double flywheelCurrentVelocity;
+    double currentSpeed;
+    double variableFlywheelSpeed;
+    double targetVelocity;
+    double power;
+
+    public PIDVelocityController2 velocityPID;
+    public static double currentVelocity;
+    public static double TargetVelocity = 900;
+    public static double VKp = 0.002;
+    public static double VKi = 0.003;
+    public static double VKd = 0;
+    public static double VkS = 0;
+    public static double VkV = 0.00042;
+    public static double sec = 0.2;
+
     int obeliskID = -1;
 
     // Initialize any instances of classes
@@ -115,8 +135,6 @@ public class BlueCloseAuto12NonSortedNewKicker extends LinearOpMode {
 
     CRAxonPDController kickerPID = new CRAxonPDController();
     DroidForceMethods DFM = new DroidForceMethods();
-
-    PIDVelocityController velocityPID = new PIDVelocityController(1, 1, 1, 1, 1);
 
     @Override
     public void runOpMode() {
@@ -453,6 +471,36 @@ public class BlueCloseAuto12NonSortedNewKicker extends LinearOpMode {
                 inner = actionFactory.apply(now);
             }
             return inner.run(telemetryPacket);
+        }
+    }
+
+    public class startVelPIDPlain implements Action {
+
+        private final double speed;
+
+        public startVelPIDPlain(double speed){
+            this.speed = speed;
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+
+            flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
+
+            targetVelocity = speed;
+
+            velocityPID.setTargetVelocity(targetVelocity);
+            velocityPID.setPID(VKp, VKi, VKd);
+            velocityPID.setFeedforward(VkS, VkV);
+
+            power = velocityPID.update(flywheelCurrentVelocity);
+
+            leftShooterMotor.setPower(power);
+            rightShooterMotor.setPower(power);
+
+            currentSpeed = targetVelocity;
+
+            return true;
         }
     }
 

@@ -108,7 +108,9 @@ public class BlueFarAutoCyclingNewKicker extends LinearOpMode {
 
     public static boolean kickersStarted;
 
+
     public static boolean intakeLastSpike = true;
+    public static boolean intakeSecondSpike = false;
 
     int obeliskID = -1;
 
@@ -488,6 +490,7 @@ public class BlueFarAutoCyclingNewKicker extends LinearOpMode {
             return inner.run(telemetryPacket);
         }
     }
+
 
     public class updatePose implements Action {
 

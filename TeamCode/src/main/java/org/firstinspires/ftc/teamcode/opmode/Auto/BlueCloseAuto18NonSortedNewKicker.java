@@ -82,7 +82,7 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.8;
+    public static double turretStartPos = 0.420;
     //public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
@@ -104,7 +104,7 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
 
     public static boolean kickersStarted = false;
 
-    public static double shootingSpeed = -0.67;
+    public static double shootingSpeed = -0.58;
 
     int obeliskID = -1;
 
@@ -215,6 +215,18 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
 
                                 new setShooter(leftShooterMotor, rightShooterMotor, shootingSpeed)
                         ),
+
+                        // Repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
                         new kickerShoot(),
                         new SleepAction(shootingDelay),
@@ -225,8 +237,8 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .setTangent(0)
-                                                .splineToConstantHeading(
-                                                        new Vector2d(15, -60), (-Math.PI/2),
+                                                .splineToLinearHeading(
+                                                        new Pose2d(15, -60, Math.toRadians(270)), (-Math.PI/2),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -241,8 +253,8 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .setTangent(Math.PI/2)
-                                                .splineToConstantHeading(
-                                                        new Vector2d(-12, -15), (Math.PI),
+                                                .splineToLinearHeading(
+                                                        new Pose2d(-12, -15, Math.toRadians(270)), (Math.PI),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -253,6 +265,18 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
                         ),
+
+                        // Repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
                         new kickerShoot(),
                         new SleepAction(shootingDelay),
@@ -269,8 +293,8 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
-                                                .strafeToConstantHeading(
-                                                        new Vector2d(15, -63),
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(15, -63), Math.toRadians(225),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -278,6 +302,17 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                 ),
                                 new kickerIdle(false),
                                 new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
+                        ),
+
+                        // repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(15, -63), Math.toRadians(225),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
                         ),
 
                         // Allow balls to get intaked
@@ -300,6 +335,18 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
                         ),
+
+                        // Repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
                         new kickerShoot(),
                         new SleepAction(shootingDelay),
@@ -317,8 +364,8 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
-                                                .strafeToConstantHeading(
-                                                        new Vector2d(15, -63),
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(15, -63), Math.toRadians(225),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -326,6 +373,17 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                 ),
                                 new kickerIdle(false),
                                 new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
+                        ),
+
+                        // repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(15, -63), Math.toRadians(225),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
                         ),
 
                         // Allow balls to get intaked
@@ -348,6 +406,18 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
                         ),
+
+                        // Repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
                         new kickerShoot(),
                         new SleepAction(shootingDelay),
@@ -373,7 +443,7 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToSplineHeading(
-                                                        new Vector2d(-12, -15), Math.toRadians(315),
+                                                        new Vector2d(-12, -15), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -384,6 +454,18 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
                         ),
+
+                        // Repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
                         new kickerShoot(),
                         new SleepAction(shootingDelay),
@@ -401,8 +483,8 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
-                                                .strafeToConstantHeading(
-                                                        new Vector2d(41, -68),
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(41, -68), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -417,7 +499,7 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToSplineHeading(
-                                                        new Vector2d(-12, -15), Math.toRadians(315),
+                                                        new Vector2d(-12, -15), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -428,6 +510,18 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                                         new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
                         ),
+
+                        // Repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
                         new SleepAction(shooterStartDelay),
                         new kickerShoot(),
                         new SleepAction(shootingDelay),
@@ -435,15 +529,15 @@ public class BlueCloseAuto18NonSortedNewKicker extends LinearOpMode {
                         // Park
                         new ParallelAction(
                                 // Park Path (from *current* pose)
-//                                new PathFromCurrentPose(drive, pose ->
-//                                        drive.actionBuilder(pose)
-//                                                .strafeToLinearHeading(
-//                                                        new Vector2d(-22, -58), Math.toRadians(270),
-//                                                        new TranslationalVelConstraint(60),
-//                                                        new ProfileAccelConstraint(-60, 60)
-//                                                )
-//                                                .build()
-//                                ),
+                                new PathFromCurrentPose(drive, pose ->
+                                        drive.actionBuilder(pose)
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(-22, -58), Math.toRadians(270),
+                                                        new TranslationalVelConstraint(minVelDrive),
+                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                )
+                                                .build()
+                                ),
                                 new setShooter(leftShooterMotor, rightShooterMotor, 0.0),
                                 new kickerIdle(true)
                         )

@@ -28,7 +28,7 @@ import org.firstinspires.ftc.teamcode.vision.visionTools;
 
 import java.util.function.Function;
 
-@Disabled
+//@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
 public class NewKickerRecycleTest extends LinearOpMode {
@@ -371,7 +371,7 @@ public class NewKickerRecycleTest extends LinearOpMode {
 
         // Default timings constructor: 400 ms tongue down, 400 ms intake
         public recycleArtifact(DcMotorEx frontIntakeMotor) {
-            this(frontIntakeMotor, 400, 600);
+            this(frontIntakeMotor, 400, 1000);
         }
 
         // Optional: custom timings constructor

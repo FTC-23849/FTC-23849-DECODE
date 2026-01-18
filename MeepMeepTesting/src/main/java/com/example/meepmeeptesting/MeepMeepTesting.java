@@ -16,20 +16,31 @@ public class MeepMeepTesting {
                 .setDimensions(14, 17)
                 .build();
 
-        myBot.runAction(myBot.getDrive().actionBuilder(/*new Pose2d(63, -14.5, Math.toRadians(270))*/ new Pose2d(-54.5, -45, Math.toRadians(225)) /*new Pose2d(0, 0, Math.toRadians(0))*/)
+        myBot.runAction(myBot.getDrive().actionBuilder(/*new Pose2d(63, -14.5, Math.toRadians(270))*/ /*new Pose2d(-54.5, -45, Math.toRadians(225))*/ new Pose2d(0, 0, Math.toRadians(270)))
 
 //                .setTangent(-Math.PI/2)
 //                .splineToConstantHeading(new Vector2d(-48, -48), (-Math.PI))
-
 
                 .strafeToSplineHeading(new Vector2d(-12, -15), Math.toRadians(270))
                 .strafeToConstantHeading(new Vector2d(-12, -53))
                 .strafeToConstantHeading(new Vector2d(-12, -15))
 
+
                 .setTangent(0)
                 .splineToConstantHeading(new Vector2d(13, -63), (-Math.PI/2))
+
+
+                .strafeToLinearHeading(new Vector2d(13, -50), Math.toRadians(270))
+
+                //.setTangent(Math.PI/2)
+                .splineToLinearHeading(new Pose2d(2, -50, Math.toRadians(270)), -Math.PI/2)
+
+                .strafeToLinearHeading(new Vector2d(2, -52), Math.toRadians(270))
+
+
                 .setTangent(Math.PI/2)
                 .splineToConstantHeading(new Vector2d(-12, -15), (Math.PI))
+
 
                 .setTangent(0)
                 .splineToLinearHeading(new Pose2d(8, -56, Math.toRadians(225)), (-Math.PI/2))

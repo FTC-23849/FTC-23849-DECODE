@@ -4,6 +4,15 @@ import com.acmerobotics.dashboard.config.Config;
 
 @Config
 public class Globals {
+    // VPID
+
+    public static double VKp = 0.01;
+    public static double VKi = 0.003;
+    public static double VKd = 0;
+    public static double VkS = 0;
+    public static double VkV = 0.00042;
+    public static double sec = 0;
+
     // Front Intake
     public static double frontIntakeIntakeSpeed = 1;
     public static double frontIntakeShootSpeed = 1; //-0.7

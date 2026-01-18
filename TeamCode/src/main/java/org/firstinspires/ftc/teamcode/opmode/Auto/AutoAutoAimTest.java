@@ -69,7 +69,7 @@ public class AutoAutoAimTest extends LinearOpMode {
     ServoImplEx leftHood;
     ServoImplEx rightHood;
 
-    private GoBildaPinpointDriver pinpoint;
+    //private GoBildaPinpointDriver pinpoint;
 
     // Initialize all parameters
     public static double minVelIntaking = 40;
@@ -108,7 +108,7 @@ public class AutoAutoAimTest extends LinearOpMode {
 
     // vPID
 
-    private PIDVelocityController2 velocityPID;
+    public PIDVelocityController2 velocityPID;
     public static double currentVelocity;
     public static double TargetVelocity = 900;
     public static double VKp = 0.002;
@@ -135,6 +135,7 @@ public class AutoAutoAimTest extends LinearOpMode {
 
     CRAxonPDController kickerPID = new CRAxonPDController();
     DroidForceMethods DFM = new DroidForceMethods();
+
 
 
     @Override
@@ -184,37 +185,49 @@ public class AutoAutoAimTest extends LinearOpMode {
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
         rightHood.setDirection(ServoImplEx.Direction.REVERSE);
 
-        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+        //pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
-        pinpoint.setOffsets(96.6511963161, -2.55558368232, DistanceUnit.MM);
-        pinpoint.setEncoderDirections(
-                GoBildaPinpointDriver.EncoderDirection.FORWARD,
-                GoBildaPinpointDriver.EncoderDirection.REVERSED
-        );
-        pinpoint.setEncoderResolution(19.970472542, DistanceUnit.MM);
-        pinpoint.resetPosAndIMU();
+        leftTurretServo.setPosition(0.5);
+        rightTurretServo.setPosition(0.5);
+
+        //pinpoint.setOffsets(96.6511963161, -2.55558368232, DistanceUnit.MM);
+        //pinpoint.setEncoderDirections(
+        //        GoBildaPinpointDriver.EncoderDirection.FORWARD,
+        //        GoBildaPinpointDriver.EncoderDirection.REVERSED
+        //);
+        //pinpoint.setEncoderResolution(19.970472542, DistanceUnit.MM);
 //        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,54.5, 45, AngleUnit.DEGREES, 45));
 //        pinpoint.update();
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        //pinpoint.resetPosAndIMU();
 
-        pinpoint.resetPosAndIMU();
+        //sleep(500);
 
-        boolean poseApplied = false;
+        //pinpoint.recalibrateIMU();
 
-        while (!isStarted() && !isStopRequested()) {
-            pinpoint.update();
+        //sleep(500);
+        telemetry.addData("FINISHED",true);
+        telemetry.update();
+        //pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 54.5, 45, AngleUnit.DEGREES, 45));;
 
-            telemetry.addData("Pinpoint status", pinpoint.getDeviceStatus());
-            telemetry.addData("Pinpoint pose", pinpoint.getPosition());
+        //pinpoint.setPosition(new Pose2D(DistanceUnit.METER, 1.46, 1.12, AngleUnit.DEGREES, 45));//54.5 in x 45 in
 
-            if (!poseApplied && pinpoint.getDeviceStatus() == GoBildaPinpointDriver.DeviceStatus.READY) {
-                pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 54.5, 45, AngleUnit.DEGREES, 45));
-                poseApplied = true;
-            }
-
-            telemetry.update();
-        }
+//        boolean poseApplied = false;
+//
+//        while (!isStarted() && !isStopRequested()) {
+//            pinpoint.update();
+//
+//            telemetry.addData("Pinpoint status", pinpoint.getDeviceStatus());
+//            telemetry.addData("Pinpoint pose", pinpoint.getPosition());
+//
+//            if (!poseApplied && pinpoint.getDeviceStatus() == GoBildaPinpointDriver.DeviceStatus.READY) {
+//                pinpoint.setPosition(new Pose2D(DistanceUnit.METER, 1.46, 1.12, AngleUnit.DEGREES, 45));//54.5 in x 45 in
+//                poseApplied = true;
+//            }
+//
+//            telemetry.update();
+//        }
 
         // Pre-Auto robot initlization. MUST BE LAST
 //        leftHood.setPosition(0.25);
@@ -222,33 +235,37 @@ public class AutoAutoAimTest extends LinearOpMode {
 
 //        leftTurretServo.setPosition(turretStartPos);
 //        rightTurretServo.setPosition(turretStartPos);
+        velocityPID = new PIDVelocityController2(
+                VKp, VKi, VKd,
+                VkS, VkV,
+                TargetVelocity
+        );
 
         waitForStart();
-
         if (isStopRequested()) return;
 
-        sleep(4);
+//        sleep(4);
 
         Actions.runBlocking(new ParallelAction(
 
                 // Thread 2: Turret Tracking
                 new SequentialAction(
-                        new startTurretTracking()
+                        new startTurretTracking(drive)
                 ),
 
                 // Thread 3: Flywheel Speed Updating
                 new SequentialAction(
-                        //new startVelPID()
+                        new startVelPID(drive)
                 ),
 
                 // Thread 4: Hood Height Updating
                 new SequentialAction(
-//                        new startHoodTracking()
+                        new startHoodTracking(drive)
                 )
 
         ));
 
-        sleep(1000);
+//        sleep(1000);
 
     }
 
@@ -636,26 +653,60 @@ public class AutoAutoAimTest extends LinearOpMode {
 
     public class startTurretTracking implements Action {
 
+        private final MecanumDrive drive;
+
+        public startTurretTracking(MecanumDrive drive){
+            this.drive = drive;
+        }
+
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            // Always update first
+            drive.updatePoseEstimate();
+            drive.localizer.update();
 
-            pinpoint.update();
-            leftTurretServo.setPosition(vision.pinpointTurretMoving(0.8,sec, pinpoint, leftTurretServo.getPosition(), allianceColor));
-            rightTurretServo.setPosition(vision.pinpointTurretMoving(0.8,sec, pinpoint, leftTurretServo.getPosition(), allianceColor));
+            //pinpoint.update();
 
-            return true;
+            Pose2D pose = vision.RRtoPinpoint(drive);
+
+            telemetry.addData("pos",pose.toString());
+            telemetry.addData("heading",pose.getHeading(AngleUnit.DEGREES));
+            telemetry.update();
+
+            // Normal tracking
+            double leftCmd  = vision.pinpointTurretMovingAUTO(pose,11.9, sec, leftTurretServo.getPosition(), allianceColor);
+            double rightCmd = vision.pinpointTurretMovingAUTO(pose,11.9, sec, rightTurretServo.getPosition(), allianceColor);
+
+            leftTurretServo.setPosition(leftCmd);
+            rightTurretServo.setPosition(rightCmd);
+
+            return true; // keep running for whole auto
         }
     }
 
+
     public class startHoodTracking implements Action {
+
+        private final MecanumDrive drive;
+
+        public startHoodTracking(MecanumDrive drive){
+            this.drive = drive;
+        }
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
-            pinpoint.update();
+            // Always update first
+            drive.updatePoseEstimate();
+            drive.localizer.update();
+
+            //pinpoint.update();
+
+            Pose2D pose = vision.RRtoPinpoint(drive);
+
             double leftHoodCurr = leftHood.getPosition();
-            leftHood.setPosition(vision.hoodHeightRegressor(limelight, leftHoodCurr, pinpoint, allianceColor));
-            rightHood.setPosition(vision.hoodHeightRegressor(limelight, leftHoodCurr, pinpoint, allianceColor));
+            leftHood.setPosition(vision.hoodHeightRegressorAUTO(pose, leftHoodCurr,allianceColor));
+            rightHood.setPosition(vision.hoodHeightRegressorAUTO(pose, leftHoodCurr, allianceColor));
 
             return true;
         }
@@ -663,14 +714,26 @@ public class AutoAutoAimTest extends LinearOpMode {
 
     public class startVelPID implements Action {
 
+        private final MecanumDrive drive;
+
+        public startVelPID(MecanumDrive drive){
+            this.drive = drive;
+        }
+
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
-            pinpoint.update();
+            // Always update first
+            drive.updatePoseEstimate();
+            drive.localizer.update();
+
+            //pinpoint.update();
+
+            Pose2D pose = vision.RRtoPinpoint(drive);
 
             flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
 
-            targetVelocity = vision.FlywheelSpeedRegressor(sec, flywheelCurrentVelocity, pinpoint, allianceColor);
+            targetVelocity = vision.FlywheelSpeedRegressorAUTO(pose,0,sec, flywheelCurrentVelocity, allianceColor);
 
             velocityPID.setTargetVelocity(targetVelocity);
             velocityPID.setPID(VKp, VKi, VKd);
@@ -688,6 +751,8 @@ public class AutoAutoAimTest extends LinearOpMode {
     }
 
 //    public class startHoodTracking implements Action {
+//
+//
 //
 //        @Override
 //        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
