@@ -893,43 +893,43 @@ public class visionTools {
     }
 
     public double FlywheelSpeedRegressor(double moveAwayAdjustment, double sec, double currentVelocity,
-                                         org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
+                                         org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint,
+                                         String allianceColor) {
 
-//        double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
-//        double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
+        double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
+        double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
+
+        double px = pinpoint.getPosX(DistanceUnit.METER);
+        double py = pinpoint.getPosY(DistanceUnit.METER);
 
         double currentDist = groundDistancePinpoint(pinpoint, allianceColor);
-//        double flightTime = sec * currentDist;
-//
-//        double ax = pinpoint.getPosX(DistanceUnit.METER) + (vx * flightTime);
-//        double ay = pinpoint.getPosY(DistanceUnit.METER) + (vy * flightTime);
 
-        double px = pinpoint.getPosX(DistanceUnit.METER) ;
-        double py = pinpoint.getPosY(DistanceUnit.METER) ;
+        double flightTime = sec * (7.0 / 30.0) * currentDist + 0.05;
 
-        //double groundDistance = groundDistancePinpoint(ax, ay, allianceColor);
-        double groundDistance = groundDistancePinpoint(px, py, allianceColor);
+        double gx = 1.8288;
+        double gy = (allianceColor.equals("Red")) ? -1.8288 : 1.8288;
 
-//        if (groundDistance > oldGroundDistance) {
-//            double adjustedSec = sec + moveAwayAdjustment;
-//            double extendedFlightTime = adjustedSec * currentDist;
-//            ax = pinpoint.getPosX(DistanceUnit.METER) + vx * extendedFlightTime;
-//            ay = pinpoint.getPosY(DistanceUnit.METER) + vy * extendedFlightTime;
-//            groundDistance = groundDistancePinpoint(ax, ay, allianceColor);
-//        }
+        double dx = gx - px;
+        double dy = gy - py;
 
-        double x = groundDistance;
+        double dist = Math.hypot(dx, dy);
+
+        double ux = dx / dist;
+        double uy = dy / dist;
+
+        double vTowardGoal = vx * ux + vy * uy;
+
+        double compensatedDist = currentDist - vTowardGoal * flightTime;
+
+        double x = compensatedDist;
         double x2 = x * x;
         double x3 = x2 * x;
-        double x4 = x3 * x;
-        double x5 = x4 * x;
-        double x6 = x5 * x;
+
         double speed = -1.8411 * x3
                 + 29.2526 * x2
                 - 344.1536 * x
                 - 962.8227;
-
-        if (groundDistance == -1) {
+        if (currentDist == -1) {
             return currentVelocity;
         } else {
             return speed;
@@ -1122,6 +1122,7 @@ public class visionTools {
         } else {
             return speed;
         }
+        //Update
     }
 
 
