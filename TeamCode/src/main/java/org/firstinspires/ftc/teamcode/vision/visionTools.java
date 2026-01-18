@@ -896,32 +896,21 @@ public class visionTools {
                                          org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint,
                                          String allianceColor) {
 
-        double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
-        double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
+        //double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
+        //double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
+        double vx = pinpoint.getVelX(DistanceUnit.METER);
+        double vy = pinpoint.getVelY(DistanceUnit.METER);
 
         double px = pinpoint.getPosX(DistanceUnit.METER);
         double py = pinpoint.getPosY(DistanceUnit.METER);
-
-        double currentDist = groundDistancePinpoint(pinpoint, allianceColor);
-
+        double currentDist = groundDistancePinpoint(px,py,allianceColor);
         double flightTime = sec * (7.0 / 30.0) * currentDist + 0.05;
+        double ax = pinpoint.getPosX(DistanceUnit.METER)+vx*flightTime;
+        double ay = pinpoint.getPosY(DistanceUnit.METER)+vy*flightTime;
+        double estimatedDist = groundDistancePinpoint(ax,ay,allianceColor);
 
-        double gx = 1.8288;
-        double gy = (allianceColor.equals("Red")) ? -1.8288 : 1.8288;
 
-        double dx = gx - px;
-        double dy = gy - py;
-
-        double dist = Math.hypot(dx, dy);
-
-        double ux = dx / dist;
-        double uy = dy / dist;
-
-        double vTowardGoal = vx * ux + vy * uy;
-
-        double compensatedDist = currentDist - vTowardGoal * flightTime;
-
-        double x = compensatedDist;
+        double x = estimatedDist;
         double x2 = x * x;
         double x3 = x2 * x;
 
@@ -977,14 +966,12 @@ public class visionTools {
     }
     public double pinpointTurretMoving(double gear,double sec, org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, double currentPos, String alliance){
         Pose2D pose2d = pinpoint.getPosition();
-        double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
-        double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
-
+        double vx = pinpoint.getVelX(DistanceUnit.METER);
+        double vy = pinpoint.getVelY(DistanceUnit.METER);
         double dist = groundDistancePinpoint(pinpoint, alliance);
-        double flightTime = sec * dist;
-
-        double curX = pose2d.getX(DistanceUnit.METER) /*+ (vx * flightTime)*/;
-        double curY = pose2d.getY(DistanceUnit.METER) /*+ (vy * flightTime)*/;
+        double flightTime = sec * (7.0 / 30.0) * dist + 0.05;
+        double curX = pose2d.getX(DistanceUnit.METER) + (vx * flightTime);
+        double curY = pose2d.getY(DistanceUnit.METER) + (vy * flightTime);
 
         double curYaw = pose2d.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
 

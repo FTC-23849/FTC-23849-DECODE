@@ -16,10 +16,9 @@ public class PinpointVelTest extends OpMode {
 
     DcMotorEx lf, rf, lb, rb;
     GoBildaPinpointDriver pinpoint;
-
+    visionTools vision = new visionTools();
     @Override
     public void init() {
-
         lf = hardwareMap.get(DcMotorEx.class, "LF");
         rf = hardwareMap.get(DcMotorEx.class, "RF");
         lb = hardwareMap.get(DcMotorEx.class, "LB");
@@ -61,7 +60,24 @@ public class PinpointVelTest extends OpMode {
         rb.setPower((y + x - rx) / denom);
 
         Pose2D pose = pinpoint.getPosition();
+        double vx = pinpoint.getVelX(DistanceUnit.METER);
+        double vy = pinpoint.getVelY(DistanceUnit.METER);
 
+        double px = pinpoint.getPosX(DistanceUnit.METER);
+        double py = pinpoint.getPosY(DistanceUnit.METER);
+        double currentDist = vision.groundDistancePinpoint(px,py,"Red");
+        double flightTime = 1 * (7.0 / 30.0) * currentDist + 0.05;
+        double ax = pinpoint.getPosX(DistanceUnit.METER)+vx*flightTime;
+        double ay = pinpoint.getPosY(DistanceUnit.METER)+vy*flightTime;
+        double estimatedDist = vision.groundDistancePinpoint(ax,ay,"Red");
+        double fx = estimatedDist;
+        double x2 = fx * fx;
+        double x3 = x2 * fx;
+
+        double speed = -1.8411 * x3
+                + 29.2526 * x2
+                - 344.1536 * x
+                - 962.8227;
         telemetry.addData("Pose X (m)", pose.getX(DistanceUnit.METER));
         telemetry.addData("Pose Y (m)", pose.getY(DistanceUnit.METER));
         telemetry.addData("Pose Heading (deg)", pose.getHeading(AngleUnit.DEGREES));
@@ -74,6 +90,10 @@ public class PinpointVelTest extends OpMode {
                 "getHeadingVelocity (deg/s)",
                 pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)
         );
+
+        telemetry.addLine();
+
+        telemetry.addData("speed",speed);
 
         telemetry.update();
     }
