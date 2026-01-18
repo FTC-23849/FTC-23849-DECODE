@@ -1000,6 +1000,7 @@ public class visionTools {
 
         /*if((curY < 0 && alliance.equals("Blue")) || (curY > 0 && alliance.equals("Red"))){
             goalX = 1.6288;
+
         }*/
 
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
