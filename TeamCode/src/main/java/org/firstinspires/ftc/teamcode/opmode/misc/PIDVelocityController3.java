@@ -48,6 +48,7 @@ public class PIDVelocityController3 {
         this.Kp_recovery = KpRecovery;
 
         this.kS_maintain = kSMaintain;
+
         this.kS_recovery = kSRecovery;
 
         this.kV = kV;
@@ -56,10 +57,10 @@ public class PIDVelocityController3 {
     }
 
     public double update(double currentVelocity) {
-        return update(currentVelocity, NOMINAL_VOLTAGE);
+        return update(-1.6,currentVelocity, NOMINAL_VOLTAGE);
     }
 
-    public double update(double currentVelocity, double batteryVoltage) {
+    public double update(double x,double currentVelocity, double batteryVoltage) {
         double dt = timer.seconds();
         timer.reset();
         if (dt <= 0) dt = 1e-6;
@@ -80,6 +81,9 @@ public class PIDVelocityController3 {
         // Apply mode gains
         double Kp = recovering ? Kp_recovery : Kp_maintain;
         double kS = recovering ? kS_recovery : kS_maintain;
+        if(x<2.5){
+            kS = recovering ? 0.09 : kS_maintain;
+        }
 
         // PID term (only P)
         double pid = Kp * error;

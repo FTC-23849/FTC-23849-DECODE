@@ -909,7 +909,6 @@ public class visionTools {
         double ay = pinpoint.getPosY(DistanceUnit.METER)+vy*flightTime;
         double estimatedDist = groundDistancePinpoint(ax,ay,allianceColor);
 
-
         double x = estimatedDist;
         double x2 = x * x;
         double x3 = x2 * x;
@@ -918,6 +917,9 @@ public class visionTools {
                 + 29.2526 * x2
                 - 344.1536 * x
                 - 962.8227;
+        if(estimatedDist<2.0){
+            speed -= 30;
+        }
         if (currentDist == -1) {
             return currentVelocity;
         } else {
@@ -982,13 +984,12 @@ public class visionTools {
             goalX = 1.6288;
             goalY = (alliance.equals("Blue")) ? 1.6288 : -1.6288;
         }
-
         if(curX > 1.2){
             goalX = 1.5288;
             goalY = (alliance.equals("Blue")) ? 1.5288 : -1.5288;
         } else if(curX > 0){
-            goalX = 1.7288;
-            goalY = (alliance.equals("Blue")) ? 1.7288 : -1.7288;
+            goalX = 1.8288;
+            goalY = (alliance.equals("Blue")) ? 1.8288 : -1.8288;
         }
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;

@@ -482,6 +482,9 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         if(gamepad2.x){
             pinpoint.recalibrateIMU();
         }
+        if(gamepad1.right_bumper){
+            pinpoint.recalibrateIMU();
+        }
         if (gamepad2.leftBumperWasReleased()){
             useTurret = !useTurret;
             if(!useTurret) {

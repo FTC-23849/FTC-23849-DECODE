@@ -65,10 +65,10 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     private PIDVelocityController3 velocityPID;
     public static double currentVelocity;
     public static double TargetVelocity = 900;
-    public static double VKpm = 0.012;
+    public static double VKpm = 0.015;
     public static double VKpr = 0.0007;
     public static double VkSm = 0.055;
-    public static double VkSr = 0.1;
+    public static double VkSr = 0.21;
     public static double VkV = 0.00042;
     public static double sec = 1.0;
     public static double moveAway = 0;
@@ -487,6 +487,9 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         if(gamepad2.x){
             pinpoint.recalibrateIMU();
         }
+        if(gamepad1.right_bumper){
+            pinpoint.recalibrateIMU();
+        }
         if (gamepad2.leftBumperWasReleased()){
             useTurret = !useTurret;
             if(!useTurret) {
@@ -573,7 +576,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
                 velocityPID.setMaintain(VKpm,VkSm,VkV);
                 velocityPID.setRecovery(VKpr, VkSr);
 
-                power = velocityPID.update(flywheelCurrentVelocity,presentVoltage);
+                power = velocityPID.update(groundDistance,flywheelCurrentVelocity,presentVoltage);
                 leftShooterMotor.setPower(power);
                 rightShooterMotor.setPower(power);
 
