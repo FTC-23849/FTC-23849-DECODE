@@ -4,7 +4,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class PIDVelocityController3 {
 
-    // ---- Gains for modes ----
     private double Kp_maintain;
     private double Kp_recovery;
 
@@ -13,26 +12,15 @@ public class PIDVelocityController3 {
 
     private double kV;
 
-    // Thresholds
-    private double recoveryThreshold = 80;  // abs(error) above this → recovery
-    private double maintainThreshold = 80;  // hysteresis to exit recovery
+
+    public double recoveryThreshold = 80;
+
 
     private double targetVelocity;
     private double lastTargetVelocity;
     private double lastVelocity = 0;
-
-    private static final double NOMINAL_VOLTAGE = 13.0;
     private ElapsedTime timer = new ElapsedTime();
 
-    /**
-     * Constructor with tunable gains
-     * @param targetVelocity initial target velocity
-     * @param KpMaintain maintain mode P
-     * @param KpRecovery recovery mode P
-     * @param kSMaintain maintain mode static feedforward
-     * @param kSRecovery recovery mode static feedforward
-     * @param kV velocity feedforward (same for both modes)
-     */
     public PIDVelocityController3(
             double targetVelocity,
             double KpMaintain,
@@ -43,65 +31,45 @@ public class PIDVelocityController3 {
     ) {
         this.targetVelocity = targetVelocity;
         this.lastTargetVelocity = targetVelocity;
-
         this.Kp_maintain = KpMaintain;
         this.Kp_recovery = KpRecovery;
-
         this.kS_maintain = kSMaintain;
-
         this.kS_recovery = kSRecovery;
-
         this.kV = kV;
 
         timer.reset();
     }
 
-    public double update(double currentVelocity) {
-        return update(-1.6,currentVelocity, NOMINAL_VOLTAGE);
-    }
 
-    public double update(double x,double currentVelocity, double batteryVoltage) {
+    public double update(double x,double currentVelocity, double batteryVoltage,double NOMINAL_VOLTAGE) {
         double dt = timer.seconds();
         timer.reset();
         if (dt <= 0) dt = 1e-6;
 
         double error = targetVelocity - currentVelocity;
-
-        // Determine mode
         boolean recovering;
         if (Math.abs(error) > recoveryThreshold) {
             recovering = true;
-        } else if (Math.abs(error) < maintainThreshold) {
+        } else if (Math.abs(error) < recoveryThreshold) {
             recovering = false;
         } else {
-            // Keep previous mode if within hysteresis band
-            recovering = lastVelocity < targetVelocity; // optional, or store mode
+            recovering = lastVelocity < targetVelocity;
         }
 
-        // Apply mode gains
         double Kp = recovering ? Kp_recovery : Kp_maintain;
         double kS = recovering ? kS_recovery : kS_maintain;
         if(x<2.5){
             kS = recovering ? 0.09 : kS_maintain;
         }
-
-        // PID term (only P)
         double pid = Kp * error;
-
-        // Feedforward term
         double ff = 0;
         if (targetVelocity != 0) {
             ff = (kV * targetVelocity) + (kS * Math.signum(targetVelocity));
         }
 
-        // Combine PID + feedforward
         double output = pid + ff;
-
-        // Voltage compensation
         double voltageComp = NOMINAL_VOLTAGE / batteryVoltage;
         output *= voltageComp;
-
-        // Clamp output
         return Math.max(-1.0, Math.min(1.0, output));
     }
 
@@ -126,11 +94,6 @@ public class PIDVelocityController3 {
         this.recoveryThreshold = threshold;
     }
 
-    public void setMaintainThreshold(double threshold) {
-        this.maintainThreshold = threshold;
-    }
-
-    // Optional: adjust gains dynamically at runtime
     public void setKpMaintain(double Kp) { this.Kp_maintain = Kp; }
     public void setKpRecovery(double Kp) { this.Kp_recovery = Kp; }
 
