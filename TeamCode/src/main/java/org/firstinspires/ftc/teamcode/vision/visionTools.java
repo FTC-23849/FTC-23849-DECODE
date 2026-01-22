@@ -914,7 +914,7 @@ public class visionTools {
                 - 344.1536 * x
                 - 962.8227;
         if(estimatedDist<2.0){
-            speed -= 30;
+            speed += 60;
         }
         if (currentDist == -1) {
             return currentVelocity;

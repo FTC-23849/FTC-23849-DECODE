@@ -559,7 +559,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         if (gamepad1.dpad_right) {
             allianceColor = "Red";
         }
-        if (gamepad1.leftStickButtonWasReleased()){
+        if (gamepad1.left_stick_button){
             posLock = !posLock;
             if(posLock){
                 lockedPos = robotPos;
