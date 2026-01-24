@@ -73,16 +73,16 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     public static double lockedHoodHeight = 0.1;
     public static double TargetVelocity = -1200;
     public static double defaultVoltage = 13.0;
-    public static double VKpm = 0.015;
-    public static double VKpr = 0.0007;
-    public static double VkSm = 0.055;
-    public static double VkSr = 0.21;
-    public static double VkV = 0.00042;
-    public static double recoveryThreshold = 80;
+    public static double KpMaintain = 0.002;
+    public static double KpRecover = 0.03;
+    public static double KiMaintain = 0.003;
+    public static double KiRecover = 0.02;
+    public static double kSFeedforward = 0.055;
+    public static double kVFeedforward = 0.00042;
+    public static double recoveryThreshold = 120;
     public static double sec = 1.0;
     public static double moveAway = 0;
     public static double gear = 11.9;
-    Pose2D lockedPos;
     double currentVoltage;
     double closezone = 1;
     boolean firstLoop = true;
@@ -91,7 +91,6 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     double turretCorrection = 0;
     boolean shooting;
     boolean yPressed = false;
-    boolean posLock = false;
     boolean purpleSortingEnabled = false;
     boolean greenSortingEnabled = false;
     ElapsedTime timer = new ElapsedTime();
@@ -107,9 +106,9 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     boolean tipped = false;
     visionToolsClean vision = new visionToolsClean();
     List currentBalls;
-    public static double Kp = 0.001;
-    public static double Ki = 0.0048;
-    public static double Kd = 0.00;
+//    public static double Kp = 0.001;
+//    public static double Ki = 0.0048;
+//    public static double Kd = 0.00;
     double currentSpeed = 0;
     boolean rightBumperTrue = false;
     boolean leftBumperTrue = false;
@@ -130,8 +129,8 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     public static double recyclingKickerUpDelay = 500;
     //throttling
     double lastPinpointUpdate = 0;
-    double pinpointThrottleMS = 50;
-    double telemeteryThrottleMS = 100;
+    public static double pinpointThrottleMS = 50;
+    public static double telemeteryThrottleMS = 400;
     double lastTelemetryUpdate = 0;
     double flywheelCurrentVelocity = 0;
     double targetVelocity = 0;
@@ -285,19 +284,22 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         rightShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
         velocityPID = new PIDVelocityController3(
-                3000,     // initial target velocity
-                VKpm,    // Kp maintain
-                VKpr,   // Kp recovery
-                VkSm,    // kS maintain
-                VkSr,      // kS recovery
-                VkV   // kV
+                900,
+                KpMaintain,
+                KiMaintain,
+                KpRecover,
+                KiRecover,
+                kSFeedforward,
+                kVFeedforward
+
         );
 
-        limelight.setPollRateHz(30);
+        limelight.setPollRateHz(15);
         limelight.start();
 
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+        telemetry.setMsTransmissionInterval(120);
         robotPos = pinpoint.getPosition();
         velX = pinpoint.getVelX(DistanceUnit.METER);
         velY = pinpoint.getVelY(DistanceUnit.METER);
@@ -355,23 +357,23 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         loops = loops + 1;
         lastLoopTime = runTime.milliseconds();
         telemetry.addData("tipped", tipped);
-        if(!posLock){
-            // -------------------- DRIVE (always allowed) --------------------
-            double y = -gamepad1.left_stick_y; // Y is reversed
-            double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
-            double rx = gamepad1.right_stick_x;
 
-            double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-            double frontLeftPower = (y + x + rx) / denominator;
-            double backLeftPower = (y - x + rx) / denominator;
-            double frontRightPower = (y - x - rx) / denominator;
-            double backRightPower = (y + x - rx) / denominator;
+        // -------------------- DRIVE (always allowed) --------------------
+        double y = -gamepad1.left_stick_y; // Y is reversed
+        double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
+        double rx = gamepad1.right_stick_x;
 
-            leftFrontMotor.setPower(frontLeftPower);
-            leftBackMotor.setPower(backLeftPower);
-            rightFrontMotor.setPower(frontRightPower);
-            rightBackMotor.setPower(backRightPower);
-        }
+        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+        double frontLeftPower = (y + x + rx) / denominator;
+        double backLeftPower = (y - x + rx) / denominator;
+        double frontRightPower = (y - x - rx) / denominator;
+        double backRightPower = (y + x - rx) / denominator;
+
+        leftFrontMotor.setPower(frontLeftPower);
+        leftBackMotor.setPower(backLeftPower);
+        rightFrontMotor.setPower(frontRightPower);
+        rightBackMotor.setPower(backRightPower);
+
 
         // ----------------- RECYCLE TRIGGER + SAFE LOCKOUT -----------------
         if (gamepad1.dpadDownWasReleased() && !recyclerIsRunning) {
@@ -532,18 +534,6 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
             usePower= !usePower;
         }
 
-        if(!usePower){
-            velocityPID.setTargetVelocity(lockedFlywheelVelocity);
-            velocityPID.setMaintain(VKpm,VkSm,VkV);
-            velocityPID.setRecovery(VKpr, VkSr);
-            velocityPID.setRecoveryThreshold(recoveryThreshold);
-            power = velocityPID.update(groundDistance,flywheelCurrentVelocity, currentVoltage, defaultVoltage);
-            leftShooterMotor.setPower(power);
-            rightShooterMotor.setPower(power);
-            leftHood.setPosition(lockedHoodHeight);
-            rightHood.setPosition(lockedHoodHeight);
-
-        }
 
         // close zone shoot
         //telemetry.addData("left", leftBumperTrue);
@@ -559,30 +549,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         if (gamepad1.dpad_right) {
             allianceColor = "Red";
         }
-        if (gamepad1.left_stick_button){
-            posLock = !posLock;
-            if(posLock){
-                lockedPos = robotPos;
-            }
-        }
-        if(posLock){
-            double ly = Math.max(1,-(lockedPos.getX(DistanceUnit.METER)-robotPos.getX(DistanceUnit.METER)));
-            double lx =Math.max(1, -(lockedPos.getY(DistanceUnit.METER)-robotPos.getY(DistanceUnit.METER))) * 1.1;
-            double lrx = Math.max(1,(lockedPos.getHeading(AngleUnit.DEGREES)+180)-(robotPos.getHeading(AngleUnit.DEGREES)+180));
 
-            double ldenominator = Math.max(Math.abs(ly) + Math.abs(lx) + Math.abs(lrx), 1);
-            double lfrontLeftPower = (ly + lx + lrx) / ldenominator;
-            double lbackLeftPower = (ly - lx + lrx) / ldenominator;
-            double lfrontRightPower = (ly - lx - lrx) / ldenominator;
-            double lbackRightPower = (ly + lx - lrx) / ldenominator;
-
-            leftFrontMotor.setPower(Math.max(lfrontLeftPower,1));
-            leftBackMotor.setPower(Math.max(lbackLeftPower,1));
-            rightFrontMotor.setPower(Math.max(lfrontRightPower,1));
-            rightBackMotor.setPower(Math.max(lbackRightPower,1));
-
-
-        }
 
 //        if (rightBumperTrue && !leftBumperTrue) {
 //            leftShooterMotor.setPower(Globals.defaultFarZonePower);
@@ -620,24 +587,31 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         }
 
         if (leftBumperTrue && !rightBumperTrue) {
-            if(usePower) {
-                flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
+            flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
 
-                targetVelocity = flywheelCorrection + flywheelSpeed;
-
-                velocityPID.setTargetVelocity(targetVelocity);
-                velocityPID.setMaintain(VKpm,VkSm,VkV);
-                velocityPID.setRecovery(VKpr, VkSr);
-
-                power = velocityPID.update(groundDistance,flywheelCurrentVelocity, currentVoltage,defaultVoltage);
-                leftShooterMotor.setPower(power);
-                rightShooterMotor.setPower(power);
-
-                currentSpeed = targetVelocity;
+            if (!usePower) {
+                targetVelocity = lockedFlywheelVelocity + flywheelCorrection;
+                leftHood.setPosition(lockedHoodHeight);
+                rightHood.setPosition(lockedHoodHeight);
+            } else {
+                targetVelocity = vision.FlywheelSpeedRegressor(robotPos, velX, velY, moveAway, sec, flywheelCurrentVelocity, allianceColor)
+                        + flywheelCorrection;
                 leftHood.setPosition(hoodHeight);
                 rightHood.setPosition(hoodHeight);
-
             }
+
+            velocityPID.setTargetVelocity(targetVelocity);
+            velocityPID.setMaintainGains(KpMaintain, KiMaintain);
+            velocityPID.setRecoveryGains(KpRecover, KiRecover);
+            velocityPID.setFeedforward(kSFeedforward, kVFeedforward);
+            velocityPID.setRecoveryThreshold(recoveryThreshold);
+
+            power = velocityPID.update(flywheelCurrentVelocity, currentVoltage, defaultVoltage);
+            leftShooterMotor.setPower(power);
+            rightShooterMotor.setPower(power);
+
+            double error = flywheelCurrentVelocity - targetVelocity;
+
         }
 
         if (!rightBumperTrue && !leftBumperTrue) {

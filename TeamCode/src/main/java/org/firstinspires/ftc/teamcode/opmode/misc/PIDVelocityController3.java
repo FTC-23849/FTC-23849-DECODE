@@ -4,101 +4,117 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class PIDVelocityController3 {
 
-    private double Kp_maintain;
-    private double Kp_recovery;
+    // ---- Gains for maintain mode ----
+    private double KpMaintain;
+    private double KiMaintain;
 
-    private double kS_maintain;
-    private double kS_recovery;
+    // ---- Gains for recovery mode ----
+    private double KpRecovery;
+    private double KiRecovery;
 
+    // ---- Feedforward (constant) ----
+    private double kS;
     private double kV;
 
+    // ---- Thresholds ----
+    private double recoveryThreshold = 80;  // abs(error) > this → recovery
+    private double maintainThreshold = 60;  // abs(error) < this → maintain
 
-    public double recoveryThreshold = 80;
-
-
+    // ---- Controller state ----
     private double targetVelocity;
-    private double lastTargetVelocity;
     private double lastVelocity = 0;
-    private ElapsedTime timer = new ElapsedTime();
+    private double integralSum = 0.0;
+    private boolean recoveringMode = false;
 
+    private static final double NOMINAL_VOLTAGE = 13.0;
+    private final ElapsedTime timer = new ElapsedTime();
+
+    // ---- Constructor ----
     public PIDVelocityController3(
             double targetVelocity,
-            double KpMaintain,
-            double KpRecovery,
-            double kSMaintain,
-            double kSRecovery,
-            double kV
+            double KpMaintain, double KiMaintain,
+            double KpRecovery, double KiRecovery,
+            double kS, double kV
     ) {
         this.targetVelocity = targetVelocity;
-        this.lastTargetVelocity = targetVelocity;
-        this.Kp_maintain = KpMaintain;
-        this.Kp_recovery = KpRecovery;
-        this.kS_maintain = kSMaintain;
-        this.kS_recovery = kSRecovery;
+
+        this.KpMaintain = KpMaintain;
+        this.KiMaintain = KiMaintain;
+        this.KpRecovery = KpRecovery;
+        this.KiRecovery = KiRecovery;
+
+        this.kS = kS;
         this.kV = kV;
 
         timer.reset();
     }
 
-
-    public double update(double x,double currentVelocity, double batteryVoltage,double NOMINAL_VOLTAGE) {
+    // ---- Main update ----
+    public double update(double currentVelocity, double batteryVoltage,double normalVoltage) {
         double dt = timer.seconds();
         timer.reset();
         if (dt <= 0) dt = 1e-6;
 
         double error = targetVelocity - currentVelocity;
-        boolean recovering;
+
+        // ---- Mode switching with hysteresis ----
         if (Math.abs(error) > recoveryThreshold) {
-            recovering = true;
-        } else if (Math.abs(error) < recoveryThreshold) {
-            recovering = false;
-        } else {
-            recovering = lastVelocity < targetVelocity;
+            recoveringMode = true;
+        } else if (Math.abs(error) < maintainThreshold) {
+            recoveringMode = false;
         }
 
-        double Kp = recovering ? Kp_recovery : Kp_maintain;
-        double kS = recovering ? kS_recovery : kS_maintain;
-        if(x<2.5){
-            kS = recovering ? 0.09 : kS_maintain;
+        // ---- Select gains ----
+        double Kp = recoveringMode ? KpRecovery : KpMaintain;
+        double Ki = recoveringMode ? KiRecovery : KiMaintain;
+
+        // ---- Integral handling ----
+        if (!recoveringMode) {
+            integralSum += error * dt;
+        } else {
+            integralSum = 0.0; // prevent windup in recovery
         }
-        double pid = Kp * error;
+
+        // ---- PID term ----
+        double pid = (Kp * error) + (Ki * integralSum);
+
+        // ---- Feedforward ----
         double ff = 0;
         if (targetVelocity != 0) {
             ff = (kV * targetVelocity) + (kS * Math.signum(targetVelocity));
         }
 
-        double output = pid + ff;
-        double voltageComp = NOMINAL_VOLTAGE / batteryVoltage;
-        output *= voltageComp;
+        // ---- Combine and voltage compensate ----
+        double output = (pid + ff) * (normalVoltage / batteryVoltage);
+
+        // ---- Clamp output ----
         return Math.max(-1.0, Math.min(1.0, output));
     }
 
-    public void setTargetVelocity(double targetVelocity) {
-        this.targetVelocity = targetVelocity;
-    }
-    public void setMaintain(double VkPm, double VkSm, double VkV) {
-        this.Kp_maintain = VkPm;
-        this.kS_maintain = VkSm;
-        this.kV = VkV;
-    }
 
-    public void setRecovery(double VkPr, double VkSr) {
-        this.kS_recovery = VkSr;
-        this.Kp_recovery = VkPr;
-    }
-    public double getTargetVelocity() {
-        return targetVelocity;
+    // ---- Target velocity ----
+    public void setTargetVelocity(double targetVelocity) { this.targetVelocity = targetVelocity; }
+    public double getTargetVelocity() { return targetVelocity; }
+
+    // ---- Mode telemetry ----
+    public boolean isRecovering() { return recoveringMode; }
+
+    // ---- Set gains dynamically ----
+    public void setMaintainGains(double Kp, double Ki) {
+        this.KpMaintain = Kp;
+        this.KiMaintain = Ki;
     }
 
-    public void setRecoveryThreshold(double threshold) {
-        this.recoveryThreshold = threshold;
+    public void setRecoveryGains(double Kp, double Ki) {
+        this.KpRecovery = Kp;
+        this.KiRecovery = Ki;
     }
 
-    public void setKpMaintain(double Kp) { this.Kp_maintain = Kp; }
-    public void setKpRecovery(double Kp) { this.Kp_recovery = Kp; }
+    public void setFeedforward(double kS, double kV) {
+        this.kS = kS;
+        this.kV = kV;
+    }
 
-    public void setKSMaintain(double kS) { this.kS_maintain = kS; }
-    public void setKSRecovery(double kS) { this.kS_recovery = kS; }
-
-    public void setKV(double kV) { this.kV = kV; }
+    public void setRecoveryThreshold(double threshold) { this.recoveryThreshold = threshold; }
+    public void setMaintainThreshold(double threshold) { this.maintainThreshold = threshold; }
 }
