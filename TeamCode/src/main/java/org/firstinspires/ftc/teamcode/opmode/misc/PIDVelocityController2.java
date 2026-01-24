@@ -77,7 +77,7 @@ public class PIDVelocityController2 {
         return Math.max(-1.0, Math.min(1.0, output));
     }
 
-    public double update(double currentVelocity, double batteryVoltage) {
+    public double update(double currentVelocity, double batteryVoltage,double nominal_voltage) {
         double dt = timer.seconds();
         timer.reset();
         if (dt <= 0) dt = 1e-6;
@@ -109,7 +109,7 @@ public class PIDVelocityController2 {
 
         output += Ki * integralSum;
 
-        double voltageComp = NOMINAL_VOLTAGE / batteryVoltage;
+        double voltageComp = nominal_voltage / batteryVoltage;
         output *= voltageComp;
 
         return Math.max(-1.0, Math.min(1.0, output));

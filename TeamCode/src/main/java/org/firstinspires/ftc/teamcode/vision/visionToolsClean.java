@@ -370,10 +370,11 @@ public class visionToolsClean {
         double x2 = x * x;
         double x3 = x2 * x;
 
-        double speed = -1.8411 * x3
-                + 29.2526 * x2
-                - 344.1536 * x
-                - 962.8227;
+        double speed = 6.1716 * x3
+                - 106.8394 * x2
+                + 199.2194 * x
+                - 1208.2518;
+
         if(estimatedDist<2.0){
             speed -= 30;
         }

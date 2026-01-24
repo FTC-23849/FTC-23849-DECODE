@@ -29,7 +29,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
-import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController3;
+import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
 import org.firstinspires.ftc.teamcode.vision.visionToolsClean;
 
 import java.util.List;
@@ -63,7 +63,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     private NormalizedColorSensor colorLeft;
     private NormalizedColorSensor colorRight;
     private Servo rgbLight;
-    private PIDVelocityController3 velocityPID;
+    private PIDVelocityController2 velocityPID;
     public Pose2D robotPos;
     public static double currentVelocity;
     public double velX;
@@ -72,15 +72,13 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     public static double lockedFlywheelVelocity = -1600;
     public static double lockedHoodHeight = 0.1;
     public static double TargetVelocity = -1200;
-    public static double defaultVoltage = 13.0;
-    public static double KpMaintain = 0.002;
-    public static double KpRecover = 0.03;
-    public static double KiMaintain = 0.003;
-    public static double KiRecover = 0.02;
-    public static double KsRecover = 0.7;
-    public static double kSFeedforward = 0.055;
-    public static double kVFeedforward = 0.00042;
-    public static double recoveryThreshold = 120;
+    public static double defaultVoltage = 12.0;
+    public static double VKp = 0.02;
+    public static double VKi = 0.003;
+    public static double VKd = 0;
+    public static double VkS = 0;
+    public static double VkV = 0.00042;
+    public static double recoveryThreshold = 160;
     public static double sec = 1.0;
     public static double moveAway = 0;
     public static double gear = 11.9;
@@ -130,8 +128,8 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     public static double recyclingKickerUpDelay = 500;
     //throttling
     double lastPinpointUpdate = 0;
-    public static double pinpointThrottleMS = 50;
-    public static double telemeteryThrottleMS = 400;
+    public static double pinpointThrottleMS = 20;
+    public static double telemeteryThrottleMS = 40000000;
     double lastTelemetryUpdate = 0;
     double flywheelCurrentVelocity = 0;
     double targetVelocity = 0;
@@ -284,16 +282,10 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         leftShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
         rightShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
-        velocityPID = new PIDVelocityController3(
-                900,
-                KpMaintain,
-                KiMaintain,
-                KpRecover,
-                KiRecover,
-                KsRecover,
-                kSFeedforward,
-                kVFeedforward
-
+        velocityPID = new PIDVelocityController2(
+                VKp, VKi, VKd,
+                VkS, VkV,
+                TargetVelocity
         );
 
         limelight.setPollRateHz(15);
@@ -603,10 +595,8 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
             }
 
             velocityPID.setTargetVelocity(targetVelocity);
-            velocityPID.setMaintainGains(KpMaintain, KiMaintain);
-            velocityPID.setRecoveryGains(KpRecover, KiRecover,KsRecover);
-            velocityPID.setFeedforward(kSFeedforward, kVFeedforward);
-            velocityPID.setRecoveryThreshold(recoveryThreshold);
+            velocityPID.setPID(VKp, VKi, VKd);
+            velocityPID.setFeedforward(VkS, VkV);
 
             power = velocityPID.update(flywheelCurrentVelocity, currentVoltage, defaultVoltage);
             leftShooterMotor.setPower(power);

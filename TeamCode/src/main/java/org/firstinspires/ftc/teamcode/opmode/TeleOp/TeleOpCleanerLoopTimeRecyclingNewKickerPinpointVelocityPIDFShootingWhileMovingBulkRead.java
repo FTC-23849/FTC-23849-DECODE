@@ -571,7 +571,7 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
                 velocityPID.setPID(VKp, VKi, VKd);
                 velocityPID.setFeedforward(VkS, VkV);
 
-                power = velocityPID.update(flywheelCurrentVelocity,presentVoltage);
+                power = velocityPID.update(flywheelCurrentVelocity,presentVoltage,12);
 
                 leftShooterMotor.setPower(power);
                 rightShooterMotor.setPower(power);
