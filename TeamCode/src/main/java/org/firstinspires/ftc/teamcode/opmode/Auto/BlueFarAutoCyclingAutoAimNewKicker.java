@@ -128,6 +128,14 @@ public class BlueFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
     public static boolean enableTurretTracking = true;
     public static boolean enableVelPID = true;
 
+    public static double secondCycleOffset = 0.0;
+    public static double thirdCycleOffset = 0.0;
+
+    public static double widenCycleOffset = 6.0;
+
+    public static boolean secondCycleOffsetEnabled = false;
+    public static boolean thirdCycleOffsetEnabled = false;
+
     // vPID
     double flywheelCurrentVelocity;
     double currentSpeed;
@@ -248,6 +256,31 @@ public class BlueFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
         sleep(500);
         telemetry.addData("FINISHED",true);
         telemetry.update();
+
+        while(!opModeIsActive() && !isStopRequested()) {
+
+            if (gamepad1.a) {
+                secondCycleOffset = 10.0;
+                secondCycleOffsetEnabled = true;
+            } else if (gamepad1.b) {
+                secondCycleOffset = 0.0;
+                secondCycleOffsetEnabled = false;
+            }
+
+            if (gamepad1.x) {
+                thirdCycleOffset = 10.0;
+                thirdCycleOffsetEnabled = true;
+            } else if (gamepad1.y) {
+                thirdCycleOffset = 0.0;
+                thirdCycleOffsetEnabled = false;
+            }
+
+            telemetry.addData("Enable second spike offset (a/b): ", secondCycleOffsetEnabled);
+            telemetry.addData("Enable third spike offset (x/y): ", thirdCycleOffsetEnabled);
+
+            telemetry.update();
+
+        }
 
         waitForStart();
 
@@ -392,17 +425,17 @@ public class BlueFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, -62), Math.toRadians(270),
+                                                        new Vector2d(62 - secondCycleOffset, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, -50), Math.toRadians(270),
+                                                        new Vector2d(62 - secondCycleOffset - widenCycleOffset, -50), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, -62), Math.toRadians(270),
+                                                        new Vector2d(62 - secondCycleOffset - widenCycleOffset, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -451,17 +484,17 @@ public class BlueFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, -62), Math.toRadians(270),
+                                                        new Vector2d(62 - thirdCycleOffset, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, -50), Math.toRadians(270),
+                                                        new Vector2d(62 - thirdCycleOffset - widenCycleOffset, -50), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, -62), Math.toRadians(270),
+                                                        new Vector2d(62 - thirdCycleOffset - widenCycleOffset, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
