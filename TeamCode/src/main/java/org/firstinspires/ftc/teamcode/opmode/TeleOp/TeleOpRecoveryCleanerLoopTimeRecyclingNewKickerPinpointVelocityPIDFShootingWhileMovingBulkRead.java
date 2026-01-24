@@ -77,6 +77,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     public static double KpRecover = 0.03;
     public static double KiMaintain = 0.003;
     public static double KiRecover = 0.02;
+    public static double KsRecover = 0.7;
     public static double kSFeedforward = 0.055;
     public static double kVFeedforward = 0.00042;
     public static double recoveryThreshold = 120;
@@ -289,6 +290,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
                 KiMaintain,
                 KpRecover,
                 KiRecover,
+                KsRecover,
                 kSFeedforward,
                 kVFeedforward
 
@@ -602,7 +604,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
 
             velocityPID.setTargetVelocity(targetVelocity);
             velocityPID.setMaintainGains(KpMaintain, KiMaintain);
-            velocityPID.setRecoveryGains(KpRecover, KiRecover);
+            velocityPID.setRecoveryGains(KpRecover, KiRecover,KsRecover);
             velocityPID.setFeedforward(kSFeedforward, kVFeedforward);
             velocityPID.setRecoveryThreshold(recoveryThreshold);
 

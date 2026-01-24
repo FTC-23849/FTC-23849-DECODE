@@ -11,7 +11,7 @@ public class PIDVelocityController3 {
     // ---- Gains for recovery mode ----
     private double KpRecovery;
     private double KiRecovery;
-
+    private double KsRecovery;
     // ---- Feedforward (constant) ----
     private double kS;
     private double kV;
@@ -33,7 +33,7 @@ public class PIDVelocityController3 {
     public PIDVelocityController3(
             double targetVelocity,
             double KpMaintain, double KiMaintain,
-            double KpRecovery, double KiRecovery,
+            double KpRecovery, double KiRecovery,double KsRecovery,
             double kS, double kV
     ) {
         this.targetVelocity = targetVelocity;
@@ -42,6 +42,7 @@ public class PIDVelocityController3 {
         this.KiMaintain = KiMaintain;
         this.KpRecovery = KpRecovery;
         this.KiRecovery = KiRecovery;
+        this.KsRecovery = KsRecovery;
 
         this.kS = kS;
         this.kV = kV;
@@ -67,6 +68,7 @@ public class PIDVelocityController3 {
         // ---- Select gains ----
         double Kp = recoveringMode ? KpRecovery : KpMaintain;
         double Ki = recoveringMode ? KiRecovery : KiMaintain;
+        double kS = recoveringMode ? KsRecovery : 0.055;
 
         // ---- Integral handling ----
         if (!recoveringMode) {
@@ -105,9 +107,10 @@ public class PIDVelocityController3 {
         this.KiMaintain = Ki;
     }
 
-    public void setRecoveryGains(double Kp, double Ki) {
+    public void setRecoveryGains(double Kp, double Ki,double Ks) {
         this.KpRecovery = Kp;
         this.KiRecovery = Ki;
+        this.KsRecovery = Ks;
     }
 
     public void setFeedforward(double kS, double kV) {

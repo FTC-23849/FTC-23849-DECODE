@@ -66,15 +66,24 @@ public class PinpointVelTest extends OpMode {
         rb.setPower((y + x - rx) / denom);
 
         Pose2D pose = pinpoint.getPosition();
-        double vx = pinpoint.getVelX(DistanceUnit.METER);
-        double vy = pinpoint.getVelY(DistanceUnit.METER);
+
+        double vxField = pinpoint.getVelX(DistanceUnit.METER);
+        double vyField = pinpoint.getVelY(DistanceUnit.METER);
+
+        double heading = pose.getHeading(AngleUnit.RADIANS);
+
+        double vxRobot = vxField * Math.sin(heading) + vyField * Math.cos(heading);
+        double vyRobot = vxField * Math.cos(heading) - vyField * Math.sin(heading);
 
         double px = pinpoint.getPosX(DistanceUnit.METER);
         double py = pinpoint.getPosY(DistanceUnit.METER);
+
         double currentDist = vision.groundDistancePinpoint(px, py, "Red");
-        double flightTime = 1 * (7.0 / 30.0) * currentDist + 0.05;
-        double ax = px + vx * flightTime;
-        double ay = py + vy * flightTime;
+        double flightTime = (7.0 / 30.0) * currentDist + 0.05;
+
+        double ax = px + vxField * flightTime;
+        double ay = py + vyField * flightTime;
+
         double estimatedDist = vision.groundDistancePinpoint(ax, ay, "Red");
         double fx = estimatedDist;
         double x2 = fx * fx;
@@ -89,9 +98,12 @@ public class PinpointVelTest extends OpMode {
         dashboardTelemetry.addData("Pose Y (m)", pose.getY(DistanceUnit.METER));
         dashboardTelemetry.addData("Pose Heading (deg)", pose.getHeading(AngleUnit.DEGREES));
         dashboardTelemetry.addLine();
-        dashboardTelemetry.addData("getVelX (m/s)", vx);
-        dashboardTelemetry.addData("getVelY (m/s)", vy);
-        dashboardTelemetry.addData("getHeadingVelocity (deg/s)", pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
+        dashboardTelemetry.addData("Field Vel X (m/s)", vxField);
+        dashboardTelemetry.addData("Field Vel Y (m/s)", vyField);
+        dashboardTelemetry.addLine();
+        dashboardTelemetry.addData("Robot Vel X (strafe m/s)", vxRobot);
+        dashboardTelemetry.addData("Robot Vel Y (forward m/s)", vyRobot);
+        dashboardTelemetry.addData("Heading Vel (deg/s)", pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
         dashboardTelemetry.addLine();
         dashboardTelemetry.addData("speed", speed);
         dashboardTelemetry.update();
