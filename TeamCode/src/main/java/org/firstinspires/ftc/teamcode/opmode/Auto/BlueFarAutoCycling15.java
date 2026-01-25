@@ -300,27 +300,27 @@ public class BlueFarAutoCycling15 extends LinearOpMode {
 
             // Offset Adjustment
 
-            if (gamepad2.a) {
+            if (gamepad2.aWasReleased()) {
                 secondCycleOffset += 1.0;
-            } else if (gamepad2.b) {
+            } else if (gamepad2.bWasReleased()) {
                 secondCycleOffset -= 1.0;
             }
 
-            if (gamepad2.x) {
+            if (gamepad2.xWasReleased()) {
                 thirdCycleOffset += 1.0;
-            } else if (gamepad2.y) {
+            } else if (gamepad2.yWasReleased()) {
                 thirdCycleOffset -= 1.0;
             }
 
-            if (gamepad2.dpad_up) {
+            if (gamepad2.dpadUpWasReleased()) {
                 fourthCycleOffset += 1.0;
-            } else if (gamepad2.dpad_down) {
+            } else if (gamepad2.dpadDownWasReleased()) {
                 fourthCycleOffset -= 1.0;
             }
 
-            if (gamepad2.dpad_left) {
+            if (gamepad2.dpadLeftWasReleased()) {
                 widenCycleOffset += 1.0;
-            } else if (gamepad2.dpad_right) {
+            } else if (gamepad2.dpadRightWasReleased()) {
                 widenCycleOffset -= 1.0;
             }
 
