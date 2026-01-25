@@ -918,7 +918,7 @@ public class visionTools {
                 - 344.1536 * x
                 - 962.8227;
         if(estimatedDist<2.0){
-            speed -= 30;
+            speed += 60;
         }
         if (currentDist == -1) {
             return currentVelocity;
@@ -977,19 +977,10 @@ public class visionTools {
 
         double curYaw = pose2d.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
 
-        double goalX = 1.6288;
-        double goalY = (alliance.equals("Red")) ? -1.6288 : 1.6288;
-
-        if(dist > 3.0) {
-            goalX = 1.6288;
-            goalY = (alliance.equals("Blue")) ? 1.6288 : -1.6288;
-        }
-        if(curX > 1.2){
-            goalX = 1.5288;
-            goalY = (alliance.equals("Blue")) ? 1.5288 : -1.5288;
-        } else if(curX > 0){
-            goalX = 1.8288;
-            goalY = (alliance.equals("Blue")) ? 1.8288 : -1.8288;
+        double goalX = 1.8288;
+        double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
+        if(dist > 3.0){
+            goalY = (alliance.equals("Red")) ? -1.6288 : 1.6288;
         }
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;
