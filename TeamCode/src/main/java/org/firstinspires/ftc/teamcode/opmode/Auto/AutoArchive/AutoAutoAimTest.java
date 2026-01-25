@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.Auto;
+package org.firstinspires.ftc.teamcode.opmode.Auto.AutoArchive;
 
 import androidx.annotation.NonNull;
 
@@ -9,11 +9,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.ProfileAccelConstraint;
 import com.acmerobotics.roadrunner.SequentialAction;
-import com.acmerobotics.roadrunner.SleepAction;
-import com.acmerobotics.roadrunner.TranslationalVelConstraint;
-import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -27,7 +23,6 @@ import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.DroidLib.CRAxonPDController;
 import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
@@ -36,7 +31,6 @@ import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 
 import java.util.function.Function;
-import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
 

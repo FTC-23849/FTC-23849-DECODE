@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.Auto;
+package org.firstinspires.ftc.teamcode.opmode.Auto.AutoArchive;
 
 import androidx.annotation.NonNull;
 
@@ -26,19 +26,18 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.DroidLib.CRAxonPDController;
+import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
-import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
-import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 
 import java.util.function.Function;
 
+//@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
+public class BlueFarAutoCyclingNewKicker extends LinearOpMode {
 
     // Initialize all hardware
     Limelight3A limelight;
@@ -66,60 +65,52 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
 
     ServoImplEx leftTongueServo;
     ServoImplEx rightTongueServo;
-    GoBildaPinpointDriver pinpoint;
 
     // Initialize all parameters
-//    public static double minVelIntaking = 40;
-//    public static double minAccelIntaking = -40;
-//    public static double maxAccelIntaking = 40;
+    public static double minVelIntaking = 40;
+    public static double minAccelIntaking = -40;
+    public static double maxAccelIntaking = 40;
 
-    public static double minVelDrive = 65;
-    public static double minAccelDrive = -55;
-    public static double maxAccelDrive = 55;
+    public static double minVelDrive = 80;
+    public static double minAccelDrive = -70;
+    public static double maxAccelDrive = 70;
 
-    public static double shooterStartDelay = 0.1;
-    public static double shootingDelay = 1;
+    public static double shooterStartDelay = 0.3;
+    public static double shootingDelay = 3.2;
 
-    public static double recycleDelay = 0.4;
+    public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.655;
-    public static double turretShootPos = 0.580;
+    public static double turretStartPos = 0.385; /*0.39*/
+    //public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
 
-    public static boolean allowExternalUpdating = true;
-    public static boolean obeliskRead = false;
-
-    //public static double recyclingDelay = 2000;
+    public static double recyclingDelay = 2000;
     public static double recyclingIntakeDelay = 500;
     public static double recyclingKickerUpDelay = 500;
 
-    public static boolean kickersStarted = false;
+    public static boolean kickerPIDEnabled = true;
 
-    public static double shootingSpeed = -0.58;
+    public static double kickerTarget = Globals.KICKER_IDLE;
 
-    public static double shootingSpeedPID = -1370;
-    public static double turretOffset = -0.015;
+    // Stall detection
+    public static double stallWindowMs   = 200;   // how long we wait to see movement
+    public static double stallMinDelta   = 0.1;  // minimum encoder change to consider "moving"
+    public static double stallRecoveryMs = 1000;   // how long to hold in IDLE before resuming shot
 
-    public static String allianceColor = "Red";
+    public static double stallGraceMs    = 400;  // ms
 
-    // vPID
-    double flywheelCurrentVelocity;
-    double currentSpeed;
-    double variableFlywheelSpeed;
-    double targetVelocity;
-    double power;
+    public static double intakeShootingSpeed = -0.2;
 
-    public PIDVelocityController2 velocityPID;
-    public static double currentVelocity;
-    public static double TargetVelocity;
-    public static double VKp = Globals.VKp;
-    public static double VKi = Globals.VKi;
-    public static double VKd = Globals.VKd;
-    public static double VkS = Globals.VkS;
-    public static double VkV = Globals.VkV;
-    public static double sec = Globals.sec;
+    public static double kickerSpeed = -0.5;
 
+    public static double shootingSpeed = -0.75;
+
+    public static boolean kickersStarted;
+
+
+    public static boolean intakeLastSpike = true;
+    public static boolean intakeSecondSpike = false;
 
     int obeliskID = -1;
 
@@ -130,13 +121,17 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
 
     visionTools vision = new visionTools();
 
+    CRAxonPDController kickerPID = new CRAxonPDController();
+    DroidForceMethods DFM = new DroidForceMethods();
+
+
     @Override
     public void runOpMode() {
 
         // Instantiate MecanumDrive
-        Pose2d startPose = new Pose2d(-54.5, 45, Math.toRadians(135));
+        Pose2d startPose = new Pose2d(63, -14.5, Math.toRadians(270));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
-        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+
         // Map motors and servos
         leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"leftIntakeColorSensor");
         rightIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"rightIntakeColorSensor");
@@ -160,10 +155,6 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
         rightKickerServo = hardwareMap.get(CRServoImplEx.class, "rightKickerServo");
         rightKickerServo.setDirection(CRServoImplEx.Direction.REVERSE);
 
-        leftTongueServo = hardwareMap.get(ServoImplEx.class, "leftGateServo");
-        rightTongueServo = hardwareMap.get(ServoImplEx.class, "rightGateServo");
-        leftTongueServo.setDirection(ServoImplEx.Direction.REVERSE);
-
         leftTurretServo = hardwareMap.get(ServoImplEx.class, "leftTurretServo");
         rightTurretServo = hardwareMap.get(ServoImplEx.class, "rightTurretServo");
 
@@ -179,11 +170,11 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
         leftTipper = hardwareMap.get(ServoImplEx.class, "leftTipper");
         rightTipper = hardwareMap.get(ServoImplEx.class, "rightTipper");
 
-        kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
+        leftTongueServo = hardwareMap.get(ServoImplEx.class, "leftGateServo");
+        rightTongueServo = hardwareMap.get(ServoImplEx.class, "rightGateServo");
+        leftTongueServo.setDirection(ServoImplEx.Direction.REVERSE);
 
-        leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
-        rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
-        rightHood.setDirection(ServoImplEx.Direction.REVERSE);
+        kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
 
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
@@ -208,23 +199,8 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
         leftTongueServo.setPosition(Globals.tongueIntake);
         rightTongueServo.setPosition(Globals.tongueIntake);
 
-
         plainKickerPower = 0.0;
 
-        velocityPID = new PIDVelocityController2(
-                VKp, VKi, VKd,
-                VkS, VkV,
-                TargetVelocity
-        );
-        sleep(500);
-
-        obeliskRead = false;
-
-        pinpoint.recalibrateIMU();
-
-        sleep(500);
-        telemetry.addData("FINISHED",true);
-        telemetry.update();
         waitForStart();
 
         if (isStopRequested()) return;
@@ -236,50 +212,91 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                 // Thread 1: Pathing + General Robot
                 new SequentialAction(
 
-                        // Preloads
-                        new ParallelAction(
-                                // Preload Path from known start pose
-                                new PathFromCurrentPose(drive, pose ->
-                                        drive.actionBuilder(pose)
-                                                .strafeToLinearHeading(
-                                                        new Vector2d(-12, 15), Math.toRadians(90),
-                                                        new TranslationalVelConstraint(minVelDrive),
-                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                )
-                                                .build()
-                                ),
-
-                                //Repeat for correction
-                                new PathFromCurrentPose(drive, pose ->
-                                        drive.actionBuilder(pose)
-                                                .strafeToLinearHeading(
-                                                        new Vector2d(-12, 15), Math.toRadians(90),
-                                                        new TranslationalVelConstraint(minVelDrive),
-                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                )
-                                                .build()
-                                ),
-
-                                new setShooter(leftShooterMotor, rightShooterMotor, shootingSpeed)
-                        ),
-                        new getObeliskID(),
-                        new SleepAction(0.3),
-                        new setObeliskRead(),
-
-                        new setTurret(turretShootPos),
-                        //new recycle("PPG", frontIntakeMotor),
-                        new SleepAction(0.3),
-
+                        new setShooter(leftShooterMotor, rightShooterMotor, shootingSpeed),
+                        new SleepAction(2),
                         new kickerShoot(),
+
                         new SleepAction(shootingDelay),
 
-                        // Spike 2
+                        new ParallelAction(
+                                // Go To Intake Last Spike Path (from *current* pose)
+                                new PathFromCurrentPose(drive, pose ->
+                                        drive.actionBuilder(pose)
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(36, -28), Math.toRadians(270),
+                                                        new TranslationalVelConstraint(minVelDrive),
+                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                )
+                                                .build()
+                                ),
+                                new kickerIdle(false),
+                                new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
+                        ),
+
+                        // Intake balls path
+
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(36, -60), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
+                        // Go to Shooting Position
+
                         new ParallelAction(
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
-                                                .setTangent(0)
-                                                .splineToLinearHeading(
-                                                        new Pose2d(13, 60, Math.toRadians(90)), (Math.PI/2),
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(62, -15), Math.toRadians(270),
+                                                        new TranslationalVelConstraint(minVelDrive),
+                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                )
+                                                .build()
+                                ),
+                                new SequentialAction(
+                                        new SleepAction(1),
+                                        new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
+                                )
+                        ),
+
+                        // repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(62, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
+
+                        new SleepAction(shooterStartDelay),
+
+                        new kickerShoot(),
+
+                        new SleepAction(shootingDelay),
+
+
+                        // Intake Cycle 1
+                        new ParallelAction(
+                                new PathFromCurrentPose(drive, pose ->
+                                        drive.actionBuilder(pose)
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(62, -62), Math.toRadians(270),
+                                                        new TranslationalVelConstraint(minVelDrive),
+                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                )
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(62, -50), Math.toRadians(270),
+                                                        new TranslationalVelConstraint(minVelDrive),
+                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                )
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(62, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -290,51 +307,26 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                         ),
 
                         new ParallelAction(
-                                // Score Spike 2 Path (from *current* pose)
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
-                                                // Gate Open
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(13, 50), Math.toRadians(90),
-                                                        new TranslationalVelConstraint(minVelDrive),
-                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                )
-                                                //.setTangent(Math.PI/2)
-                                                .splineToLinearHeading(new Pose2d(2, 50, Math.toRadians(90)),
-                                                        (Math.PI/2),
-                                                        new TranslationalVelConstraint(minVelDrive),
-                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                )
-                                                .strafeToLinearHeading(
-                                                        new Vector2d(2, 62), Math.toRadians(90),
-                                                        new TranslationalVelConstraint(minVelDrive),
-                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                )
-                                                // Shoot Path
-                                                .strafeToLinearHeading(
-                                                        new Vector2d(2, 60), Math.toRadians(90),
-                                                        new TranslationalVelConstraint(minVelDrive),
-                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                )
-                                                .setTangent(-Math.PI/2)
-                                                .splineToLinearHeading(
-                                                        new Pose2d(-12, 15, Math.toRadians(90)), (Math.PI),
+                                                        new Vector2d(62, -15), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .build()
                                 ),
-
                                 new SequentialAction(
-                                        new SleepAction(recycleDelay + 3.5),
-                                        new recycle("PGP", frontIntakeMotor)
+                                        new SleepAction(1),
+                                        new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
                         ),
-                        //Repeat for correction
+
+                        // repeat for correction
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(-12, 15), Math.toRadians(90),
+                                                new Vector2d(62, -15), Math.toRadians(270),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -342,72 +334,28 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                         ),
 
                         new SleepAction(shooterStartDelay),
+
                         new kickerShoot(),
+
                         new SleepAction(shootingDelay),
 
-                        // Spike 1
+                        //Intake Cycle 2
+
                         new ParallelAction(
-                                // Intake Spike 1 Path (from *current* pose)
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-11, 60), Math.toRadians(90),
-                                                        new TranslationalVelConstraint(minVelDrive),
-                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                )
-                                                .build()
-                                ),
-                                new kickerIdle(false)
-                                // new setIntake(frontIntakeMotor, backIntakeMotor, 0.75)
-                        ),
-
-                        new ParallelAction(
-                                // Score Spike 1 Path (from *current* pose)
-                                new PathFromCurrentPose(drive, pose ->
-                                        drive.actionBuilder(pose)
-                                                .strafeToLinearHeading(
-                                                        new Vector2d(-12, 15), Math.toRadians(90),
-                                                        new TranslationalVelConstraint(minVelDrive),
-                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                )
-                                                .build()
-                                ),
-                                new SequentialAction(
-                                        new SleepAction(recycleDelay),
-                                        new recycle("PPG", frontIntakeMotor)
-                                )
-                        ),
-
-                        //Repeat for correction
-                        new PathFromCurrentPose(drive, pose ->
-                                drive.actionBuilder(pose)
-                                        .strafeToLinearHeading(
-                                                new Vector2d(-12, 15), Math.toRadians(90),
-                                                new TranslationalVelConstraint(minVelDrive),
-                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                        )
-                                        .build()
-                        ),
-
-                        new SleepAction(shooterStartDelay),
-                        new kickerShoot(),
-                        new SleepAction(shootingDelay),
-
-
-                        // Spike 3
-
-                        new ParallelAction(
-                                // Intake Spike 3 Path (from *current* pose)
-                                new PathFromCurrentPose(drive, pose ->
-                                        drive.actionBuilder(pose)
-                                                .setTangent(0)
-                                                .splineToLinearHeading(
-                                                        new Pose2d(33, 25, Math.toRadians(90)), (Math.PI/2),
+                                                        new Vector2d(62, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(33, 62), Math.toRadians(90),
+                                                        new Vector2d(62, -50), Math.toRadians(270),
+                                                        new TranslationalVelConstraint(minVelDrive),
+                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                )
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(62, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -418,27 +366,26 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                         ),
 
                         new ParallelAction(
-                                // Score Spike 3 Path (from *current* pose)
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-12, 15), Math.toRadians(90),
+                                                        new Vector2d(62, -15), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .build()
                                 ),
                                 new SequentialAction(
-                                        new SleepAction(recycleDelay),
-                                        new recycle("GPP", frontIntakeMotor)
+                                        new SleepAction(1),
+                                        new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
                                 )
                         ),
 
-                        //Repeat for correction
+                        // repeat for correction
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(-12, 15), Math.toRadians(90),
+                                                new Vector2d(62, -15), Math.toRadians(270),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -446,117 +393,76 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                         ),
 
                         new SleepAction(shooterStartDelay),
+
                         new kickerShoot(),
+
                         new SleepAction(shootingDelay),
 
-                        // Park
+                        //Intake Cycle 3
+
                         new ParallelAction(
-                                // Park Path (from *current* pose)
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-22, 54), Math.toRadians(90),
-                                                        new TranslationalVelConstraint(60),
-                                                        new ProfileAccelConstraint(-60, 60)
+                                                        new Vector2d(62, -62), Math.toRadians(270),
+                                                        new TranslationalVelConstraint(minVelDrive),
+                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                )
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(62, -50), Math.toRadians(270),
+                                                        new TranslationalVelConstraint(minVelDrive),
+                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                )
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(62, -62), Math.toRadians(270),
+                                                        new TranslationalVelConstraint(minVelDrive),
+                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .build()
                                 ),
-                                new setShooter(leftShooterMotor, rightShooterMotor, 0.0),
-                                new kickerIdle(true)
-                        )
+                                new kickerIdle(false),
+                                new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
+                        ),
 
-                ),
+                        new ParallelAction(
+                                new PathFromCurrentPose(drive, pose ->
+                                        drive.actionBuilder(pose)
+                                                .strafeToLinearHeading(
+                                                        new Vector2d(62, -15), Math.toRadians(270),
+                                                        new TranslationalVelConstraint(minVelDrive),
+                                                        new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                )
+                                                .build()
+                                ),
+                                new SequentialAction(
+                                        new SleepAction(1),
+                                        new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
+                                )
+                        ),
 
-                new SequentialAction(
-                        new startVelPIDPlain(shootingSpeedPID)
-                ),
+                        // repeat for correction
+                        new PathFromCurrentPose(drive, pose ->
+                                drive.actionBuilder(pose)
+                                        .strafeToLinearHeading(
+                                                new Vector2d(62, -15), Math.toRadians(270),
+                                                new TranslationalVelConstraint(minVelDrive),
+                                                new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                        )
+                                        .build()
+                        ),
 
-                new SequentialAction(
-                        new startTurretTracking(drive)
+                        new SleepAction(shooterStartDelay),
+
+                        new kickerShoot(),
+
+                        new SleepAction(shootingDelay)
+
                 )
 
         ));
 
         sleep(1000);
 
-    }
-
-    public class startTurretTracking implements Action {
-
-        private final MecanumDrive drive;
-
-        public startTurretTracking(MecanumDrive drive){
-            this.drive = drive;
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            // Always update first
-            if (allowExternalUpdating) {
-                drive.updatePoseEstimate();
-                drive.localizer.update();
-            }
-
-            if (obeliskRead) {
-                //pinpoint.update();
-
-                Pose2D pose = vision.RRtoPinpoint(drive);
-
-                telemetry.addData("pos",pose.toString());
-                telemetry.addData("heading",pose.getHeading(AngleUnit.DEGREES));
-                telemetry.update();
-
-                // Normal tracking
-                double leftCmd  = vision.pinpointTurretMovingAUTO(pose,11.9, sec, leftTurretServo.getPosition(), allianceColor);
-                double rightCmd = vision.pinpointTurretMovingAUTO(pose,11.9, sec, rightTurretServo.getPosition(), allianceColor);
-
-                leftTurretServo.setPosition(leftCmd - turretOffset);
-                rightTurretServo.setPosition(rightCmd - turretOffset);
-            }
-
-            return true; // keep running for whole auto
-        }
-    }
-
-    public class setObeliskRead implements Action {
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            // Always update first
-            obeliskRead = true;
-
-            return false; // keep running for whole auto
-        }
-    }
-
-    public class startVelPIDPlain implements Action {
-
-        private final double speed;
-
-        public startVelPIDPlain(double speed){
-            this.speed = speed;
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
-
-            targetVelocity = speed;
-
-            velocityPID.setTargetVelocity(targetVelocity);
-            velocityPID.setPID(VKp, VKi, VKd);
-            velocityPID.setFeedforward(VkS, VkV);
-
-            power = velocityPID.update(flywheelCurrentVelocity);
-
-            leftShooterMotor.setPower(power);
-            rightShooterMotor.setPower(power);
-
-            currentSpeed = targetVelocity;
-
-            return true;
-        }
     }
 
     /**
@@ -569,7 +475,6 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
         private final MecanumDrive drive;
         private final Function<Pose2d, Action> actionFactory;
         private Action inner = null;
-        private boolean started = false;
 
         public PathFromCurrentPose(MecanumDrive drive, Function<Pose2d, Action> actionFactory) {
             this.drive = drive;
@@ -579,33 +484,12 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             if (inner == null) {
-                // Before the path starts
-                allowExternalUpdating = false;
-                started = true;
-
                 Pose2d now = drive.localizer.getPose();
                 inner = actionFactory.apply(now);
-
-                // Fail-safe: if factory returns null, don't leave updates disabled
-                if (inner == null) {
-                    allowExternalUpdating = true;
-                    started = false;
-                    return false;
-                }
             }
-
-            boolean keepRunning = inner.run(telemetryPacket);
-
-            if (!keepRunning && started) {
-                // Once the path completes
-                allowExternalUpdating = true;
-                started = false;
-            }
-
-            return keepRunning;
+            return inner.run(telemetryPacket);
         }
     }
-
 
 
     public class updatePose implements Action {
@@ -651,6 +535,30 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
             telemetry.update();
 
             return true;
+
+        }
+    }
+
+    public class kickerPIDEnableDisable implements Action {
+
+        private String status = null;
+
+        public kickerPIDEnableDisable(String status){
+
+            this.status = status;
+
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+
+            if ("Enabled".equals(status)) {
+                kickerPIDEnabled = true;
+            } else if ("Disabled".equals(status)) {
+                kickerPIDEnabled = false;
+            }
+
+            return false;
 
         }
     }
@@ -759,9 +667,9 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
         private final ElapsedTime recyclerTimer = new ElapsedTime();
         private boolean started = false;
 
-        // Default timings constructor: 400 ms tongue down, 400 ms intake
+        // Default timings constructor: 400 ms tongue down, 600 ms intake
         public recycleArtifact(DcMotorEx frontIntakeMotor) {
-            this(frontIntakeMotor, 600, 1000);
+            this(frontIntakeMotor, 400, 600);
         }
 
         // Optional: custom timings constructor
@@ -775,10 +683,7 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            telemetry.addData("Version",1);
-            telemetry.addData("Tongue Pos",leftTongueServo.getPosition());
-            telemetry.addData("intake ms",intakeRunMs);
-            telemetry.update();
+
             if (!started) {
                 started = true;
                 recyclerTimer.reset();
@@ -790,29 +695,26 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
             if (t < tongueDownMs) {
                 leftTongueServo.setPosition(Globals.tongueRecycle);
                 rightTongueServo.setPosition(Globals.tongueRecycle);
-                telemetry.addData("Tongue Pos",leftTongueServo.getPosition());
-                telemetry.addData("intake ms",intakeRunMs);
-                telemetry.update();
+
                 leftKickerServo.setPower(Globals.rollerKickerRecycle);
                 rightKickerServo.setPower(Globals.rollerKickerRecycle);
 
                 frontIntakeMotor.setPower(0.0);
 
-                return true;  // still running
+                return true;
             }
 
             // -------- PHASE 2: tongue UP + rollers OFF, intake ON --------
             if (t < tongueDownMs + intakeRunMs) {
                 leftTongueServo.setPosition(Globals.tongueIntake);
                 rightTongueServo.setPosition(Globals.tongueIntake);
-                telemetry.addData("intake ms",intakeRunMs);
-                telemetry.addData("intake ms",intakeRunMs);
+
                 leftKickerServo.setPower(0.0);
                 rightKickerServo.setPower(0.0);
 
                 frontIntakeMotor.setPower(-1.0);
 
-                return true;  // still running
+                return true;
             }
 
             // -------- PHASE 3: stop intake, finish --------
@@ -824,84 +726,9 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
 
             frontIntakeMotor.setPower(0.0);
 
-            return false; // action complete
+            return false;
         }
     }
-
-//    public class recycleArtifact implements Action {
-//
-//        private final DcMotorEx frontIntakeMotor;
-//
-//        // Phase durations (ms)
-//        private final double tongueDownMs;
-//        private final double intakeRunMs;
-//
-//        private final ElapsedTime recyclerTimer = new ElapsedTime();
-//        private boolean started = false;
-//
-//        // Default timings constructor: 400 ms tongue down, 600 ms intake
-//        public recycleArtifact(DcMotorEx frontIntakeMotor) {
-//            this(frontIntakeMotor, 400, 1000);
-//        }
-//
-//        // Optional: custom timings constructor
-//        public recycleArtifact(DcMotorEx frontIntakeMotor,
-//                               double tongueDownMs,
-//                               double intakeRunMs) {
-//            this.frontIntakeMotor = frontIntakeMotor;
-//            this.tongueDownMs = tongueDownMs;
-//            this.intakeRunMs = intakeRunMs;
-//        }
-//
-//        @Override
-//        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-//
-//            if (!started) {
-//                started = true;
-//                recyclerTimer.reset();
-//            }
-//
-//            double t = recyclerTimer.milliseconds();
-//
-//            // -------- PHASE 1: tongue DOWN + rollers ON, intake OFF --------
-//            if (t < tongueDownMs) {
-//                leftTongueServo.setPosition(Globals.tongueRecycle);
-//                rightTongueServo.setPosition(Globals.tongueRecycle);
-//
-//                leftKickerServo.setPower(Globals.rollerKickerRecycle);
-//                rightKickerServo.setPower(Globals.rollerKickerRecycle);
-//
-//                frontIntakeMotor.setPower(0.0);
-//
-//                return true;
-//            }
-//
-//            // -------- PHASE 2: tongue UP + rollers OFF, intake ON --------
-//            if (t < tongueDownMs + intakeRunMs) {
-//                leftTongueServo.setPosition(Globals.tongueIntake);
-//                rightTongueServo.setPosition(Globals.tongueIntake);
-//
-//                leftKickerServo.setPower(0.0);
-//                rightKickerServo.setPower(0.0);
-//
-//                frontIntakeMotor.setPower(-1.0);
-//
-//                return true;
-//            }
-//
-//            // -------- PHASE 3: stop intake, finish --------
-//            leftTongueServo.setPosition(Globals.tongueIntake);
-//            rightTongueServo.setPosition(Globals.tongueIntake);
-//
-//            leftKickerServo.setPower(0.0);
-//            rightKickerServo.setPower(0.0);
-//
-//            frontIntakeMotor.setPower(0.0);
-//
-//            return false;
-//        }
-//    }
-
 
 
     public class setTurret implements Action {
@@ -922,32 +749,32 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
         }
     }
 
-//    public class startTurretTracking implements Action {
-//
-//        private final ServoImplEx leftTurretServo;
-//        private final ServoImplEx rightTurretServo;
-//        private final Limelight3A limelight;
-//
-//        private final visionTools visionTools;
-//
-//        public startTurretTracking(ServoImplEx leftTurretServo, ServoImplEx rightTurretServo, Limelight3A limelight, visionTools visionTools){
-//            this.leftTurretServo = leftTurretServo;
-//            this.rightTurretServo = rightTurretServo;
-//            this.limelight = limelight;
-//            this.visionTools = visionTools;
-//        }
-//
-//        @Override
-//        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-//
-//            double position = leftTurretServo.getPosition();
-//
-//            leftTurretServo.setPosition(visionTools.adjustedTurretAngle(position, limelight,1));
-//            rightTurretServo.setPosition(visionTools.adjustedTurretAngle(position, limelight,1));
-//
-//            return true;
-//        }
-//    }
+    public class startTurretTracking implements Action {
+
+        private final ServoImplEx leftTurretServo;
+        private final ServoImplEx rightTurretServo;
+        private final Limelight3A limelight;
+
+        private final visionTools visionTools;
+
+        public startTurretTracking(ServoImplEx leftTurretServo, ServoImplEx rightTurretServo, Limelight3A limelight, visionTools visionTools){
+            this.leftTurretServo = leftTurretServo;
+            this.rightTurretServo = rightTurretServo;
+            this.limelight = limelight;
+            this.visionTools = visionTools;
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+
+            double position = leftTurretServo.getPosition();
+
+            leftTurretServo.setPosition(visionTools.adjustedTurretAngle(position, limelight,1));
+            rightTurretServo.setPosition(visionTools.adjustedTurretAngle(position, limelight,1));
+
+            return true;
+        }
+    }
 
     public class setShooter implements Action {
 
@@ -992,10 +819,10 @@ public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
 
             // after 200ms, run the kickers
             if (!kickersStarted && shooterTimer.milliseconds() >= 200) {
-                leftKickerServo.setPower(Globals.rollerKickerShoot);
-                rightKickerServo.setPower(Globals.rollerKickerShoot);
-                frontIntakeMotor.setPower(-1.0);
-                backIntakeMotor.setPower(-1.0);
+                leftKickerServo.setPower(kickerSpeed);
+                rightKickerServo.setPower(kickerSpeed);
+                frontIntakeMotor.setPower(intakeShootingSpeed);
+                backIntakeMotor.setPower(intakeShootingSpeed);
 
                 kickersStarted = true;
             }

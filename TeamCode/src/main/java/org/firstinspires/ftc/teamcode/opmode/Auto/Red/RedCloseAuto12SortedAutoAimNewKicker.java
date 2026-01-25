@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.Auto;
+package org.firstinspires.ftc.teamcode.opmode.Auto.Red;
 
 import androidx.annotation.NonNull;
 
@@ -38,7 +38,7 @@ import java.util.function.Function;
 
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
+public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
 
     // Initialize all hardware
     Limelight3A limelight;
@@ -82,8 +82,8 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
 
     public static double recycleDelay = 0.4;
 
-    public static double turretStartPos = 0.34;
-    public static double turretShootPos = 0.420;
+    public static double turretStartPos = 0.655;
+    public static double turretShootPos = 0.580;
 
     public static double plainKickerPower = 0.0;
 
@@ -99,9 +99,9 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
     public static double shootingSpeed = -0.58;
 
     public static double shootingSpeedPID = -1370;
-    public static double turretOffset = 0.01;
+    public static double turretOffset = -0.015;
 
-    public static String allianceColor = "Blue";
+    public static String allianceColor = "Red";
 
     // vPID
     double flywheelCurrentVelocity;
@@ -134,7 +134,7 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
     public void runOpMode() {
 
         // Instantiate MecanumDrive
-        Pose2d startPose = new Pose2d(-54.5, -45, Math.toRadians(225));
+        Pose2d startPose = new Pose2d(-54.5, 45, Math.toRadians(135));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         // Map motors and servos
@@ -242,7 +242,7 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-12, -15), Math.toRadians(270),
+                                                        new Vector2d(-12, 15), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -253,7 +253,7 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-12, -15), Math.toRadians(270),
+                                                        new Vector2d(-12, 15), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -279,7 +279,7 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                                         drive.actionBuilder(pose)
                                                 .setTangent(0)
                                                 .splineToLinearHeading(
-                                                        new Pose2d(15, -60, Math.toRadians(270)), (-Math.PI/2),
+                                                        new Pose2d(13, 60, Math.toRadians(90)), (Math.PI/2),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -295,30 +295,30 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                                         drive.actionBuilder(pose)
                                                 // Gate Open
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(13, -50), Math.toRadians(270),
+                                                        new Vector2d(13, 50), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 //.setTangent(Math.PI/2)
-                                                .splineToLinearHeading(new Pose2d(2, -50, Math.toRadians(270)),
-                                                        (-Math.PI/2),
+                                                .splineToLinearHeading(new Pose2d(2, 50, Math.toRadians(90)),
+                                                        (Math.PI/2),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(2, -62), Math.toRadians(270),
+                                                        new Vector2d(2, 62), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 // Shoot Path
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(2, -60), Math.toRadians(270),
+                                                        new Vector2d(2, 60), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
-                                                .setTangent(Math.PI/2)
+                                                .setTangent(-Math.PI/2)
                                                 .splineToLinearHeading(
-                                                        new Pose2d(-12, -15, Math.toRadians(270)), (Math.PI),
+                                                        new Pose2d(-12, 15, Math.toRadians(90)), (Math.PI),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -334,7 +334,7 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new Vector2d(-12, 15), Math.toRadians(90),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -351,7 +351,7 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-11, -60), Math.toRadians(270),
+                                                        new Vector2d(-11, 60), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -366,7 +366,7 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-12, -15), Math.toRadians(270),
+                                                        new Vector2d(-12, 15), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -382,7 +382,7 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new Vector2d(-12, 15), Math.toRadians(90),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -402,12 +402,12 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                                         drive.actionBuilder(pose)
                                                 .setTangent(0)
                                                 .splineToLinearHeading(
-                                                        new Pose2d(33, -25, Math.toRadians(270)), (-Math.PI/2),
+                                                        new Pose2d(33, 25, Math.toRadians(90)), (Math.PI/2),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(33, -62), Math.toRadians(270),
+                                                        new Vector2d(33, 62), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -422,7 +422,7 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-12, -15), Math.toRadians(270),
+                                                        new Vector2d(-12, 15), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -438,7 +438,7 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new Vector2d(-12, 15), Math.toRadians(90),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -455,7 +455,7 @@ public class BlueCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-22, -54), Math.toRadians(270),
+                                                        new Vector2d(-22, 54), Math.toRadians(90),
                                                         new TranslationalVelConstraint(60),
                                                         new ProfileAccelConstraint(-60, 60)
                                                 )
