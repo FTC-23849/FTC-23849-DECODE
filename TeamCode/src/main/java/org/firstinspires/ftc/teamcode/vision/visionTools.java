@@ -888,6 +888,8 @@ public class visionTools {
         return vyEstimate;
     }
 
+
+
     public double FlywheelSpeedRegressor(double moveAwayAdjustment, double sec, double currentVelocity,
                                          org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint,
                                          String allianceColor) {

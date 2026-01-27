@@ -83,7 +83,7 @@ public class PIDVelocityController3 {
         // ---- Feedforward ----
         double ff = 0;
         if (targetVelocity != 0) {
-            ff = (kV * targetVelocity) + (kS * Math.signum(targetVelocity));
+            ff = (kV * targetVelocity) + (kS * Math.signum(error));
         }
 
         // ---- Combine and voltage compensate ----

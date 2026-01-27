@@ -13,12 +13,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 
-@TeleOp(name = "Pinpoint Raw Vel Tester", group = "Test")
+@TeleOp(name = "Pinpoint + Vision Vel Tester", group = "Test")
 public class PinpointVelTest extends OpMode {
 
     DcMotorEx lf, rf, lb, rb;
     GoBildaPinpointDriver pinpoint;
-    visionTools vision = new visionTools();
+    visionToolsClean vision = new visionToolsClean();
     MultipleTelemetry dashboardTelemetry;
 
     @Override
@@ -75,37 +75,28 @@ public class PinpointVelTest extends OpMode {
         double vxRobot = vxField * Math.sin(heading) + vyField * Math.cos(heading);
         double vyRobot = vxField * Math.cos(heading) - vyField * Math.sin(heading);
 
-        double px = pinpoint.getPosX(DistanceUnit.METER);
-        double py = pinpoint.getPosY(DistanceUnit.METER);
+        double px = pose.getX(DistanceUnit.METER);
+        double py = pose.getY(DistanceUnit.METER);
+        double t = getRuntime();
 
-        double currentDist = vision.groundDistancePinpoint(px, py, "Red");
-        double flightTime = (7.0 / 30.0) * currentDist + 0.05;
+        double[] visionVel = vision.calculateVelocity(px, py, t);
+        double vxVision = visionVel[0];
+        double vyVision = visionVel[1];
 
-        double ax = px + vxField * flightTime;
-        double ay = py + vyField * flightTime;
-
-        double estimatedDist = vision.groundDistancePinpoint(ax, ay, "Red");
-        double fx = estimatedDist;
-        double x2 = fx * fx;
-        double x3 = x2 * fx;
-
-        double speed = -1.8411 * x3
-                + 29.2526 * x2
-                - 344.1536 * fx
-                - 962.8227;
-
-        dashboardTelemetry.addData("Pose X (m)", pose.getX(DistanceUnit.METER));
-        dashboardTelemetry.addData("Pose Y (m)", pose.getY(DistanceUnit.METER));
-        dashboardTelemetry.addData("Pose Heading (deg)", pose.getHeading(AngleUnit.DEGREES));
+        dashboardTelemetry.addData("Pose X (m)", px);
+        dashboardTelemetry.addData("Pose Y (m)", py);
+        dashboardTelemetry.addData("Heading (deg)", pose.getHeading(AngleUnit.DEGREES));
         dashboardTelemetry.addLine();
-        dashboardTelemetry.addData("Field Vel X (m/s)", vxField);
-        dashboardTelemetry.addData("Field Vel Y (m/s)", vyField);
+        dashboardTelemetry.addData("Pinpoint Field VX (m/s)", vxField);
+        dashboardTelemetry.addData("Pinpoint Field VY (m/s)", vyField);
         dashboardTelemetry.addLine();
-        dashboardTelemetry.addData("Robot Vel X (strafe m/s)", vxRobot);
-        dashboardTelemetry.addData("Robot Vel Y (forward m/s)", vyRobot);
+        dashboardTelemetry.addData("Robot VX Strafe (m/s)", vxRobot);
+        dashboardTelemetry.addData("Robot VY Forward (m/s)", vyRobot);
+        dashboardTelemetry.addLine();
+        dashboardTelemetry.addData("Vision VX FD (m/s)", vxVision);
+        dashboardTelemetry.addData("Vision VY FD (m/s)", vyVision);
+        dashboardTelemetry.addLine();
         dashboardTelemetry.addData("Heading Vel (deg/s)", pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
-        dashboardTelemetry.addLine();
-        dashboardTelemetry.addData("speed", speed);
         dashboardTelemetry.update();
     }
 }

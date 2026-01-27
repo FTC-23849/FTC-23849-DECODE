@@ -250,8 +250,8 @@ public class visionToolsClean {
         if (groundDistance == -1) {
             return currentHood;
         }else{
-            double height = 0.1*(groundDistance);
-            if(groundDistance > 1.25){
+            double height = 0.1;
+            if(groundDistance > 1.9){
                 height = 0.4;
             }
 
@@ -304,6 +304,23 @@ public class visionToolsClean {
     private final double kalmanR = 0.1;
     private final double kalmanQ = 0.01;
 
+    private double lastX;
+    private double lastY;
+    private double lastTime;
+
+    public double[] calculateVelocity(double currentX, double currentY, double currentTime) {
+        double dt = currentTime - lastTime;
+
+        double vx =getFilteredVelocityX  ((currentX - lastX) / dt);
+        double vy = getFilteredVelocityY  ((currentY - lastY) / dt);
+
+        lastX = currentX;
+        lastY = currentY;
+        lastTime = currentTime;
+
+        return new double[]{vx, vy};
+    }
+
     private double getFilteredVelocityX(double measuredVx){
         vxErrCov += kalmanQ;
         double K = vxErrCov / (vxErrCov + kalmanR);
@@ -324,7 +341,7 @@ public class visionToolsClean {
         double vx = xVelocity;
         double vy = yVelocity;
         double dist = groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER), alliance);
-        double flightTime = sec * (7.0 / 30.0) * dist + 0.05;
+        double flightTime = sec * ((7.0 / 30.0) * dist + 0.05);
         double curX = robotPos.getX(DistanceUnit.METER) + (vx * flightTime);
         double curY = robotPos.getY(DistanceUnit.METER) + (vy * flightTime);
 
@@ -369,12 +386,19 @@ public class visionToolsClean {
         double x = estimatedDist;
         double x2 = x * x;
         double x3 = x2 * x;
+        double speed = 0;
+        if(estimatedDist < 1.9) {
+            speed = 638.8889 * x3
+                    - 3788.8889 * x2
+                    + 6576.9444 * x
+                    - 4590.4444;
+        }else{
 
-        double speed = 6.1716 * x3
-                - 106.8394 * x2
-                + 199.2194 * x
-                - 1208.2518;
-
+            speed = -1.8579 * x3
+                    - 33.2624 * x2
+                    - 0.5996 * x
+                    - 1162.7841;
+        }
         if(estimatedDist<2.0){
             speed -= 30;
         }

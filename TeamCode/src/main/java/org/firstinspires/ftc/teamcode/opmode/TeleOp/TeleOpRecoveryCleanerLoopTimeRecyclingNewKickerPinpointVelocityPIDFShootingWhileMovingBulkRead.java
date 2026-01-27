@@ -29,7 +29,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
-import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
+import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController3;
 import org.firstinspires.ftc.teamcode.vision.visionToolsClean;
 
 import java.util.List;
@@ -63,7 +63,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     private NormalizedColorSensor colorLeft;
     private NormalizedColorSensor colorRight;
     private Servo rgbLight;
-    private PIDVelocityController2 velocityPID;
+    private PIDVelocityController3 velocityPID;
     public Pose2D robotPos;
     public static double currentVelocity;
     public double velX;
@@ -72,15 +72,22 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     public static double lockedFlywheelVelocity = -1600;
     public static double lockedHoodHeight = 0.1;
     public static double TargetVelocity = -1200;
-    public static double defaultVoltage = 12.0;
-    public static double VKp = 0.02;
-    public static double VKi = 0.003;
-    public static double VKd = 0;
-    public static double VkS = 0;
-    public static double VkV = 0.00042;
-    public static double recoveryThreshold = 160;
+    public static double defaultVoltage = 13.15;
+//    public static double VKp = 0.02;
+//    public static double VKi = 0.003;
+//    public static double VKd = 0;
+//    public static double VkS = 0;
+//    public static double VkV = 0.00042;
+    public static double KpMaintain = 0.008;
+    public static double KiMaintain = 0.003;
+    public static double KpRecovery = 1;
+    public static double KiRecovery = 0.001;
+    public static double KsRecovery = 1.5;
+    public static double KvFF = 0.00042;
+    public static double KsFF = 0.055 ;
+    public static double recoveryThreshold = 40;
     public static double sec = 1.0;
-    public static double moveAway = 0;
+    public static double moveAway = 1;
     public static double gear = 11.9;
     double currentVoltage;
     double closezone = 1;
@@ -282,10 +289,11 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         leftShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
         rightShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
-        velocityPID = new PIDVelocityController2(
-                VKp, VKi, VKd,
-                VkS, VkV,
-                TargetVelocity
+        velocityPID = new PIDVelocityController3(
+                targetVelocity,
+                KpMaintain,KiMaintain,
+                KpRecovery,KiRecovery,KsRecovery
+                , KsFF, KvFF
         );
 
         limelight.setPollRateHz(15);
@@ -295,8 +303,8 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
         telemetry.setMsTransmissionInterval(120);
         robotPos = pinpoint.getPosition();
-        velX = pinpoint.getVelX(DistanceUnit.METER);
-        velY = pinpoint.getVelY(DistanceUnit.METER);
+        velX = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[0];
+        velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
         hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
         turretPos = vision.pinpointTurretMoving(robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
@@ -331,8 +339,8 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
             if(leftBumperTrue){
                 robotPos = pinpoint.getPosition();
-                velX = pinpoint.getVelX(DistanceUnit.METER);
-                velY = pinpoint.getVelY(DistanceUnit.METER);
+                velX = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[0];
+                velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
                 velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
                 hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
                 turretPos = vision.pinpointTurretMoving(robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
@@ -595,9 +603,10 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
             }
 
             velocityPID.setTargetVelocity(targetVelocity);
-            velocityPID.setPID(VKp, VKi, VKd);
-            velocityPID.setFeedforward(VkS, VkV);
-
+            velocityPID.setMaintainGains(KpMaintain,KiMaintain);
+            velocityPID.setRecoveryGains(KpRecovery,KiRecovery,KsRecovery);
+            velocityPID.setFeedforward(KsFF, KvFF);
+            velocityPID.setRecoveryThreshold(recoveryThreshold);
             power = velocityPID.update(flywheelCurrentVelocity, currentVoltage, defaultVoltage);
             leftShooterMotor.setPower(power);
             rightShooterMotor.setPower(power);
@@ -636,15 +645,16 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         }
         telemetry.addData("Error", flywheelCurrentVelocity-targetVelocity );
         telemetry.addData("Correction",flywheelCorrection);
+        telemetry.addData("VelX", velX);
+        telemetry.addData("VelY",velY);
+        telemetry.addData("VelH",velH);
         if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {
             telemetry.addData("current voltage, ", currentVoltage);
-            telemetry.addData("correction",flywheelCorrection);
             telemetry.addData("leftservo",leftTurretServo.getPosition());
             telemetry.addData("rightservo",rightTurretServo.getPosition());
             telemetry.addData("pinpoint turret",turretPos);
             telemetry.addData("flywheel", flywheelCurrentVelocity);
             telemetry.addData("targetVelocity", targetVelocity);
-            telemetry.addData("Error", flywheelCurrentVelocity - targetVelocity);
             telemetry.addData("PIDF Power", power);
             telemetry.addData("looptime", timer.milliseconds());
             telemetry.addData("left kicker speed", leftKickerServo.getPower());
