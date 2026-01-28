@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.Auto;
+package org.firstinspires.ftc.teamcode.opmode.Auto.Blue;
 
 import androidx.annotation.NonNull;
 
@@ -28,6 +28,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.DroidLib.CRAxonPDController;
+import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
@@ -39,7 +41,7 @@ import java.util.function.Function;
 //@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
+public class BlueFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
 
     // Initialize all hardware
     Limelight3A limelight;
@@ -57,7 +59,6 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
     DcMotorEx rightShooterMotor;
     ServoImplEx leftTipper;
     ServoImplEx rightTipper;
-
     AnalogInput kickerEncoder;
     AnalogInput turretEncoder;
     NormalizedColorSensor leftIntakeColorSensor;
@@ -72,9 +73,9 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
     GoBildaPinpointDriver pinpoint;
 
     // Initialize all parameters
-//    public static double minVelIntaking = 40;
-//    public static double minAccelIntaking = -40;
-//    public static double maxAccelIntaking = 40;
+    public static double minVelIntaking = 40;
+    public static double minAccelIntaking = -40;
+    public static double maxAccelIntaking = 40;
 
     public static double minVelDrive = 90;
     public static double minAccelDrive = -80;
@@ -85,7 +86,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.621; /*0.62*/
+    public static double turretStartPos = 0.385; /*0.39*/
     //public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
@@ -113,15 +114,27 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
 
     public static double shootingSpeed = -1.0;
 
-    public static boolean kickersStarted = false;
+    public static boolean kickersStarted;
+
+
+    public static boolean intakeLastSpike = true;
+    public static boolean intakeSecondSpike = false;
 
     public static double shootingSpeedPID = -1840;
-    public static double turretOffset = -0.015;
+    public static double turretOffset = 0.009;
 
-    public static String allianceColor = "Red";
+    public static String allianceColor = "Blue";
 
     public static boolean enableTurretTracking = true;
     public static boolean enableVelPID = true;
+
+    public static double secondCycleOffset = 0.0;
+    public static double thirdCycleOffset = 0.0;
+
+    public static double widenCycleOffset = 6.0;
+
+    public static boolean secondCycleOffsetEnabled = false;
+    public static boolean thirdCycleOffsetEnabled = false;
 
     // vPID
     double flywheelCurrentVelocity;
@@ -149,12 +162,15 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
 
     visionTools vision = new visionTools();
 
+    CRAxonPDController kickerPID = new CRAxonPDController();
+    DroidForceMethods DFM = new DroidForceMethods();
+
 
     @Override
     public void runOpMode() {
 
         // Instantiate MecanumDrive
-        Pose2d startPose = new Pose2d(63, 14.5, Math.toRadians(90));
+        Pose2d startPose = new Pose2d(63, -14.5, Math.toRadians(270));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
 
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
@@ -241,6 +257,30 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
         telemetry.addData("FINISHED",true);
         telemetry.update();
 
+        while(!opModeIsActive() && !isStopRequested()) {
+
+            if (gamepad1.a) {
+                secondCycleOffset = 10.0;
+                secondCycleOffsetEnabled = true;
+            } else if (gamepad1.b) {
+                secondCycleOffset = 0.0;
+                secondCycleOffsetEnabled = false;
+            }
+
+            if (gamepad1.x) {
+                thirdCycleOffset = 10.0;
+                thirdCycleOffsetEnabled = true;
+            } else if (gamepad1.y) {
+                thirdCycleOffset = 0.0;
+                thirdCycleOffsetEnabled = false;
+            }
+
+            telemetry.addData("Enable second spike offset (a/b): ", secondCycleOffsetEnabled);
+            telemetry.addData("Enable third spike offset (x/y): ", thirdCycleOffsetEnabled);
+
+            telemetry.update();
+
+        }
 
         waitForStart();
 
@@ -253,7 +293,6 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                 // Thread 1: Pathing + General Robot
                 new SequentialAction(
 
-                        new setShooter(leftShooterMotor, rightShooterMotor, shootingSpeed),
                         new SleepAction(2),
                         new kickerShoot(),
 
@@ -264,7 +303,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(36, 28), Math.toRadians(90),
+                                                        new Vector2d(36, -28), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -279,7 +318,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(36, 58), Math.toRadians(90),
+                                                new Vector2d(36, -56), Math.toRadians(270),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -292,7 +331,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 15), Math.toRadians(90),
+                                                        new Vector2d(62, -15), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -308,7 +347,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(62, 15), Math.toRadians(90),
+                                                new Vector2d(62, -15), Math.toRadians(270),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -327,17 +366,17 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 60), Math.toRadians(90),
+                                                        new Vector2d(62, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 50), Math.toRadians(90),
+                                                        new Vector2d(62, -50), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 60), Math.toRadians(90),
+                                                        new Vector2d(62, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -351,7 +390,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 15), Math.toRadians(90),
+                                                        new Vector2d(62, -15), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -367,7 +406,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(62, 15), Math.toRadians(90),
+                                                new Vector2d(62, -15), Math.toRadians(270),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -386,17 +425,17 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 60), Math.toRadians(90),
+                                                        new Vector2d(62 - secondCycleOffset, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 50), Math.toRadians(90),
+                                                        new Vector2d(62 - secondCycleOffset - widenCycleOffset, -50), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 60), Math.toRadians(90),
+                                                        new Vector2d(62 - secondCycleOffset - widenCycleOffset, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -410,7 +449,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 15), Math.toRadians(90),
+                                                        new Vector2d(62, -15), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -426,7 +465,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(62, 15), Math.toRadians(90),
+                                                new Vector2d(62, -15), Math.toRadians(270),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -445,17 +484,17 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 60), Math.toRadians(90),
+                                                        new Vector2d(62 - thirdCycleOffset, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 50), Math.toRadians(90),
+                                                        new Vector2d(62 - thirdCycleOffset - widenCycleOffset, -50), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 60), Math.toRadians(90),
+                                                        new Vector2d(62 - thirdCycleOffset - widenCycleOffset, -62), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -469,7 +508,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 15), Math.toRadians(90),
+                                                        new Vector2d(62, -15), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -485,7 +524,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(62, 15), Math.toRadians(90),
+                                                new Vector2d(62, -15), Math.toRadians(270),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -498,22 +537,17 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
 
                         new SleepAction(shootingDelay),
 
-
                         //Park
-
                         new ParallelAction(
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(62, 40), Math.toRadians(90),
+                                                        new Vector2d(62, -40), Math.toRadians(270),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .build()
-                                ),
-                                new kickerIdle(true),
-                                new setIntake(frontIntakeMotor, backIntakeMotor, 0.0),
-                                new setShooter(leftShooterMotor, rightShooterMotor, 0.0)
+                                )
                         )
 
                 ),
@@ -649,6 +683,8 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
             return keepRunning;
         }
     }
+
+
     public class updatePose implements Action {
 
         private MecanumDrive drive = null;
@@ -887,6 +923,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
         }
     }
 
+
     public class setTurret implements Action {
 
         private final double pos;
@@ -960,6 +997,7 @@ public class RedFarAutoCyclingAutoAimNewKicker extends LinearOpMode {
             return !kickersStarted;
         }
     }
+
 
     public class kickerIdle implements Action {
 
