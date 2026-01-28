@@ -311,8 +311,8 @@ public class visionToolsClean {
     public double[] calculateVelocity(double currentX, double currentY, double currentTime) {
         double dt = currentTime - lastTime;
 
-        double vx =getFilteredVelocityX  ((currentX - lastX) / dt);
-        double vy = getFilteredVelocityY  ((currentY - lastY) / dt);
+        double vx =getFilteredVelocityX  ((currentX - lastX) / dt,0.1,0.01);
+        double vy = getFilteredVelocityY  ((currentY - lastY) / dt,0.1,0.01);
 
         lastX = currentX;
         lastY = currentY;
@@ -321,7 +321,7 @@ public class visionToolsClean {
         return new double[]{vx, vy};
     }
 
-    private double getFilteredVelocityX(double measuredVx){
+    public double getFilteredVelocityX(double measuredVx,double kalmanQ, double kalmanR){
         vxErrCov += kalmanQ;
         double K = vxErrCov / (vxErrCov + kalmanR);
         vxEstimate = vxEstimate + K * (measuredVx - vxEstimate);
@@ -329,7 +329,7 @@ public class visionToolsClean {
         return vxEstimate;
     }
 
-    private double getFilteredVelocityY(double measuredVy){
+    public double getFilteredVelocityY(double measuredVy,double kalmanQ, double kalmanR){
         vyErrCov += kalmanQ;
         double K = vyErrCov / (vyErrCov + kalmanR);
         vyEstimate = vyEstimate + K * (measuredVy - vyEstimate);
