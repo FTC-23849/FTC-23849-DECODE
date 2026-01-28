@@ -72,20 +72,26 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     public static double lockedFlywheelVelocity = -1600;
     public static double lockedHoodHeight = 0.1;
     public static double TargetVelocity = -1200;
-    public static double defaultVoltage = 13.15;
 //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
 //    public static double VkS = 0;
 //    public static double VkV = 0.00042;
-    public static double KpMaintain = 0.008;
+    public static double KpMaintain = 0.013;
     public static double KiMaintain = 0.003;
-    public static double KpRecovery = 1;
+
+    public static double KpDriveRecovery = 0.035;
+
+    public static double KpRecovery = 0.001;
     public static double KiRecovery = 0.001;
-    public static double KsRecovery = 1.5;
+    public static double KsRecovery = 0.35;
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055 ;
-    public static double recoveryThreshold = 40;
+
+
+    public static double recoveryThreshold = 80;
+    public static double maintainThreshold = 40;
+    public static double defaultVoltage = 13.15;
     public static double sec = 1.0;
     public static double moveAway = 1;
     public static double gear = 11.9;
@@ -135,7 +141,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     public static double recyclingKickerUpDelay = 500;
     //throttling
     double lastPinpointUpdate = 0;
-    public static double pinpointThrottleMS = 20;
+    public static double pinpointThrottleMS =100;
     public static double telemeteryThrottleMS = 40000000;
     double lastTelemetryUpdate = 0;
     double flywheelCurrentVelocity = 0;
@@ -603,10 +609,11 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
             }
 
             velocityPID.setTargetVelocity(targetVelocity);
-            velocityPID.setMaintainGains(KpMaintain,KiMaintain);
+            velocityPID.setMaintainGains(KpMaintain,KiMaintain,KpDriveRecovery);
             velocityPID.setRecoveryGains(KpRecovery,KiRecovery,KsRecovery);
             velocityPID.setFeedforward(KsFF, KvFF);
             velocityPID.setRecoveryThreshold(recoveryThreshold);
+            velocityPID.setMaintainThreshold(maintainThreshold);
             power = velocityPID.update(flywheelCurrentVelocity, currentVoltage, defaultVoltage);
             leftShooterMotor.setPower(power);
             rightShooterMotor.setPower(power);
