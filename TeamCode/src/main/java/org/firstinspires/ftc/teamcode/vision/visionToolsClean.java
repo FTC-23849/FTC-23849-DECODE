@@ -342,24 +342,23 @@ public class visionToolsClean {
         double vy = yVelocity;
         double dist = groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER), alliance);
         double flightTime = sec * ((7.0 / 30.0) * dist + 0.05);
-        double curX = robotPos.getX(DistanceUnit.METER) + (vx * flightTime);
-        double curY = robotPos.getY(DistanceUnit.METER) + (vy * flightTime);
 
+        double heading = robotPos.getHeading(AngleUnit.DEGREES);
+        double adjustedHeading = heading + 90;
+        if(adjustedHeading < 0 ){ adjustedHeading+= 360; }
+
+        double robotX = robotPos.getX(DistanceUnit.METER) + (vx * flightTime);
+        double robotY = robotPos.getY(DistanceUnit.METER) + (vy * flightTime);
+
+        double offset = 0.0765;
+        double curX = robotX - Math.sin(Math.toRadians(adjustedHeading))*offset;//Cartesian Y
+        double curY = robotY + Math.cos(Math.toRadians(adjustedHeading))*offset;//flipped Cartesian X
         double curYaw = robotPos.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
 
-        double goalX = 1.6288;
-        double goalY = (alliance.equals("Red")) ? -1.6288 : 1.6288;
-
-        if(dist > 3.0) {
-            goalX = 1.6288;
-            goalY = (alliance.equals("Blue")) ? 1.6288 : -1.6288;
-        }
-        if(curX > 1.2){
-            goalX = 1.5288;
-            goalY = (alliance.equals("Blue")) ? 1.5288 : -1.5288;
-        } else if(curX > 0){
-            goalX = 1.8288;
-            goalY = (alliance.equals("Blue")) ? 1.8288 : -1.8288;
+        double goalX = 1.8288;
+        double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
+        if(curX < -0.95){
+            goalY = (alliance.equals("Red")) ? -1.7288 : 1.7288;
         }
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;
@@ -382,26 +381,41 @@ public class visionToolsClean {
         double ax = px+vx*flightTime;
         double ay = py+vy*flightTime;
         double estimatedDist = groundDistancePinpoint(ax,ay,allianceColor);
+        if(currentDist < estimatedDist){
+            flightTime = (sec+moveAwayAdjustment) * (7.0 / 30.0) * currentDist + 0.05;
+            ax = px+vx*flightTime;
+            ay = py+vy*flightTime;
+            estimatedDist = groundDistancePinpoint(ax,ay,allianceColor);
+        }
+
+        double offset = 0.0508;
+        if(estimatedDist < 1.9) {
+            offset = 0.0254;
+        }
+        double adjustedHeading =  robotPos.getHeading(AngleUnit.DEGREES)+ 90;
+        if(adjustedHeading < 0 ){ adjustedHeading+= 360; }
+
+        ax = ax - Math.sin(Math.toRadians(adjustedHeading))*offset;//Cartesian Y
+        ay = ay + Math.cos(Math.toRadians(adjustedHeading))*offset;
+        estimatedDist = groundDistancePinpoint(ax,ay,allianceColor);
 
         double x = estimatedDist;
         double x2 = x * x;
         double x3 = x2 * x;
         double speed = 0;
         if(estimatedDist < 1.9) {
-            speed = 638.8889 * x3
-                    - 3788.8889 * x2
-                    + 6576.9444 * x
-                    - 4590.4444;
+            speed = 1152.7778 * x3
+                    - 4477.7778 * x2
+                    + 5855.1389 * x
+                    - 1476.8889;
         }else{
+            //−19.9936x3+191.7677x2−853.9049x−213.5501
+            speed = -19.9936 * x3
+                    +191.7677 * x2
+                    -853.9049 * x
+                    -213.5501;
+        }
 
-            speed = -1.8579 * x3
-                    - 33.2624 * x2
-                    - 0.5996 * x
-                    - 1162.7841;
-        }
-        if(estimatedDist<2.0){
-            speed -= 30;
-        }
         if (currentDist == -1) {
             return currentVelocity;
         } else {

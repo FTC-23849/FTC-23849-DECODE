@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.vision;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -12,6 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 
 @TeleOp(name = "SOTM Tester", group = "Test")
+@Config
 public class SOTMtest extends OpMode {
 
     DcMotorEx lf, rf, lb, rb;
@@ -24,7 +26,7 @@ public class SOTMtest extends OpMode {
     public static double sec = 0.45;
     public static double moveAwayAdjustment = 0.0;
     public static double driveScale = 1.0;
-    public static String allianceColor = "RED";
+    public static String allianceColor = "Red";
 
     private double lastSpeed = 0;
 

@@ -84,7 +84,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
 
     public static double KpRecovery = 0.001;
     public static double KiRecovery = 0.001;
-    public static double KsRecovery = 0.35;
+    public static double KsRecovery = 1;
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055 ;
 

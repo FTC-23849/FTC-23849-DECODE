@@ -59,6 +59,7 @@ public class BlobDetection extends LinearOpMode {
             telemetry.addData("Blob X", x);
             telemetry.addData("Blob Y", y);
             telemetry.addData("Offset X", offsetX);
+            telemetry.addData("Offset CM",(135.0/346.0  )*(offsetX+26));
             telemetry.update();
         }
 
