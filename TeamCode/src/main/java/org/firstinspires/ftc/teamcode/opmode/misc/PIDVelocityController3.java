@@ -17,6 +17,7 @@ public class PIDVelocityController3 {
 
     private double recoveryThreshold = 80;
     private double maintainThreshold = 40;
+    private boolean lowVoltage;
 
     private double targetVelocity;
     private double integralSum = 0.0;
@@ -71,8 +72,12 @@ public class PIDVelocityController3 {
         if (targetVelocity != 0) {
             ff = (kV * targetVelocity) + (kS * Math.signum(error));
         }
-
-        double output = (pid + ff) * (normalVoltage / batteryVoltage);
+        double output = 0;
+        if(lowVoltage){
+            output = (pid + ff) * (normalVoltage / batteryVoltage);
+        }else{
+            output = (pid + ff) *0.95; //(normalVoltage / batteryVoltage);
+        }
 
         return Math.max(-1.0, Math.min(1.0, output));
     }
@@ -100,4 +105,5 @@ public class PIDVelocityController3 {
 
     public void setRecoveryThreshold(double threshold) { this.recoveryThreshold = threshold; }
     public void setMaintainThreshold(double threshold) { this.maintainThreshold = threshold; }
+    public void setVoltageStatus(boolean voltage) { this.lowVoltage = voltage; }
 }

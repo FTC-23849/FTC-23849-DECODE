@@ -342,7 +342,6 @@ public class visionToolsClean {
         double vy = yVelocity;
         double dist = groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER), alliance);
         double flightTime = sec * ((7.0 / 30.0) * dist + 0.05);
-
         double heading = robotPos.getHeading(AngleUnit.DEGREES);
         double adjustedHeading = heading + 90;
         if(adjustedHeading < 0 ){ adjustedHeading+= 360; }
@@ -351,21 +350,21 @@ public class visionToolsClean {
         double robotY = robotPos.getY(DistanceUnit.METER) + (vy * flightTime);
 
         double offset = 0.0765;
-        double curX = robotX - Math.sin(Math.toRadians(adjustedHeading))*offset;//Cartesian Y
-        double curY = robotY + Math.cos(Math.toRadians(adjustedHeading))*offset;//flipped Cartesian X
+        double curX = robotX + Math.sin(Math.toRadians(adjustedHeading))*offset;//Cartesian Y
+        double curY = robotY - Math.cos(Math.toRadians(adjustedHeading))*offset;//flipped Cartesian X
         double curYaw = robotPos.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
 
         double goalX = 1.8288;
         double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
         if(curX < -0.95){
-            goalY = (alliance.equals("Red")) ? -1.7288 : 1.7288;
+            goalY = (alliance.equals("Red")) ? -1.73288 : 1.8288;
         }
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;
 
         double turretPos = 0.5 + (turretOffset * (33.0/gear) / 1800.0);
 
-        return Range.clip(turretPos, 0.25, 0.625);
+        return Range.clip(turretPos, 0.23   , 0.7);
     }
     public double FlywheelSpeedRegressor(Pose2D robotPos, double xVelocity, double yVelocity,double moveAwayAdjustment, double sec, double currentVelocity, String allianceColor) {
 
@@ -402,18 +401,21 @@ public class visionToolsClean {
         double x = estimatedDist;
         double x2 = x * x;
         double x3 = x2 * x;
+        double x4 = x2 * x2;
         double speed = 0;
         if(estimatedDist < 1.9) {
-            speed = 1152.7778 * x3
-                    - 4477.7778 * x2
-                    + 5855.1389 * x
-                    - 1476.8889;
+            speed = -1638.8889 * x3
+                    + 7088.8889 * x2
+                    - 10416.9444 * x
+                    + 3982.4444;
         }else{
             //−19.9936x3+191.7677x2−853.9049x−213.5501
-            speed = -19.9936 * x3
-                    +191.7677 * x2
-                    -853.9049 * x
-                    -213.5501;
+            speed = -10.9726 * x4
+                    + 128.3579 * x3
+                    - 534.5961 * x2
+                    + 646.7612 * x
+                    - 1318.3132;
+
         }
 
         if (currentDist == -1) {
