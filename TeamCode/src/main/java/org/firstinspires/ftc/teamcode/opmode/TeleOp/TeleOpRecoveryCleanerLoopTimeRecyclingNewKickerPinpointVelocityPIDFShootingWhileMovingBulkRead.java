@@ -29,6 +29,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
+import org.firstinspires.ftc.teamcode.opmode.Auto.PoseStorage;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController3;
 import org.firstinspires.ftc.teamcode.vision.visionToolsClean;
 
@@ -199,6 +200,19 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         }
     }
 
+    private enum InitStage {
+        RESET,
+        WAIT_AFTER_RESET,
+        RECAL_IMU,
+        WAIT_AFTER_RECAL,
+        SET_POSE,
+        WAIT_AFTER_SET,
+        UPDATE_AND_PRINT,
+        DONE
+    }
+
+    private InitStage initStage = InitStage.RESET;
+
     // track B state for edge detection
     boolean lastBPressed = false;
 
@@ -317,12 +331,76 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
         flywheelSpeed = vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor);
 
+        leftTipper.setPosition(Globals.tipperRetracted);
+        rightTipper.setPosition(Globals.tipperRetracted);
+
     }
 
     @Override
     public void init_loop() {
-        leftTipper.setPosition(Globals.tipperRetracted);
-        rightTipper.setPosition(Globals.tipperRetracted);
+        switch (initStage) {
+
+            case RESET:
+                // Run ONCE
+                pinpoint.resetPosAndIMU();
+                timer.reset();
+                initStage = InitStage.WAIT_AFTER_RESET;
+                break;
+
+            case WAIT_AFTER_RESET:
+                // Wait 500ms
+                if (timer.milliseconds() >= 500) {
+                    initStage = InitStage.RECAL_IMU;
+                }
+                break;
+
+            case RECAL_IMU:
+                // Run ONCE
+                pinpoint.recalibrateIMU();
+                timer.reset();
+                initStage = InitStage.WAIT_AFTER_RECAL;
+                break;
+
+            case WAIT_AFTER_RECAL:
+                // Wait 1000ms
+                if (timer.milliseconds() >= 1000) {
+                    initStage = InitStage.SET_POSE;
+                }
+                break;
+
+            case SET_POSE:
+                // Run ONCE (IMPORTANT: convert if your pinpoint expects Pose2D units)
+                pinpoint.setPosition(PoseStorage.currentPose);
+                timer.reset();
+                initStage = InitStage.WAIT_AFTER_SET;
+                break;
+
+            case WAIT_AFTER_SET:
+                // Optional small settle time (you had 1000ms; keep it if you want)
+                if (timer.milliseconds() >= 1000) {
+                    initStage = InitStage.UPDATE_AND_PRINT;
+                }
+                break;
+
+            case UPDATE_AND_PRINT:
+                // Run ONCE
+                pinpoint.update();
+                telemetry.addData("file current pose", PoseStorage.currentPose);
+                telemetry.addData("pinpoint current pose", pinpoint.getPosition().toString());
+                initStage = InitStage.DONE;
+                break;
+
+            case DONE:
+                // Keep showing telemetry every loop if you want
+                telemetry.addData("Init", "DONE");
+                telemetry.addData("file current pose", PoseStorage.currentPose);
+                telemetry.addData("pinpoint current pose", pinpoint.getPosition().toString());
+                break;
+        }
+
+        telemetry.addData("InitStage", initStage);
+        telemetry.addData("t(ms)", (int) timer.milliseconds());
+        telemetry.update();
     }
 
     @Override
