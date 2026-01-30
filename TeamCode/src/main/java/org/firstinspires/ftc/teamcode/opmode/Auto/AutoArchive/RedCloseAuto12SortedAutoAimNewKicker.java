@@ -27,8 +27,11 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
+import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 
@@ -37,7 +40,7 @@ import java.util.function.Function;
 @Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
+public class RedCloseAuto12SortedAutoAimNewKicker extends LinearOpMode {
 
     // Initialize all hardware
     Limelight3A limelight;
@@ -65,6 +68,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
 
     ServoImplEx leftTongueServo;
     ServoImplEx rightTongueServo;
+    GoBildaPinpointDriver pinpoint;
 
     // Initialize all parameters
 //    public static double minVelIntaking = 40;
@@ -80,10 +84,13 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
 
     public static double recycleDelay = 0.4;
 
-    public static double turretStartPos = 0.34;
-    public static double turretShootPos = 0.420;
+    public static double turretStartPos = 0.655;
+    public static double turretShootPos = 0.580;
 
     public static double plainKickerPower = 0.0;
+
+    public static boolean allowExternalUpdating = true;
+    public static boolean obeliskRead = false;
 
     //public static double recyclingDelay = 2000;
     public static double recyclingIntakeDelay = 500;
@@ -93,7 +100,10 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
 
     public static double shootingSpeed = -0.58;
 
-    public static double shootingSpeedPID = -1400;
+    public static double shootingSpeedPID = -1370;
+    public static double turretOffset = -0.015;
+
+    public static String allianceColor = "Red";
 
     // vPID
     double flywheelCurrentVelocity;
@@ -104,13 +114,13 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
 
     public PIDVelocityController2 velocityPID;
     public static double currentVelocity;
-    public static double TargetVelocity = 900;
-    public static double VKp = 0.002;
-    public static double VKi = 0.003;
-    public static double VKd = 0;
-    public static double VkS = 0;
-    public static double VkV = 0.00042;
-    public static double sec = 0.2;
+    public static double TargetVelocity;
+    public static double VKp = Globals.VKp;
+    public static double VKi = Globals.VKi;
+    public static double VKd = Globals.VKd;
+    public static double VkS = Globals.VkS;
+    public static double VkV = Globals.VkV;
+    public static double sec = Globals.sec;
 
 
     int obeliskID = -1;
@@ -126,9 +136,9 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
     public void runOpMode() {
 
         // Instantiate MecanumDrive
-        Pose2d startPose = new Pose2d(-54.5, -45, Math.toRadians(225));
+        Pose2d startPose = new Pose2d(-54.5, 45, Math.toRadians(135));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
-
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         // Map motors and servos
         leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"leftIntakeColorSensor");
         rightIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"rightIntakeColorSensor");
@@ -191,8 +201,8 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         // Pre-Auto robot initlization. MUST BE LAST
-        leftHood.setPosition(0.25);
-        rightHood.setPosition(0.25);
+        leftHood.setPosition(0.4);
+        rightHood.setPosition(0.4);
 
         leftTurretServo.setPosition(turretStartPos);
         rightTurretServo.setPosition(turretStartPos);
@@ -208,7 +218,15 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                 VkS, VkV,
                 TargetVelocity
         );
+        sleep(500);
 
+        obeliskRead = false;
+
+        pinpoint.recalibrateIMU();
+
+        sleep(500);
+        telemetry.addData("FINISHED",true);
+        telemetry.update();
         waitForStart();
 
         if (isStopRequested()) return;
@@ -226,7 +244,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-12, -15), Math.toRadians(270),
+                                                        new Vector2d(-12, 15), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -237,7 +255,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-12, -15), Math.toRadians(270),
+                                                        new Vector2d(-12, 15), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -248,6 +266,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                         ),
                         new getObeliskID(),
                         new SleepAction(0.3),
+                        new setObeliskRead(),
 
                         new setTurret(turretShootPos),
                         //new recycle("PPG", frontIntakeMotor),
@@ -262,7 +281,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                                         drive.actionBuilder(pose)
                                                 .setTangent(0)
                                                 .splineToLinearHeading(
-                                                        new Pose2d(13, -60, Math.toRadians(270)), (-Math.PI/2),
+                                                        new Pose2d(13, 60, Math.toRadians(90)), (Math.PI/2),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -278,30 +297,30 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                                         drive.actionBuilder(pose)
                                                 // Gate Open
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(13, -50), Math.toRadians(270),
+                                                        new Vector2d(13, 50), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 //.setTangent(Math.PI/2)
-                                                .splineToLinearHeading(new Pose2d(2, -50, Math.toRadians(270)),
-                                                        (-Math.PI/2),
+                                                .splineToLinearHeading(new Pose2d(2, 50, Math.toRadians(90)),
+                                                        (Math.PI/2),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(2, -62), Math.toRadians(270),
+                                                        new Vector2d(2, 62), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 // Shoot Path
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(2, -60), Math.toRadians(270),
+                                                        new Vector2d(2, 60), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
-                                                .setTangent(Math.PI/2)
+                                                .setTangent(-Math.PI/2)
                                                 .splineToLinearHeading(
-                                                        new Pose2d(-12, -15, Math.toRadians(270)), (Math.PI),
+                                                        new Pose2d(-12, 15, Math.toRadians(90)), (Math.PI),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -317,7 +336,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new Vector2d(-12, 15), Math.toRadians(90),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -334,7 +353,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-11, -60), Math.toRadians(270),
+                                                        new Vector2d(-11, 60), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -349,7 +368,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-12, -15), Math.toRadians(270),
+                                                        new Vector2d(-12, 15), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -365,7 +384,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new Vector2d(-12, 15), Math.toRadians(90),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -385,12 +404,12 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                                         drive.actionBuilder(pose)
                                                 .setTangent(0)
                                                 .splineToLinearHeading(
-                                                        new Pose2d(33, -35, Math.toRadians(270)), (-Math.PI/2),
+                                                        new Pose2d(33, 25, Math.toRadians(90)), (Math.PI/2),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(33, -65), Math.toRadians(270),
+                                                        new Vector2d(33, 62), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -405,7 +424,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-12, -15), Math.toRadians(270),
+                                                        new Vector2d(-12, 15), Math.toRadians(90),
                                                         new TranslationalVelConstraint(minVelDrive),
                                                         new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                 )
@@ -421,7 +440,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                         new PathFromCurrentPose(drive, pose ->
                                 drive.actionBuilder(pose)
                                         .strafeToLinearHeading(
-                                                new Vector2d(-12, -15), Math.toRadians(270),
+                                                new Vector2d(-12, 15), Math.toRadians(90),
                                                 new TranslationalVelConstraint(minVelDrive),
                                                 new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                         )
@@ -438,7 +457,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
                                 new PathFromCurrentPose(drive, pose ->
                                         drive.actionBuilder(pose)
                                                 .strafeToLinearHeading(
-                                                        new Vector2d(-22, -58), Math.toRadians(270),
+                                                        new Vector2d(-22, 54), Math.toRadians(90),
                                                         new TranslationalVelConstraint(60),
                                                         new ProfileAccelConstraint(-60, 60)
                                                 )
@@ -452,12 +471,64 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
 
                 new SequentialAction(
                         new startVelPIDPlain(shootingSpeedPID)
+                ),
+
+                new SequentialAction(
+                        new startTurretTracking(drive)
                 )
 
         ));
 
         sleep(1000);
 
+    }
+
+    public class startTurretTracking implements Action {
+
+        private final MecanumDrive drive;
+
+        public startTurretTracking(MecanumDrive drive){
+            this.drive = drive;
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            // Always update first
+            if (allowExternalUpdating) {
+                drive.updatePoseEstimate();
+                drive.localizer.update();
+            }
+
+            if (obeliskRead) {
+                //pinpoint.update();
+
+                Pose2D pose = vision.RRtoPinpoint(drive);
+
+                telemetry.addData("pos",pose.toString());
+                telemetry.addData("heading",pose.getHeading(AngleUnit.DEGREES));
+                telemetry.update();
+
+                // Normal tracking
+                double leftCmd  = vision.pinpointTurretMovingAUTO(pose,11.9, sec, leftTurretServo.getPosition(), allianceColor);
+                double rightCmd = vision.pinpointTurretMovingAUTO(pose,11.9, sec, rightTurretServo.getPosition(), allianceColor);
+
+                leftTurretServo.setPosition(leftCmd - turretOffset);
+                rightTurretServo.setPosition(rightCmd - turretOffset);
+            }
+
+            return true; // keep running for whole auto
+        }
+    }
+
+    public class setObeliskRead implements Action {
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            // Always update first
+            obeliskRead = true;
+
+            return false; // keep running for whole auto
+        }
     }
 
     public class startVelPIDPlain implements Action {
@@ -500,6 +571,7 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
         private final MecanumDrive drive;
         private final Function<Pose2d, Action> actionFactory;
         private Action inner = null;
+        private boolean started = false;
 
         public PathFromCurrentPose(MecanumDrive drive, Function<Pose2d, Action> actionFactory) {
             this.drive = drive;
@@ -509,12 +581,33 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             if (inner == null) {
+                // Before the path starts
+                allowExternalUpdating = false;
+                started = true;
+
                 Pose2d now = drive.localizer.getPose();
                 inner = actionFactory.apply(now);
+
+                // Fail-safe: if factory returns null, don't leave updates disabled
+                if (inner == null) {
+                    allowExternalUpdating = true;
+                    started = false;
+                    return false;
+                }
             }
-            return inner.run(telemetryPacket);
+
+            boolean keepRunning = inner.run(telemetryPacket);
+
+            if (!keepRunning && started) {
+                // Once the path completes
+                allowExternalUpdating = true;
+                started = false;
+            }
+
+            return keepRunning;
         }
     }
+
 
 
     public class updatePose implements Action {
@@ -831,32 +924,32 @@ public class BlueCloseAuto12SortedNewKicker extends LinearOpMode {
         }
     }
 
-    public class startTurretTracking implements Action {
-
-        private final ServoImplEx leftTurretServo;
-        private final ServoImplEx rightTurretServo;
-        private final Limelight3A limelight;
-
-        private final visionTools visionTools;
-
-        public startTurretTracking(ServoImplEx leftTurretServo, ServoImplEx rightTurretServo, Limelight3A limelight, visionTools visionTools){
-            this.leftTurretServo = leftTurretServo;
-            this.rightTurretServo = rightTurretServo;
-            this.limelight = limelight;
-            this.visionTools = visionTools;
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            double position = leftTurretServo.getPosition();
-
-            leftTurretServo.setPosition(visionTools.adjustedTurretAngle(position, limelight,1));
-            rightTurretServo.setPosition(visionTools.adjustedTurretAngle(position, limelight,1));
-
-            return true;
-        }
-    }
+//    public class startTurretTracking implements Action {
+//
+//        private final ServoImplEx leftTurretServo;
+//        private final ServoImplEx rightTurretServo;
+//        private final Limelight3A limelight;
+//
+//        private final visionTools visionTools;
+//
+//        public startTurretTracking(ServoImplEx leftTurretServo, ServoImplEx rightTurretServo, Limelight3A limelight, visionTools visionTools){
+//            this.leftTurretServo = leftTurretServo;
+//            this.rightTurretServo = rightTurretServo;
+//            this.limelight = limelight;
+//            this.visionTools = visionTools;
+//        }
+//
+//        @Override
+//        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+//
+//            double position = leftTurretServo.getPosition();
+//
+//            leftTurretServo.setPosition(visionTools.adjustedTurretAngle(position, limelight,1));
+//            rightTurretServo.setPosition(visionTools.adjustedTurretAngle(position, limelight,1));
+//
+//            return true;
+//        }
+//    }
 
     public class setShooter implements Action {
 

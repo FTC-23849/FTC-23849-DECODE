@@ -28,7 +28,7 @@ import org.firstinspires.ftc.teamcode.vision.visionTools;
 
 import java.util.function.Function;
 
-//@Disabled
+@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
 public class NewKickerRecycleTest extends LinearOpMode {

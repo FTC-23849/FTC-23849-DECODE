@@ -13,6 +13,22 @@ public class Globals {
     public static double VkV = 0.00042;
     public static double sec = 0;
 
+    public static double KpMaintain = 0.013;
+    public static double KiMaintain = 0.003;
+
+    public static double KpDriveRecovery = 0.035;
+
+    public static double KpRecovery = 0.001;
+    public static double KiRecovery = 0.001;
+    public static double KsRecovery = 0.35;
+    public static double KvFF = 0.00042;
+    public static double KsFF = 0.055 ;
+
+
+    public static double recoveryThreshold = 80;
+    public static double maintainThreshold = 40;
+    public static double defaultVoltage = 13.15;
+
     // Front Intake
     public static double frontIntakeIntakeSpeed = 1;
     public static double frontIntakeShootSpeed = 1; //-0.7

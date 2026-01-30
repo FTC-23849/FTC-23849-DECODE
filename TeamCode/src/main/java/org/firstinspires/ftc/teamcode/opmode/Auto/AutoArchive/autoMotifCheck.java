@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 
-//@Disabled
+@Disabled
 @Autonomous
 public class autoMotifCheck extends LinearOpMode {
 
