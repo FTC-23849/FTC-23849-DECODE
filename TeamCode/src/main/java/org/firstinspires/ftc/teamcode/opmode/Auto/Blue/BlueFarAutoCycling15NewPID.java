@@ -121,8 +121,8 @@ public class BlueFarAutoCycling15NewPID extends LinearOpMode {
     public static boolean intakeLastSpike = true;
     public static boolean intakeSecondSpike = false;
 
-    public static double shootingSpeedPID = -1790;
-    public static double turretOffset = 0.011;
+    public static double shootingSpeedPID = -1815;
+    public static double turretOffset = 0.0052;
 
     public static String allianceColor = "Blue";
 

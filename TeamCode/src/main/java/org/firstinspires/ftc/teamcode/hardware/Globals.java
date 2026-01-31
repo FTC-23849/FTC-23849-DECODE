@@ -18,7 +18,7 @@ public class Globals {
 
     public static double KpDriveRecovery = 0.035;
 
-    public static double KpRecovery = 0.5;
+    public static double KpRecovery = 1;
     public static double KiRecovery = 0.001;
     public static double KsRecovery = 1.2;
     public static double KvFF = 0.00042;

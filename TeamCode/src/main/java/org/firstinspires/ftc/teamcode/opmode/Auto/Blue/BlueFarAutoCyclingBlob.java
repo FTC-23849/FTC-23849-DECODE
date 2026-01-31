@@ -123,8 +123,10 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
     public static boolean intakeLastSpike = true;
     public static boolean intakeSecondSpike = false;
 
-    public static double shootingSpeedPID = -1790;
-    public static double turretOffset = 0.011;
+    public static double preloadShootingSpeed = -1815;
+    public static double cyclingShootingSpeed = -1800;
+    public static double shootingSpeedPID = preloadShootingSpeed;
+    public static double turretOffset = 0.0052;
 
     public static String allianceColor = "Blue";
 
@@ -327,7 +329,8 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
                                                     .build()
                                     ),
                                     new kickerIdle(false),
-                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
+                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0),
+                                    new setPIDToCycling()
                             ),
 
                             // Intake balls path
@@ -645,6 +648,18 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
             }
 
             return true; // keep running for whole auto
+        }
+    }
+
+    public class setPIDToCycling implements Action {
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+
+            shootingSpeedPID = cyclingShootingSpeed;
+
+            return false;
+
         }
     }
 

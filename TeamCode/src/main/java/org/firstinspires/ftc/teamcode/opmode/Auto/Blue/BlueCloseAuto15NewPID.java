@@ -113,7 +113,7 @@ public class BlueCloseAuto15NewPID extends LinearOpMode {
 
     public static double shootingSpeed = -0.58;
 
-    public static double shootingSpeedPID = -1400;
+    public static double shootingSpeedPID = -1390;
     public static double turretOffset = 0.01;
 
     public static String allianceColor = "Blue";
@@ -229,8 +229,8 @@ public class BlueCloseAuto15NewPID extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         // Pre-Auto robot initlization. MUST BE LAST
-        leftHood.setPosition(0.25);
-        rightHood.setPosition(0.25);
+        leftHood.setPosition(0.4);
+        rightHood.setPosition(0.4);
 
         leftTurretServo.setPosition(turretStartPos);
         rightTurretServo.setPosition(turretStartPos);
