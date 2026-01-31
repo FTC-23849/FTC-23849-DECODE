@@ -79,28 +79,31 @@ public class FinalTeleop extends OpMode {
     public static double lockedFlywheelVelocity = -1600;
     public static double lockedHoodHeight = 0.1;
     public static double TargetVelocity = -1200;
+    public static double red = 2;
+    public static double blue = -2;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
 //    public static double VkS = 0;
 //    public static double VkV = 0.00042;
-    public static double KpMaintain = 0.016;
+    public static double KpMaintain = 0.008;
     public static double KiMaintain = 0.003;
 
-    public static double KpDriveRecovery = 0.025;
+    public static double KpDriveRecovery = 0.015;
 
-    public static double KpRecovery = 1;
+    public static double KpRecovery = 0;
     public static double KiRecovery = 0.001;
     public static double KsRecovery = 1;
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055 ;
 
 
-    public static double recoveryThreshold = 130;
-    public static double maintainThreshold = 80;
+    public static double recoveryThreshold = 80;
+    public static double maintainThreshold = 40;
     public static double defaultVoltage = 13.15;
     public static double sec = 1.0;
     public static double moveAway = 1;
+    public static double moveAwayTurret = 1;
     public static double gear = 11.9;
     double currentVoltage;
     double closezone = 1;
@@ -173,7 +176,8 @@ public class FinalTeleop extends OpMode {
     // --- TELEOP RECYCLE TIMINGS (matches your updated auto default: 400 down, 600 intake) ---
     public static double RECYCLE_TONGUE_DOWN_MS = 400;
     public static double RECYCLE_INTAKE_RUN_MS  = 600;
-
+    public static double xcoeff = -1;
+    public static double ycoeff = 1;
     ElapsedTime recyclerTimer = new ElapsedTime();
     ElapsedTime kickerStartDelayTimer = new ElapsedTime();
     boolean started = false;
@@ -396,7 +400,7 @@ public class FinalTeleop extends OpMode {
         velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
         hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-        turretPos = vision.pinpointTurretMoving(robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+        turretPos = vision.pinpointTurretShootingAndMoving(moveAwayTurret,-xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
         flywheelSpeed = vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor);
 
@@ -514,7 +518,7 @@ public class FinalTeleop extends OpMode {
                 velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
                 velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
                 hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-                turretPos = vision.pinpointTurretMoving(robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+                turretPos = vision.pinpointTurretShootingAndMoving(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
                 flywheelSpeed = vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor);
 
@@ -767,7 +771,7 @@ public class FinalTeleop extends OpMode {
 //        }
         if (gamepad1.x) {
             turretCorrection = 0;
-            vision.mt1pinpoint(pinpoint, limelight);
+            vision.mt1pinpoint(red,blue,pinpoint,allianceColor, limelight);
         }
         if (gamepad2.a){
             if(allianceColor.equals("Blue")){

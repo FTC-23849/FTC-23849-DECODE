@@ -260,7 +260,7 @@ public class visionToolsClean {
         }
     }
 
-    public double mt1pinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, Limelight3A limelight){
+    public double mt1pinpoint(double red,double blue,org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint,String alliance, Limelight3A limelight){
         limelight.pipelineSwitch(9);
         limelight.start();
         LLResult result = limelight.getLatestResult();
@@ -269,7 +269,11 @@ public class visionToolsClean {
             double mt1x = result.getBotpose().getPosition().x;
             double mt1y = result.getBotpose().getPosition().y;
             double mt1heading = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);
-            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mt1x*-1,mt1y*-1,AngleUnit.DEGREES,mt1heading-180-3 /*+2 = 2 deg right*/));
+            if(alliance.equals("Blue")){
+                pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mt1x*-1,mt1y*-1,AngleUnit.DEGREES,mt1heading-180+blue /*+2 = 2 deg right*/));
+            }else {
+                pinpoint.setPosition(new Pose2D(DistanceUnit.METER, mt1x * -1, mt1y * -1, AngleUnit.DEGREES, mt1heading - 180 + red /*+2 = 2 deg right*/));
+            }
             return 1;
         }else{
             return 0;
@@ -277,6 +281,26 @@ public class visionToolsClean {
 
     }
 
+    public double mt1pinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint,String alliance, Limelight3A limelight){
+        limelight.pipelineSwitch(9);
+        limelight.start();
+        LLResult result = limelight.getLatestResult();
+
+        if(result != null && result.isValid() && result.getBotpose() != null){
+            double mt1x = result.getBotpose().getPosition().x;
+            double mt1y = result.getBotpose().getPosition().y;
+            double mt1heading = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);
+            if(alliance.equals("Blue")){
+                pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mt1x*-1,mt1y*-1,AngleUnit.DEGREES,mt1heading-180 /*+2 = 2 deg right*/));
+            }else {
+                pinpoint.setPosition(new Pose2D(DistanceUnit.METER, mt1x * -1, mt1y * -1, AngleUnit.DEGREES, mt1heading - 180 /*+2 = 2 deg right*/));
+            }
+            return 1;
+        }else{
+            return 0;
+        }
+
+    }
     public double mt2pinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, Limelight3A limelight){
         limelight.pipelineSwitch(9);
         limelight.start();
@@ -337,7 +361,7 @@ public class visionToolsClean {
         return vyEstimate;
     }
 
-    public double pinpointTurretMoving(Pose2D robotPos, double xVelocity, double yVelocity, double headingVelocity, double gear,double sec, double currentPos, String alliance){
+    public double pinpointTurretMoving( double xcoeff,double ycoeff, Pose2D robotPos, double xVelocity, double yVelocity, double headingVelocity, double gear,double sec, double currentPos, String alliance){
         double vx = xVelocity;
         double vy = yVelocity;
         double dist = groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER), alliance);
@@ -348,16 +372,50 @@ public class visionToolsClean {
 
         double robotX = robotPos.getX(DistanceUnit.METER) + (vx * flightTime);
         double robotY = robotPos.getY(DistanceUnit.METER) + (vy * flightTime);
-
-        double offset = 0.0765;
-        double curX = robotX + Math.sin(Math.toRadians(adjustedHeading))*offset;//Cartesian Y
-        double curY = robotY - Math.cos(Math.toRadians(adjustedHeading))*offset;//flipped Cartesian X
+        double offset = -0.0765;
+        double curX = robotX +Math.sin(Math.toRadians(adjustedHeading))*offset;//Cartesian Y
+        double curY = robotY -xcoeff* Math.cos(Math.toRadians(adjustedHeading))*offset;//flipped Cartesian X
         double curYaw = robotPos.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
 
         double goalX = 1.8288;
         double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
         if(curX < -0.95){
-            goalY = (alliance.equals("Red")) ? -1.7288 : 1.7288;
+            goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
+        }
+        double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
+        double turretOffset = turretAngle - curYaw;
+
+        double turretPos = 0.5 + (turretOffset * (33.0/gear) / 1800.0);
+
+        return Range.clip(turretPos, 0.23   , 0.65);
+    }
+    public double pinpointTurretShootingAndMoving(double moveAway, double xcoeff,double ycoeff, Pose2D robotPos, double xVelocity, double yVelocity, double headingVelocity, double gear,double sec, double currentPos, String alliance){
+        double vx = xVelocity;
+        double vy = yVelocity;
+        double dist = groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER), alliance);
+        double flightTime = sec * ((7.0 / 30.0) * dist + 0.05);
+        double heading = robotPos.getHeading(AngleUnit.DEGREES);
+        double adjustedHeading = heading + 90;
+        if(adjustedHeading < 0 ){ adjustedHeading+= 360; }
+
+        double robotX = robotPos.getX(DistanceUnit.METER) + (vx * flightTime);
+        double robotY = robotPos.getY(DistanceUnit.METER) + (vy * flightTime);
+        double edist = groundDistancePinpoint(robotX,robotY,alliance);
+        if(edist>dist){
+            sec+=moveAway;
+            flightTime = sec * ((7.0 / 30.0) * dist + 0.05);
+            robotX = robotPos.getX(DistanceUnit.METER) + (vx * flightTime);
+            robotY = robotPos.getY(DistanceUnit.METER) + (vy * flightTime);
+        }
+        double offset = -0.0765;
+        double curX = robotX +Math.sin(Math.toRadians(adjustedHeading))*offset;//Cartesian Y
+        double curY = robotY -xcoeff* Math.cos(Math.toRadians(adjustedHeading))*offset;//flipped Cartesian X
+        double curYaw = robotPos.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
+
+        double goalX = 1.8288;
+        double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
+        if(curX < -0.95){
+            goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
         }
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;

@@ -93,9 +93,13 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
     public static double recoveryThreshold = 130;
     public static double maintainThreshold = 80;
     public static double defaultVoltage = 13.15;
+    public static double xcoeff = -1;
+    public static double ycoeff = 1;
     public static double sec = 1.0;
     public static double moveAway = 1;
     public static double gear = 11.9;
+    public static double red = 2;
+    public static double blue = -2;
     double currentVoltage;
     double closezone = 1;
     boolean firstLoop = true;
@@ -328,7 +332,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
         velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
         hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-        turretPos = vision.pinpointTurretMoving(robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+        turretPos = vision.pinpointTurretMoving(xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
         flywheelSpeed = vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor);
 
@@ -428,7 +432,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
                 velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
                 velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
                 hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-                turretPos = vision.pinpointTurretMoving(robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+                turretPos = vision.pinpointTurretMoving(xcoeff,ycoeff, robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
                 flywheelSpeed = vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor);
 
@@ -660,7 +664,7 @@ public class TeleOpRecoveryCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDF
 //        }
         if (gamepad1.x) {
             turretCorrection = 0;
-            vision.mt1pinpoint(pinpoint, limelight);
+            vision.mt1pinpoint(red,blue,pinpoint,allianceColor, limelight);
         }
         if (gamepad2.a){
             if(allianceColor.equals("Blue")){
