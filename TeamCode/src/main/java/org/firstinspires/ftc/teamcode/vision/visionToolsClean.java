@@ -332,6 +332,17 @@ public class visionToolsClean {
     private double lastY;
     private double lastTime;
 
+    private double axEstimate = 0;
+    private double ayEstimate = 0;
+    private double accelErrCovX = 1;
+    private double accelErrCovY = 1;
+
+    private final double accelAlpha = 0.25;
+    private double lastVx = 0;
+    private double lastVy = 0;
+
+    private ElapsedTime accelTimer = new ElapsedTime();
+
     public double[] calculateVelocity(double currentX, double currentY, double currentTime) {
         double dt = currentTime - lastTime;
 
@@ -343,6 +354,26 @@ public class visionToolsClean {
         lastTime = currentTime;
 
         return new double[]{vx, vy};
+    }
+
+    public double[] calculateAcceleration(double vx, double vy) {
+        double dt = accelTimer.seconds();
+        accelTimer.reset();
+
+        if(dt == 0){
+            dt = 0.001;
+        }
+
+        double axRaw = (vx - lastVx) / dt;
+        double ayRaw = (vy - lastVy) / dt;
+
+        axEstimate = axEstimate + accelAlpha * (axRaw - axEstimate);
+        ayEstimate = ayEstimate + accelAlpha * (ayRaw - ayEstimate);
+
+        lastVx = vx;
+        lastVy = vy;
+
+        return new double[]{axEstimate, ayEstimate};
     }
 
     public double getFilteredVelocityX(double measuredVx,double kalmanQ, double kalmanR){
@@ -410,7 +441,7 @@ public class visionToolsClean {
         double offset = -0.0765;
         double curX = robotX +Math.sin(Math.toRadians(adjustedHeading))*offset;//Cartesian Y
         double curY = robotY -xcoeff* Math.cos(Math.toRadians(adjustedHeading))*offset;//flipped Cartesian X
-        double curYaw = robotPos.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
+        double curYaw = robotPos.getHeading(AngleUnit.DEGREES); //+ 0.1 * headingVelocity;
 
         double goalX = 1.8288;
         double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
@@ -435,8 +466,13 @@ public class visionToolsClean {
         double py = robotPos.getY(DistanceUnit.METER);
         double currentDist = groundDistancePinpoint(px,py,allianceColor);
         double flightTime = sec * (7.0 / 30.0) * currentDist + 0.05;
-        double ax = px+vx*flightTime;
-        double ay = py+vy*flightTime;
+
+        double[] accel = calculateAcceleration(vx, vy);
+        double acx = accel[0];
+        double acy = accel[1];
+
+        double ax = px + vx * flightTime + 0.5 * acx * flightTime * flightTime;
+        double ay = py + vy * flightTime + 0.5 * acy * flightTime * flightTime;
         double estimatedDist = groundDistancePinpoint(ax,ay,allianceColor);
         if(currentDist < estimatedDist){
             flightTime = (sec+moveAwayAdjustment) * (7.0 / 30.0) * currentDist + 0.05;

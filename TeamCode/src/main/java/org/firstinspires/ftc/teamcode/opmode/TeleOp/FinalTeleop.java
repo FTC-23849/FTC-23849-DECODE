@@ -102,8 +102,8 @@ public class FinalTeleop extends OpMode {
     public static double maintainThreshold = 40;
     public static double defaultVoltage = 13.15;
     public static double sec = 1.0;
-    public static double moveAway = 1;
-    public static double moveAwayTurret = 1;
+    public static double moveAway = 5;
+    public static double moveAwayTurret = 3;
     public static double gear = 11.9;
     double currentVoltage;
     double closezone = 1;
@@ -238,7 +238,8 @@ public class FinalTeleop extends OpMode {
     private boolean prismSenseEnabled = false;   // optional toggle
     private boolean lastEnableCombo = false;
     private boolean lastDisableCombo = false;
-
+    public static double kalmanQ = 0.1;
+    public static double kalmanR = 0.01;
     private enum InitStage {
         RESET,
         WAIT_AFTER_RESET,
@@ -514,9 +515,9 @@ public class FinalTeleop extends OpMode {
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
             if(leftBumperTrue){
                 robotPos = pinpoint.getPosition();
-                velX = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[0];
-                velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
-                velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
+                velX = vision.getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER),kalmanQ, kalmanR);
+                velY = vision.getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER),kalmanQ, kalmanR);
+                velH = vision.getFilteredVelocityY(pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES),kalmanQ, kalmanR);
                 hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
                 turretPos = vision.pinpointTurretShootingAndMoving(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
@@ -995,6 +996,7 @@ public class FinalTeleop extends OpMode {
         frontIntakeMotor.setPower(0.0);
         backIntakeMotor.setPower(0.0);
     }
+
 
     private void initSensor(NormalizedColorSensor sensor) {
         if (sensor instanceof SwitchableLight) {
