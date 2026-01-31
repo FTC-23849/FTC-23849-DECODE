@@ -79,9 +79,9 @@ public class BlueFarAutoCycling18Blob extends LinearOpMode {
 //    public static double minAccelIntaking = -40;
 //    public static double maxAccelIntaking = 40;
 
-    public static double minVelDrive = 90;
-    public static double minAccelDrive = -90;
-    public static double maxAccelDrive = 90;
+    public static double minVelDrive = 120;
+    public static double minAccelDrive = -120;
+    public static double maxAccelDrive = 120;
 
     public static double shooterStartDelay = 0.1;
     public static double shootingDelay = 1;

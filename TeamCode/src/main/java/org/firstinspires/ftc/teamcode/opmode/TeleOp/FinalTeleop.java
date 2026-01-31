@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.PwmControl;
@@ -65,6 +66,10 @@ public class FinalTeleop extends OpMode {
     private NormalizedColorSensor colorLeft;
     private NormalizedColorSensor colorRight;
     private Servo rgbLight;
+    private DigitalChannel bottomLeftLaser;
+    private DigitalChannel bottomRightLaser;
+
+
     private PIDVelocityController3 velocityPID;
     public Pose2D robotPos;
     public static double currentVelocity;
@@ -245,6 +250,8 @@ public class FinalTeleop extends OpMode {
 
     // track B state for edge detection
     boolean lastBPressed = false;
+    
+    boolean thirdBallPresent;
 
     @Override
     public void init() {
@@ -345,6 +352,12 @@ public class FinalTeleop extends OpMode {
 
         colorLeft  = hardwareMap.get(NormalizedColorSensor.class, "colorLeft1");
         colorRight = hardwareMap.get(NormalizedColorSensor.class, "colorRight1");
+
+        bottomLeftLaser = hardwareMap.get(DigitalChannel.class, "bottomLeftLaser");
+        bottomRightLaser = hardwareMap.get(DigitalChannel.class, "bottomRightLaser");
+
+        bottomLeftLaser.setMode(DigitalChannel.Mode.INPUT);
+        bottomRightLaser.setMode(DigitalChannel.Mode.INPUT);
 
 //        rightHood.setPosition(0.0);
 //        leftHood.setPosition(0.0);
@@ -472,6 +485,16 @@ public class FinalTeleop extends OpMode {
         for (LynxModule hub : hubs) {
             hub.clearBulkCache();
         }
+        
+        thirdBallPresent = bottomLeftLaser.getState() || bottomRightLaser.getState();
+
+        if (thirdBallPresent) {
+            zoneLight.setPosition(1.0);
+            //telemetry.addData("thirdball?: ", thirdBallPresent);
+        } else {
+            zoneLight.setPosition(0.0);
+        }
+        
         if(firstLoop){
             leftTurretServo.setPosition(0.5);
             rightTurretServo.setPosition(0.5);
