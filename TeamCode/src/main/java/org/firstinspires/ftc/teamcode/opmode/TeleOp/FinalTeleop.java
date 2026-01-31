@@ -20,20 +20,25 @@ import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
+import org.firstinspires.ftc.teamcode.hardware.CustomGoBildaPrismRgbLedDriver;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
-import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
-import org.firstinspires.ftc.teamcode.vision.visionTools;
+import org.firstinspires.ftc.teamcode.opmode.Auto.PoseStorage;
+import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController3;
+import org.firstinspires.ftc.teamcode.vision.visionToolsClean;
+
 import java.util.List;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
+
 @TeleOp
 @Config
-public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShootingWhileMovingBulkRead extends OpMode {
+public class FinalTeleop extends OpMode {
     List<LynxModule> hubs;
     private VoltageSensor myControlHubVoltageSensor;
     Limelight3A limelight;
@@ -60,19 +65,41 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
     private NormalizedColorSensor colorLeft;
     private NormalizedColorSensor colorRight;
     private Servo rgbLight;
-    private PIDVelocityController2 velocityPID;
+    private PIDVelocityController3 velocityPID;
+    public Pose2D robotPos;
     public static double currentVelocity;
-    public static double TargetVelocity = 900;
-    public static double VKp = 0.02;
-    public static double VKi = 0.003;
-    public static double VKd = 0;
-    public static double VkS = 0;
-    public static double VkV = 0.00042;
-    public static double sec = 0.;
-    public static double moveAway = 0;
+    public double velX;
+    public double velY;
+    public double velH;
+    public static double lockedFlywheelVelocity = -1600;
+    public static double lockedHoodHeight = 0.1;
+    public static double TargetVelocity = -1200;
+    //    public static double VKp = 0.02;
+//    public static double VKi = 0.003;
+//    public static double VKd = 0;
+//    public static double VkS = 0;
+//    public static double VkV = 0.00042;
+    public static double KpMaintain = 0.016;
+    public static double KiMaintain = 0.003;
+
+    public static double KpDriveRecovery = 0.025;
+
+    public static double KpRecovery = 1;
+    public static double KiRecovery = 0.001;
+    public static double KsRecovery = 1;
+    public static double KvFF = 0.00042;
+    public static double KsFF = 0.055 ;
+
+
+    public static double recoveryThreshold = 130;
+    public static double maintainThreshold = 80;
+    public static double defaultVoltage = 13.15;
+    public static double sec = 1.0;
+    public static double moveAway = 1;
     public static double gear = 11.9;
-    double presentVoltage;
+    double currentVoltage;
     double closezone = 1;
+    boolean firstLoop = true;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
     double turretCorrection = 0;
@@ -80,22 +107,31 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
     boolean greenSortingEnabled = false;
+    boolean lowVoltage = false;
     ElapsedTime timer = new ElapsedTime();
     ElapsedTime recycleIntakeTimer = new ElapsedTime();
     AnalogInput turretEncoder;
-    NormalizedColorSensor leftIntakeColorSensor;
-    NormalizedColorSensor rightIntakeColorSensor;
+    private NormalizedColorSensor colorLeft1;
+    private NormalizedColorSensor colorRight1;
+
+    private NormalizedColorSensor colorLeft2;
+    private NormalizedColorSensor colorRight2;
+
+    private NormalizedColorSensor colorLeft3;
+    private NormalizedColorSensor colorRight3;
+
+    CustomGoBildaPrismRgbLedDriver prism;
     double totalCurrent;
     double groundDistance = 0;
     double turretPos = 0.5;
     double hoodHeight = 0;
     double flywheelSpeed = 0;
     boolean tipped = false;
-    visionTools vision = new visionTools();
+    visionToolsClean vision = new visionToolsClean();
     List currentBalls;
-    public static double Kp = 0.001;
-    public static double Ki = 0.0048;
-    public static double Kd = 0.00;
+    //    public static double Kp = 0.001;
+//    public static double Ki = 0.0048;
+//    public static double Kd = 0.00;
     double currentSpeed = 0;
     boolean rightBumperTrue = false;
     boolean leftBumperTrue = false;
@@ -116,8 +152,8 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
     public static double recyclingKickerUpDelay = 500;
     //throttling
     double lastPinpointUpdate = 0;
-    double pinpointThrottleMS = 50;
-    double telemeteryThrottleMS = 100;
+    public static double pinpointThrottleMS =100;
+    public static double telemeteryThrottleMS = 40000000;
     double lastTelemetryUpdate = 0;
     double flywheelCurrentVelocity = 0;
     double targetVelocity = 0;
@@ -174,6 +210,39 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         }
     }
 
+    // LED colors
+    private static final int[] RGB_GREEN  = {0, 255, 0};
+    private static final int[] RGB_PURPLE = {180, 0, 255};
+    private static final int[] RGB_OFF    = {0, 0, 0};
+
+    private static final int BRIGHT_ON = 100;
+    private static final int BRIGHT_OFF = 0;
+
+    private ArtifactColor last1 = null;
+    private ArtifactColor last2 = null;
+    private ArtifactColor last3 = null;
+
+    // --- Color sensing + Prism updates (throttled round-robin) ---
+    public static double colorTickMs = 80;   // 50ms tick = 20Hz. Each pair updates every 150ms (~6.7Hz)
+    private double lastColorTick = 0;
+    private int colorPhase = 0;             // 0->pair1, 1->pair2, 2->pair3
+    private boolean prismSenseEnabled = false;   // optional toggle
+    private boolean lastEnableCombo = false;
+    private boolean lastDisableCombo = false;
+
+    private enum InitStage {
+        RESET,
+        WAIT_AFTER_RESET,
+        RECAL_IMU,
+        WAIT_AFTER_RECAL,
+        SET_POSE,
+        WAIT_AFTER_SET,
+        UPDATE_AND_PRINT,
+        DONE
+    }
+
+    private InitStage initStage = InitStage.RESET;
+
     // track B state for edge detection
     boolean lastBPressed = false;
 
@@ -187,8 +256,34 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
         limelight.pipelineSwitch(9);
 
-        leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorLeft1");
-        rightIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorRight1");
+        prism = hardwareMap.get(CustomGoBildaPrismRgbLedDriver.class, "prism");
+
+        // Configure 3 layers as 3 segments: (0-1), (2-3), (4-5)
+        // Index 0 is the LED closest to the Prism driver. :contentReference[oaicite:10]{index=10}
+        prism.configureSolidLayer(0, 0, 1, BRIGHT_ON, 0, 0, 0);
+        prism.configureSolidLayer(1, 2, 3, BRIGHT_ON, 0, 0, 0);
+        prism.configureSolidLayer(2, 4, 5, BRIGHT_ON, 0, 0, 0);
+
+        colorLeft1 = hardwareMap.get(NormalizedColorSensor.class, "colorLeft1");
+        colorRight1 = hardwareMap.get(NormalizedColorSensor.class, "colorRight1");
+
+        colorLeft2 = hardwareMap.get(NormalizedColorSensor.class, "colorLeft2");
+        colorRight2 = hardwareMap.get(NormalizedColorSensor.class, "colorRight2");
+
+        colorLeft3 = hardwareMap.get(NormalizedColorSensor.class, "colorLeft3");
+        colorRight3 = hardwareMap.get(NormalizedColorSensor.class, "colorRight3");
+
+        initSensor(colorLeft1);
+        initSensor(colorRight1);
+
+        initSensor(colorLeft2);
+        initSensor(colorRight2);
+
+        initSensor(colorLeft3);
+        initSensor(colorRight3);
+
+        last1 = last2 = last3 = null;
+
         turretEncoder = hardwareMap.get(AnalogInput.class, "turretEncoder");
 
         leftFrontMotor = hardwareMap.get(DcMotorEx.class, "LF");
@@ -236,11 +331,11 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
         leftTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
         rightTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
-        leftTurretServo.setPosition(0.5);
-        rightTurretServo.setPosition(0.5);
-
-        leftTongueServo.setPosition(Globals.tongueIntake);
-        rightTongueServo.setPosition(Globals.tongueIntake);
+//        leftTurretServo.setPosition(0.5);
+//        rightTurretServo.setPosition(0.5);
+//
+//        leftTongueServo.setPosition(Globals.tongueIntake);
+//        rightTongueServo.setPosition(Globals.tongueIntake);
 
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
@@ -251,8 +346,8 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         colorLeft  = hardwareMap.get(NormalizedColorSensor.class, "colorLeft1");
         colorRight = hardwareMap.get(NormalizedColorSensor.class, "colorRight1");
 
-        rightHood.setPosition(0.0);
-        leftHood.setPosition(0.0);
+//        rightHood.setPosition(0.0);
+//        leftHood.setPosition(0.0);
 
         pinpoint.setOffsets(96.6511963161, -2.55558368232, DistanceUnit.MM);
         pinpoint.setEncoderDirections(
@@ -270,28 +365,106 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         leftShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
         rightShooterMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
-        velocityPID = new PIDVelocityController2(
-                VKp, VKi, VKd,
-                VkS, VkV,
-                TargetVelocity
+        velocityPID = new PIDVelocityController3(
+                targetVelocity,
+                KpMaintain,KiMaintain,
+                KpRecovery,KiRecovery,KsRecovery
+                , KsFF, KvFF
         );
 
-        limelight.setPollRateHz(30);
+        limelight.setPollRateHz(15);
         limelight.start();
 
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
-        hoodHeight = vision.hoodHeightRegressor(limelight, leftHood.getPosition(), pinpoint, allianceColor);
-        turretPos = vision.pinpointTurretMoving(gear,sec, pinpoint, leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+        telemetry.setMsTransmissionInterval(120);
+        robotPos = pinpoint.getPosition();
+        velX = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[0];
+        velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
+        velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
+        hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
+        turretPos = vision.pinpointTurretMoving(robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
-        flywheelSpeed = vision.FlywheelSpeedRegressor(moveAway, sec, flywheelCurrentVelocity, pinpoint, allianceColor);
+        flywheelSpeed = vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor);
+
+        prism.configureSolidLayer(0, 0, 1, BRIGHT_ON, 0, 0, 0);
+        prism.configureSolidLayer(1, 2, 3, BRIGHT_ON, 0, 0, 0);
+        prism.configureSolidLayer(2, 4, 5, BRIGHT_ON, 0, 0, 0);
+
+        leftTipper.setPosition(Globals.tipperRetracted);
+        rightTipper.setPosition(Globals.tipperRetracted);
+
+        lastColorTick = runTime.milliseconds();
+        colorPhase = 0;
+        prismSenseEnabled = false; // start OFF (or true if you want always on)
 
     }
 
     @Override
     public void init_loop() {
-        leftTipper.setPosition(Globals.tipperRetracted);
-        rightTipper.setPosition(Globals.tipperRetracted);
+        switch (initStage) {
+
+            case RESET:
+                // Run ONCE
+                pinpoint.resetPosAndIMU();
+                timer.reset();
+                initStage = InitStage.WAIT_AFTER_RESET;
+                break;
+
+            case WAIT_AFTER_RESET:
+                // Wait 500ms
+                if (timer.milliseconds() >= 500) {
+                    initStage = InitStage.RECAL_IMU;
+                }
+                break;
+
+            case RECAL_IMU:
+                // Run ONCE
+                pinpoint.recalibrateIMU();
+                timer.reset();
+                initStage = InitStage.WAIT_AFTER_RECAL;
+                break;
+
+            case WAIT_AFTER_RECAL:
+                // Wait 1000ms
+                if (timer.milliseconds() >= 1000) {
+                    initStage = InitStage.SET_POSE;
+                }
+                break;
+
+            case SET_POSE:
+                // Run ONCE (IMPORTANT: convert if your pinpoint expects Pose2D units)
+                pinpoint.setPosition(PoseStorage.currentPose);
+                timer.reset();
+                initStage = InitStage.WAIT_AFTER_SET;
+                break;
+
+            case WAIT_AFTER_SET:
+                // Optional small settle time (you had 1000ms; keep it if you want)
+                if (timer.milliseconds() >= 1000) {
+                    initStage = InitStage.UPDATE_AND_PRINT;
+                }
+                break;
+
+            case UPDATE_AND_PRINT:
+                // Run ONCE
+                pinpoint.update();
+                telemetry.addData("file current pose", PoseStorage.currentPose);
+                telemetry.addData("pinpoint current pose", pinpoint.getPosition().toString());
+                initStage = InitStage.DONE;
+                break;
+
+            case DONE:
+                // Keep showing telemetry every loop if you want
+                telemetry.addData("Init", "DONE");
+                telemetry.addData("file current pose", PoseStorage.currentPose);
+                telemetry.addData("pinpoint current pose", pinpoint.getPosition().toString());
+                break;
+        }
+
+        telemetry.addData("InitStage", initStage);
+        telemetry.addData("t(ms)", (int) timer.milliseconds());
+        telemetry.update();
     }
 
     @Override
@@ -299,20 +472,55 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         for (LynxModule hub : hubs) {
             hub.clearBulkCache();
         }
-        presentVoltage = myControlHubVoltageSensor.getVoltage();
+        if(firstLoop){
+            leftTurretServo.setPosition(0.5);
+            rightTurretServo.setPosition(0.5);
+
+            leftTongueServo.setPosition(Globals.tongueIntake);
+            rightTongueServo.setPosition(Globals.tongueIntake);
+            rightHood.setPosition(0.0);
+            leftHood.setPosition(0.0);
+            firstLoop = false;
+        }
+        currentVoltage = myControlHubVoltageSensor.getVoltage();
         double now = runTime.milliseconds();
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
             if(leftBumperTrue){
-                hoodHeight = vision.hoodHeightRegressor(limelight, leftHood.getPosition(), pinpoint, allianceColor);
-                turretPos = vision.pinpointTurretMoving(gear,sec, pinpoint, leftTurretServo.getPosition(), allianceColor) + turretCorrection;
-                groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
-                flywheelSpeed = vision.FlywheelSpeedRegressor(moveAway, sec, flywheelCurrentVelocity, pinpoint, allianceColor);
+                robotPos = pinpoint.getPosition();
+                velX = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[0];
+                velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
+                velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
+                hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
+                turretPos = vision.pinpointTurretMoving(robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+                groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
+                flywheelSpeed = vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor);
 
             }
             pinpoint.update();
             lastPinpointUpdate = now;
         }
         timer.reset();
+
+        // --- Toggle PrismSense ON/OFF (optional) ---
+        boolean enableCombo  = gamepad2.right_stick_button;
+        boolean disableCombo = gamepad2.left_stick_button;
+
+        if (enableCombo && !lastEnableCombo) {
+            prismSenseEnabled = true;
+            last1 = last2 = last3 = null;   // force refresh
+            colorPhase = 0;
+        }
+
+        if (disableCombo && !lastDisableCombo) {
+            prismSenseEnabled = false;
+            applyToLayer(prism, 0, ArtifactColor.UNKNOWN);
+            applyToLayer(prism, 1, ArtifactColor.UNKNOWN);
+            applyToLayer(prism, 2, ArtifactColor.UNKNOWN);
+            showOnRgbLight(ArtifactColor.UNKNOWN);
+        }
+
+        lastEnableCombo = enableCombo;
+        lastDisableCombo = disableCombo;
 
         telemetry.addData("last loop time", runTime.milliseconds() - lastLoopTime);
         telemetry.addData("average loop time", runTime.milliseconds() / loops);
@@ -336,6 +544,7 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         leftBackMotor.setPower(backLeftPower);
         rightFrontMotor.setPower(frontRightPower);
         rightBackMotor.setPower(backRightPower);
+
 
         // ----------------- RECYCLE TRIGGER + SAFE LOCKOUT -----------------
         if (gamepad1.dpadDownWasReleased() && !recyclerIsRunning) {
@@ -482,6 +691,9 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         if(gamepad2.x){
             pinpoint.recalibrateIMU();
         }
+        if(gamepad2.bWasReleased()){
+            lowVoltage=!lowVoltage;
+        }
         if(gamepad1.right_bumper){
             pinpoint.recalibrateIMU();
         }
@@ -496,20 +708,6 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
             usePower= !usePower;
         }
 
-        if(!usePower){
-            leftShooterMotor.setPower(-0.6);
-            rightShooterMotor.setPower(-0.6);
-            leftHood.setPosition(0.11);
-            rightHood.setPosition(0.11);
-            leftShooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            rightShooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-
-
-        }else{
-            leftShooterMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            rightShooterMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        }
 
         // close zone shoot
         //telemetry.addData("left", leftBumperTrue);
@@ -525,6 +723,7 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         if (gamepad1.dpad_right) {
             allianceColor = "Red";
         }
+
 
 //        if (rightBumperTrue && !leftBumperTrue) {
 //            leftShooterMotor.setPower(Globals.defaultFarZonePower);
@@ -562,25 +761,32 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         }
 
         if (leftBumperTrue && !rightBumperTrue) {
-            if(usePower) {
-                flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
+            flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
 
-                targetVelocity = flywheelCorrection + flywheelSpeed;
-
-                velocityPID.setTargetVelocity(targetVelocity);
-                velocityPID.setPID(VKp, VKi, VKd);
-                velocityPID.setFeedforward(VkS, VkV);
-
-                power = velocityPID.update(flywheelCurrentVelocity,presentVoltage,12);
-
-                leftShooterMotor.setPower(power);
-                rightShooterMotor.setPower(power);
-
-                currentSpeed = targetVelocity;
+            if (!usePower) {
+                targetVelocity = lockedFlywheelVelocity + flywheelCorrection;
+                leftHood.setPosition(lockedHoodHeight);
+                rightHood.setPosition(lockedHoodHeight);
+            } else {
+                targetVelocity = vision.FlywheelSpeedRegressor(robotPos, velX, velY, moveAway, sec, flywheelCurrentVelocity, allianceColor)
+                        + flywheelCorrection;
                 leftHood.setPosition(hoodHeight);
                 rightHood.setPosition(hoodHeight);
-
             }
+
+            velocityPID.setTargetVelocity(targetVelocity);
+            velocityPID.setMaintainGains(KpMaintain,KiMaintain,KpDriveRecovery);
+            velocityPID.setRecoveryGains(KpRecovery,KiRecovery,KsRecovery);
+            velocityPID.setFeedforward(KsFF, KvFF);
+            velocityPID.setRecoveryThreshold(recoveryThreshold);
+            velocityPID.setMaintainThreshold(maintainThreshold);
+            velocityPID.setVoltageStatus(lowVoltage);
+            power = velocityPID.update(flywheelCurrentVelocity, currentVoltage, defaultVoltage);
+            leftShooterMotor.setPower(power);
+            rightShooterMotor.setPower(power);
+
+            double error = flywheelCurrentVelocity - targetVelocity;
+
         }
 
         if (!rightBumperTrue && !leftBumperTrue) {
@@ -613,33 +819,90 @@ public class TeleOpCleanerLoopTimeRecyclingNewKickerPinpointVelocityPIDFShooting
         }
         telemetry.addData("Error", flywheelCurrentVelocity-targetVelocity );
         telemetry.addData("Correction",flywheelCorrection);
+        telemetry.addData("VelX", velX);
+        telemetry.addData("VelY",velY);
+        telemetry.addData("distance", groundDistance);
         if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {
-            telemetry.addData("current voltage, ", presentVoltage);
-            telemetry.addData("correction",flywheelCorrection);
+            telemetry.addData("current voltage, ", currentVoltage);
             telemetry.addData("leftservo",leftTurretServo.getPosition());
             telemetry.addData("rightservo",rightTurretServo.getPosition());
             telemetry.addData("pinpoint turret",turretPos);
             telemetry.addData("flywheel", flywheelCurrentVelocity);
             telemetry.addData("targetVelocity", targetVelocity);
-            telemetry.addData("Error", flywheelCurrentVelocity - targetVelocity);
             telemetry.addData("PIDF Power", power);
             telemetry.addData("looptime", timer.milliseconds());
             telemetry.addData("left kicker speed", leftKickerServo.getPower());
             telemetry.addData("right kicker speed", rightKickerServo.getPower());
-            telemetry.addData("distance", groundDistance);
+            telemetry.addData("low voltage?", lowVoltage);
 
             telemetry.update();
             lastTelemetryUpdate = now;
         }
 
-        // --- color sensing ---
-        Reading L = readAndClassify(colorLeft);
-        Reading R = readAndClassify(colorRight);
+        // --- Color sensing + Prism updates (THROTTLED ROUND-ROBIN) ---
+        if (prismSenseEnabled && (now - lastColorTick >= colorTickMs)) {
+            lastColorTick = now;
 
-        ArtifactColor overall = combineByConfidence(L, R);
-        showOnRgbLight(overall);
+            switch (colorPhase) {
+                case 0: {
+                    Reading L1 = readAndClassify(colorLeft1);
+                    Reading R1 = readAndClassify(colorRight1);
+                    ArtifactColor overall1 = combineByConfidence(L1, R1);
+
+                    if (last1 == null || overall1 != last1) applyToLayer(prism, 2, overall1);
+                    last1 = overall1;
+
+                    showOnRgbLight(overall1); // servo light shows pair1
+                    break;
+                }
+                case 1: {
+                    Reading L2 = readAndClassify(colorLeft2);
+                    Reading R2 = readAndClassify(colorRight2);
+                    ArtifactColor overall2 = combineByConfidence(L2, R2);
+
+                    if (last2 == null || overall2 != last2) applyToLayer(prism, 1, overall2);
+                    last2 = overall2;
+                    break;
+                }
+                case 2: {
+                    Reading L3 = readAndClassify(colorLeft3);
+                    Reading R3 = readAndClassify(colorRight3);
+                    ArtifactColor overall3 = combineByConfidence(L3, R3);
+
+                    if (last3 == null || overall3 != last3) applyToLayer(prism, 0, overall3);
+                    last3 = overall3;
+                    break;
+                }
+            }
+
+            colorPhase = (colorPhase + 1) % 3;
+        }
 
 
+    }
+
+    @Override
+    public void stop() {
+        applyToLayer(prism, 0, ArtifactColor.UNKNOWN);
+        applyToLayer(prism, 1, ArtifactColor.UNKNOWN);
+        applyToLayer(prism, 2, ArtifactColor.UNKNOWN);
+    }
+
+    private void applyToLayer(CustomGoBildaPrismRgbLedDriver prism, int layer, ArtifactColor c) {
+        int[] rgb;
+        int bright;
+
+        switch (c) {
+            case GREEN:
+                rgb = RGB_GREEN; bright = BRIGHT_ON; break;
+            case PURPLE:
+                rgb = RGB_PURPLE; bright = BRIGHT_ON; break;
+            default:
+                rgb = RGB_OFF; bright = BRIGHT_OFF; break;
+        }
+
+        //prism.setLayerBrightness(layer, bright);
+        prism.setLayerColor(layer, rgb[0], rgb[1], rgb[2]);
     }
 
     // --- TeleOp recycle state machine (ONLY owns tongue/kickers/intake while active) ---

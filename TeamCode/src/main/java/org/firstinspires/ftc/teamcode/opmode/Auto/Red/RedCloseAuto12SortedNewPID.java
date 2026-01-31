@@ -155,8 +155,6 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         // Map motors and servos
-        leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"leftIntakeColorSensor");
-        rightIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"rightIntakeColorSensor");
         turretEncoder = hardwareMap.get(AnalogInput.class, "turretEncoder");
         leftFrontMotor  = hardwareMap.get(DcMotorEx.class,"LF");
         rightFrontMotor = hardwareMap.get(DcMotorEx.class, "RF");
@@ -320,7 +318,7 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     //.setTangent(Math.PI/2)
-                                                    .splineToLinearHeading(new Pose2d(2, 50, Math.toRadians(90)),
+                                                    .splineToLinearHeading(new Pose2d(2, 47, Math.toRadians(90)),
                                                             (Math.PI/2),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)

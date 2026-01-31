@@ -203,8 +203,8 @@ public class TeleOpPassedPose extends OpMode {
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
         limelight.pipelineSwitch(9);
 
-        leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "leftIntakeColorSensor");
-        rightIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "rightIntakeColorSensor");
+        leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorLeft1");
+        rightIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorRight1");
         turretEncoder = hardwareMap.get(AnalogInput.class, "turretEncoder");
 
         leftFrontMotor = hardwareMap.get(DcMotorEx.class, "LF");
@@ -264,8 +264,9 @@ public class TeleOpPassedPose extends OpMode {
 
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
-        colorLeft  = hardwareMap.get(NormalizedColorSensor.class, "leftIntakeColorSensor");
-        colorRight = hardwareMap.get(NormalizedColorSensor.class, "rightIntakeColorSensor");
+
+        colorLeft  = hardwareMap.get(NormalizedColorSensor.class, "colorLeft1");
+        colorRight = hardwareMap.get(NormalizedColorSensor.class, "colorRight1");
 
         //rightHood.setPosition(0.0);
         //leftHood.setPosition(0.0);

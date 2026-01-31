@@ -154,7 +154,7 @@ public class PrismTeleop extends OpMode {
     public static double pinpointThrottleMS =100;
 
     // --- Color/Prism throttling ---
-    public static double colorUpdatePeriodMs = 50; // 50ms = 20Hz (use 33 for ~30Hz)
+    public static double colorUpdatePeriodMs = 200; // 50ms = 20Hz (use 33 for ~30Hz)
     double lastColorUpdate = 0;
 
     public static double telemeteryThrottleMS = 40000000;
@@ -225,6 +225,15 @@ public class PrismTeleop extends OpMode {
     private ArtifactColor last1 = null;
     private ArtifactColor last2 = null;
     private ArtifactColor last3 = null;
+
+    // --- Color sensing + Prism updates (throttled round-robin) ---
+    public static double colorTickMs = 50;   // 50ms tick = 20Hz. Each pair updates every 150ms (~6.7Hz)
+    private double lastColorTick = 0;
+    private int colorPhase = 0;             // 0->pair1, 1->pair2, 2->pair3
+    private boolean prismSenseEnabled = false;   // optional toggle
+    private boolean lastEnableCombo = false;
+    private boolean lastDisableCombo = false;
+
 
     private enum InitStage {
         RESET,
@@ -378,8 +387,17 @@ public class PrismTeleop extends OpMode {
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
         flywheelSpeed = vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor);
 
+        prism.configureSolidLayer(0, 0, 1, BRIGHT_ON, 0, 0, 0);
+        prism.configureSolidLayer(1, 2, 3, BRIGHT_ON, 0, 0, 0);
+        prism.configureSolidLayer(2, 4, 5, BRIGHT_ON, 0, 0, 0);
+
         leftTipper.setPosition(Globals.tipperRetracted);
         rightTipper.setPosition(Globals.tipperRetracted);
+
+        lastColorTick = runTime.milliseconds();
+        colorPhase = 0;
+        prismSenseEnabled = false; // start OFF (or true if you want always on)
+
 
     }
 
@@ -486,6 +504,28 @@ public class PrismTeleop extends OpMode {
         }
         timer.reset();
 
+        // --- Toggle PrismSense ON/OFF (optional) ---
+        boolean enableCombo  = gamepad2.right_stick_button;
+        boolean disableCombo = gamepad2.left_stick_button;
+
+        if (enableCombo && !lastEnableCombo) {
+            prismSenseEnabled = true;
+            last1 = last2 = last3 = null;   // force refresh
+            colorPhase = 0;
+        }
+
+        if (disableCombo && !lastDisableCombo) {
+            prismSenseEnabled = false;
+            applyToLayer(prism, 0, ArtifactColor.UNKNOWN);
+            applyToLayer(prism, 1, ArtifactColor.UNKNOWN);
+            applyToLayer(prism, 2, ArtifactColor.UNKNOWN);
+            showOnRgbLight(ArtifactColor.UNKNOWN);
+        }
+
+        lastEnableCombo = enableCombo;
+        lastDisableCombo = disableCombo;
+
+
         telemetry.addData("last loop time", runTime.milliseconds() - lastLoopTime);
         telemetry.addData("average loop time", runTime.milliseconds() / loops);
         telemetry.addData("loops", loops);
@@ -511,7 +551,7 @@ public class PrismTeleop extends OpMode {
 
 
         // ----------------- RECYCLE TRIGGER + SAFE LOCKOUT -----------------
-        if (gamepad1.dpadDownWasReleased() && !recyclerIsRunning) {
+        if ((gamepad1.dpadDownWasReleased() || gamepad2.dpadDownWasReleased() ) && !recyclerIsRunning) {
             recyclerIsRunning = true;
             started = false;
         }
@@ -799,37 +839,45 @@ public class PrismTeleop extends OpMode {
             lastTelemetryUpdate = now;
         }
 
-        // --- color sensing + prism updates (THROTTLED) ---
-        if (now - lastColorUpdate >= colorUpdatePeriodMs) {
-            lastColorUpdate = now;
+        // --- Color sensing + Prism updates (THROTTLED ROUND-ROBIN) ---
+        if (prismSenseEnabled && (now - lastColorTick >= colorTickMs)) {
+            lastColorTick = now;
 
-            // --- color sensing ---
-            Reading L1 = readAndClassify(colorLeft1);
-            Reading R1 = readAndClassify(colorRight1);
+            switch (colorPhase) {
+                case 0: {
+                    Reading L1 = readAndClassify(colorLeft1);
+                    Reading R1 = readAndClassify(colorRight1);
+                    ArtifactColor overall1 = combineByConfidence(L1, R1);
 
-            ArtifactColor overall1 = combineByConfidence(L1, R1);
+                    if (last1 == null || overall1 != last1) applyToLayer(prism, 2, overall1);
+                    last1 = overall1;
 
-            Reading L2 = readAndClassify(colorLeft2);
-            Reading R2 = readAndClassify(colorRight2);
+                    showOnRgbLight(overall1); // servo light shows pair1
+                    break;
+                }
+                case 1: {
+                    Reading L2 = readAndClassify(colorLeft2);
+                    Reading R2 = readAndClassify(colorRight2);
+                    ArtifactColor overall2 = combineByConfidence(L2, R2);
 
-            ArtifactColor overall2 = combineByConfidence(L2, R2);
+                    if (last2 == null || overall2 != last2) applyToLayer(prism, 1, overall2);
+                    last2 = overall2;
+                    break;
+                }
+                case 2: {
+                    Reading L3 = readAndClassify(colorLeft3);
+                    Reading R3 = readAndClassify(colorRight3);
+                    ArtifactColor overall3 = combineByConfidence(L3, R3);
 
-            Reading L3 = readAndClassify(colorLeft3);
-            Reading R3 = readAndClassify(colorRight3);
+                    if (last3 == null || overall3 != last3) applyToLayer(prism, 0, overall3);
+                    last3 = overall3;
+                    break;
+                }
+            }
 
-            ArtifactColor overall3 = combineByConfidence(L3, R3);
-
-            // Only update Prism when a sensor's detected state changes (faster + less I2C spam)
-            if (last1 == null || overall1 != last1) applyToLayer(prism, 2, overall1);
-            if (last2 == null || overall2 != last2) applyToLayer(prism, 1, overall2);
-            if (last3 == null || overall3 != last3) applyToLayer(prism, 0, overall3);
-
-            last1 = overall1;
-            last2 = overall2;
-            last3 = overall3;
-
-            showOnRgbLight(overall1);
+            colorPhase = (colorPhase + 1) % 3;
         }
+
 
     }
 

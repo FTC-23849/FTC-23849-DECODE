@@ -116,8 +116,8 @@ public class RedFarAutoCycling15NewPID extends LinearOpMode {
 
     public static boolean kickersStarted = false;
 
-    public static double shootingSpeedPID = -1840;
-    public static double turretOffset = -0.015;
+    public static double shootingSpeedPID = -1790;
+    public static double turretOffset = -0.017;
 
     public static String allianceColor = "Red";
 
@@ -189,8 +189,6 @@ public class RedFarAutoCycling15NewPID extends LinearOpMode {
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
         // Map motors and servos
-        leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"leftIntakeColorSensor");
-        rightIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"rightIntakeColorSensor");
         turretEncoder = hardwareMap.get(AnalogInput.class, "turretEncoder");
         leftFrontMotor  = hardwareMap.get(DcMotorEx.class,"LF");
         rightFrontMotor = hardwareMap.get(DcMotorEx.class, "RF");

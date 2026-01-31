@@ -121,8 +121,8 @@ public class BlueFarAutoCycling15NewPID extends LinearOpMode {
     public static boolean intakeLastSpike = true;
     public static boolean intakeSecondSpike = false;
 
-    public static double shootingSpeedPID = -1840;
-    public static double turretOffset = 0.009;
+    public static double shootingSpeedPID = -1790;
+    public static double turretOffset = 0.011;
 
     public static String allianceColor = "Blue";
 
@@ -198,8 +198,6 @@ public class BlueFarAutoCycling15NewPID extends LinearOpMode {
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
         // Map motors and servos
-        leftIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"leftIntakeColorSensor");
-        rightIntakeColorSensor = hardwareMap.get(NormalizedColorSensor.class,"rightIntakeColorSensor");
         turretEncoder = hardwareMap.get(AnalogInput.class, "turretEncoder");
         leftFrontMotor  = hardwareMap.get(DcMotorEx.class,"LF");
         rightFrontMotor = hardwareMap.get(DcMotorEx.class, "RF");

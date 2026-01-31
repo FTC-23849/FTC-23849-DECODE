@@ -34,6 +34,7 @@ import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.opmode.Auto.PoseStorage;
+import org.firstinspires.ftc.teamcode.opmode.Auto.Red.RedFarAutoCyclingBlob;
 import org.firstinspires.ftc.teamcode.opmode.misc.BlobDetector;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController3;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
@@ -122,8 +123,8 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
     public static boolean intakeLastSpike = true;
     public static boolean intakeSecondSpike = false;
 
-    public static double shootingSpeedPID = -1840;
-    public static double turretOffset = 0.009;
+    public static double shootingSpeedPID = -1790;
+    public static double turretOffset = 0.011;
 
     public static String allianceColor = "Blue";
 
@@ -276,7 +277,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
                 KpRecovery,KiRecovery,KsRecovery
                 , KsFF, KvFF
         );
-        sleep(500);
+        sleep(1000);
 
         pinpoint.recalibrateIMU();
 
@@ -295,84 +296,6 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
         );
 
         detector.start();
-
-        while(!opModeIsActive() && !isStopRequested()) {
-
-            // Offset enabling
-
-            if (gamepad1.a) {
-                secondCycleOffset = 10.0;
-                secondCycleOffsetEnabled = true;
-            } else if (gamepad1.b) {
-                secondCycleOffset = 0.0;
-                secondCycleOffsetEnabled = false;
-            }
-
-            if (gamepad1.x) {
-                thirdCycleOffset = 15.0;
-                thirdCycleOffsetEnabled = true;
-            } else if (gamepad1.y) {
-                thirdCycleOffset = 0.0;
-                thirdCycleOffsetEnabled = false;
-            }
-
-            if (gamepad1.dpad_up) {
-                fourthCycleOffset = 20.0;
-                fourthCycleOffsetEnabled = true;
-            } else if (gamepad1.dpad_down) {
-                fourthCycleOffset = 0.0;
-                fourthCycleOffsetEnabled = false;
-            }
-
-            if (gamepad1.dpad_left) {
-                widenCycleOffset = 10.0;
-                widenCycleOffsetEnabled = true;
-            } else if (gamepad1.dpad_right) {
-                widenCycleOffset = 0.0;
-                widenCycleOffsetEnabled = false;
-            }
-
-            // Offset Adjustment
-
-            if (gamepad2.aWasReleased()) {
-                secondCycleOffset += 1.0;
-            } else if (gamepad2.bWasReleased()) {
-                secondCycleOffset -= 1.0;
-            }
-
-            if (gamepad2.xWasReleased()) {
-                thirdCycleOffset += 1.0;
-            } else if (gamepad2.yWasReleased()) {
-                thirdCycleOffset -= 1.0;
-            }
-
-            if (gamepad2.dpadUpWasReleased()) {
-                fourthCycleOffset += 1.0;
-            } else if (gamepad2.dpadDownWasReleased()) {
-                fourthCycleOffset -= 1.0;
-            }
-
-            if (gamepad2.dpadLeftWasReleased()) {
-                widenCycleOffset += 1.0;
-            } else if (gamepad2.dpadRightWasReleased()) {
-                widenCycleOffset -= 1.0;
-            }
-
-
-
-            telemetry.addData("Enable second spike offset (G1 a/b): ", secondCycleOffsetEnabled);
-            telemetry.addData("Enable third spike offset (G1 x/y): ", thirdCycleOffsetEnabled);
-            telemetry.addData("Enable fourth spike offset (G1 up/down): ", fourthCycleOffsetEnabled);
-            telemetry.addData("Enable wide cycle (G1 left/right): ", widenCycleOffsetEnabled);
-
-            telemetry.addData("\nSecond spike offset (G2 a/b): ", secondCycleOffset);
-            telemetry.addData("Third spike offset (G2 x/y): ", thirdCycleOffset);
-            telemetry.addData("Fourth spike offset (G2 up/down): ", fourthCycleOffset);
-            telemetry.addData("Wide cycle offset (G2 left/right): ", widenCycleOffset);
-
-            telemetry.update();
-
-        }
 
         waitForStart();
 
@@ -650,7 +573,10 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .build()
-                                    )
+                                    ),
+                                    new kickerIdle(true),
+                                    new setIntake(frontIntakeMotor, backIntakeMotor, 0.0),
+                                    new setShooter(leftShooterMotor, rightShooterMotor, 0.0)
                             )
 
                     ),
@@ -845,10 +771,10 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
 
             blobOffset = detector.getOffsetCm() / 2.54;
 
-            if (blobOffset < 4) {
+            if (blobOffset < 5) {
                 blobOffset = 0;
             } else {
-                blobOffset -= 4;
+                blobOffset -= 5;
             }
 
             return false;
