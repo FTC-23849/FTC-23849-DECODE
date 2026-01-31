@@ -357,14 +357,14 @@ public class visionToolsClean {
         double goalX = 1.8288;
         double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
         if(curX < -0.95){
-            goalY = (alliance.equals("Red")) ? -1.73288 : 1.8288;
+            goalY = (alliance.equals("Red")) ? -1.7288 : 1.7288;
         }
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;
 
         double turretPos = 0.5 + (turretOffset * (33.0/gear) / 1800.0);
 
-        return Range.clip(turretPos, 0.23   , 0.7);
+        return Range.clip(turretPos, 0.23   , 0.65);
     }
     public double FlywheelSpeedRegressor(Pose2D robotPos, double xVelocity, double yVelocity,double moveAwayAdjustment, double sec, double currentVelocity, String allianceColor) {
 
@@ -407,14 +407,15 @@ public class visionToolsClean {
             speed = -1638.8889 * x3
                     + 7088.8889 * x2
                     - 10416.9444 * x
-                    + 3982.4444;
+                    + 3942.4444;
         }else{
             //−19.9936x3+191.7677x2−853.9049x−213.5501
-            speed = -10.9726 * x4
-                    + 128.3579 * x3
-                    - 534.5961 * x2
-                    + 646.7612 * x
-                    - 1318.3132;
+
+            speed = 29.5869 * x4
+                    - 400.0673 * x3
+                    + 1948.5589 * x2
+                    - 4318.8324 * x
+                    + 2218.1269;
 
         }
 

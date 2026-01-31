@@ -547,7 +547,7 @@ public class FinalTeleop extends OpMode {
 
 
         // ----------------- RECYCLE TRIGGER + SAFE LOCKOUT -----------------
-        if (gamepad1.dpadDownWasReleased() && !recyclerIsRunning) {
+        if ((gamepad1.dpadDownWasReleased() || gamepad2.dpadRightWasReleased()) && !recyclerIsRunning) {
             recyclerIsRunning = true;
             started = false;
         }
@@ -661,22 +661,22 @@ public class FinalTeleop extends OpMode {
         }
         if (gamepad1.back) {
             if (leftTurretServo.getPosition() < 0.84) {
-                turretCorrection += 0.001;
+                turretCorrection += 0.0005;
             }
         }
         if (gamepad1.start) {
             if (leftTurretServo.getPosition() > 0.34) {
-                turretCorrection -= 0.001;
+                turretCorrection -= 0.0005;
             }
         }
         if (gamepad2.back) {
             if (leftTurretServo.getPosition() < 0.84) {
-                turretCorrection += 0.001;
+                turretCorrection += 0.0005;
             }
         }
         if (gamepad2.start) {
             if (leftTurretServo.getPosition() > 0.34) {
-                turretCorrection -= 0.001;
+                turretCorrection -= 0.0005;
             }
         }
         if (gamepad2.dpad_up) {
