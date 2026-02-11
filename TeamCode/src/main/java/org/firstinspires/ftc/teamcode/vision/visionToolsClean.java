@@ -446,7 +446,7 @@ public class visionToolsClean {
         double goalX = 1.8288;
         double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
         if(curX < -0.95){
-            goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
+            goalY = (alliance.equals("Red")) ? -1.6588 : 1.8288;
         }
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;

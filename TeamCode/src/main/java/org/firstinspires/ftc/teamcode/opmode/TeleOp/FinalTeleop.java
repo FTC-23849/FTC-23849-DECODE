@@ -101,10 +101,10 @@ public class FinalTeleop extends OpMode {
     public static double recoveryThreshold = 80;
     public static double maintainThreshold = 40;
     public static double defaultVoltage = 13.15;
-    public static double sec = 1.0;
-    public static double moveAway = 5;
-    public static double moveAwayTurret = 3;
-    public static double gear = 11.9;
+    public static double sec = 0;
+    public static double moveAway = 0;
+    public static double moveAwayTurret = 0;
+    public static double gear = 12.5;
     double currentVoltage;
     double closezone = 1;
     boolean firstLoop = true;
@@ -403,7 +403,7 @@ public class FinalTeleop extends OpMode {
         hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
         turretPos = vision.pinpointTurretShootingAndMoving(moveAwayTurret,-xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
-        flywheelSpeed = vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor);
+        flywheelSpeed = Math.min(0,vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
 
         prism.configureSolidLayer(0, 0, 1, BRIGHT_ON, 0, 0, 0);
         prism.configureSolidLayer(1, 2, 3, BRIGHT_ON, 0, 0, 0);
@@ -521,7 +521,7 @@ public class FinalTeleop extends OpMode {
                 hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
                 turretPos = vision.pinpointTurretShootingAndMoving(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
-                flywheelSpeed = vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor);
+                flywheelSpeed = Math.min(0,vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
 
             }
             pinpoint.update();

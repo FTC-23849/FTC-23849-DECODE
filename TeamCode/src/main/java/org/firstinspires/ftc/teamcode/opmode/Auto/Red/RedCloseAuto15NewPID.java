@@ -113,7 +113,7 @@ public class RedCloseAuto15NewPID extends LinearOpMode {
     public static double shootingSpeed = -0.58;
 
     public static double shootingSpeedPID = -1390;
-    public static double turretOffset = -0.015;
+    public static double turretOffset = -0.012;
 
     public static String allianceColor = "Red";
 

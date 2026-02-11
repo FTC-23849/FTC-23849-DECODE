@@ -19,18 +19,18 @@ import java.util.List;
 public class BlobDetection extends LinearOpMode {
 
     public static double PURPLE_H_LOW = 117;
-    public static double PURPLE_S_LOW = 3;
-    public static double PURPLE_V_LOW = 64;
+    public static double PURPLE_S_LOW = 20;
+    public static double PURPLE_V_LOW = 30;
 
     public static double PURPLE_H_HIGH = 155;
-    public static double PURPLE_S_HIGH = 231;
-    public static double PURPLE_V_HIGH = 220;
+    public static double PURPLE_S_HIGH = 240;
+    public static double PURPLE_V_HIGH = 240;
 
-    public static double GREEN_H_LOW = 68;
+    public static double GREEN_H_LOW = 65;
     public static double GREEN_S_LOW = 82;
-    public static double GREEN_V_LOW = 0;
+    public static double GREEN_V_LOW = 30;
 
-    public static double GREEN_H_HIGH = 84;
+    public static double GREEN_H_HIGH = 89;
     public static double GREEN_S_HIGH = 255;
     public static double GREEN_V_HIGH = 220;
 
