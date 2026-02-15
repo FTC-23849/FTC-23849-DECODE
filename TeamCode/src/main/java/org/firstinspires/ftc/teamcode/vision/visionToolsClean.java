@@ -2,33 +2,15 @@ package org.firstinspires.ftc.teamcode.vision;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.robotcore.hardware.CRServoImplEx;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
-import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.robotcore.external.JavaUtil;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
-import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
-import org.firstinspires.ftc.teamcode.hardware.Globals;
-import org.opencv.core.Core;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 
 public class visionToolsClean {
     public int[] rampOrder = new int[9];
@@ -38,186 +20,7 @@ public class visionToolsClean {
     public double correctPos = 0;
     public double TurretPowerTxDebug;
     private double smoothTx = 0;
-    public boolean inRange (Limelight3A limelight){
-        LLResult result = limelight.getLatestResult();
-        double size = result.getTa();
-        if ((size < 3.5)&(size > 1.5)){
-            return true;
-        }else{
-            return false;
-        }
-    }
 
-    public int ObeliskID(Limelight3A limelight){
-        limelight.pipelineSwitch(8);
-        LLResult result = limelight.getLatestResult();
-        int tagID = -1;
-        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
-        for (LLResultTypes.FiducialResult fiducial : fiducials) {
-            tagID = fiducial.getFiducialId(); // The ID number of the Apriltag
-        }
-        return tagID;
-    }
-
-    public String currentColor(NormalizedColorSensor leftIntakeColorSensor,NormalizedColorSensor rightIntakeColorSensor) {
-
-        NormalizedRGBA leftColor = leftIntakeColorSensor.getNormalizedColors();
-        NormalizedRGBA rightColor = rightIntakeColorSensor.getNormalizedColors();
-        double leftHue = JavaUtil.colorToHue(rightColor.toColor());
-        double rightHue = JavaUtil.colorToHue(rightColor.toColor());
-        if (leftHue > hueThresholdPurple && rightHue > hueThresholdPurple) {
-
-            return "Purple";
-        }else {
-            if (leftHue > hueThresholdGreen && rightHue > hueThresholdGreen){
-                return "Green";
-            }
-        }
-
-
-        return "none";
-    }
-    public double ballsInRamp (Limelight3A limelight){
-        limelight.pipelineSwitch(0);
-        LLResult results = limelight.getLatestResult();
-        return results.getPythonOutput()[3];
-    }
-    public double RampIsFull (Limelight3A limelight){
-        limelight.pipelineSwitch(2);
-        limelight.start();
-        LLResult results = limelight.getLatestResult();
-        return results.getPythonOutput()[0];
-    }
-
-    public double ballinRampOpenCVCloseZone(Mat frame) {
-
-        Mat hsv = new Mat();
-        Mat greenMask = new Mat();
-        Mat purpleMask = new Mat();
-
-        Scalar GREEN_LOWER = new Scalar(69, 111, 71);
-        Scalar GREEN_UPPER = new Scalar(97, 255, 255);
-
-        Scalar PURPLE_LOWER = new Scalar(125, 71, 101);
-        Scalar PURPLE_UPPER = new Scalar(146, 232, 255);
-
-        int RAMP_SIZE_THRESHOLD = 40;
-
-        Imgproc.cvtColor(frame, hsv, Imgproc.COLOR_BGR2HSV);
-        Core.inRange(hsv, GREEN_LOWER, GREEN_UPPER, greenMask);
-        Core.inRange(hsv, PURPLE_LOWER, PURPLE_UPPER, purpleMask);
-
-        class Detection {
-            int x;
-            int type;
-            Detection(int x, int type) {
-                this.x = x;
-                this.type = type;
-            }
-        }
-
-        ArrayList<Detection> detections = new ArrayList<>();
-
-        ArrayList<MatOfPoint> greenContours = new ArrayList<>();
-        Imgproc.findContours(greenMask, greenContours, new Mat(),
-                Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-        for (MatOfPoint c : greenContours) {
-            Rect r = Imgproc.boundingRect(c);
-            if (r.width > RAMP_SIZE_THRESHOLD && r.height > RAMP_SIZE_THRESHOLD) {
-                detections.add(new Detection(r.x, 1));
-                Imgproc.rectangle(frame, r, new Scalar(0, 255, 0), 2);
-            }
-        }
-
-        ArrayList<MatOfPoint> purpleContours = new ArrayList<>();
-        Imgproc.findContours(purpleMask, purpleContours, new Mat(),
-                Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-        for (MatOfPoint c : purpleContours) {
-            Rect r = Imgproc.boundingRect(c);
-            if (r.width > RAMP_SIZE_THRESHOLD && r.height > RAMP_SIZE_THRESHOLD) {
-                detections.add(new Detection(r.x, 2));
-                Imgproc.rectangle(frame, r, new Scalar(255, 0, 255), 2);
-            }
-        }
-
-        detections.sort(Comparator.comparingInt(d -> d.x));
-
-        for (int i = 0; i < rampOrder.length; i++) {
-            rampOrder[i] = 0;
-        }
-
-        int start = Math.max(0, rampOrder.length - detections.size());
-        for (int i = 0; i < detections.size() && i < rampOrder.length; i++) {
-            rampOrder[start + i] = detections.get(i).type;
-        }
-
-        return detections.size();
-    }
-
-    public double ballinRampOpenCVFarZone(Mat frame) {
-
-        Mat hsv = new Mat();
-        Mat greenMask = new Mat();
-        Mat purpleMask = new Mat();
-
-        Scalar GREEN_LOWER = new Scalar(69, 111, 71);
-        Scalar GREEN_UPPER = new Scalar(97, 255, 255);
-
-        Scalar PURPLE_LOWER = new Scalar(125, 71, 101);
-        Scalar PURPLE_UPPER = new Scalar(146, 232, 255);
-
-        int RAMP_SIZE_THRESHOLD = 40;
-
-        Imgproc.cvtColor(frame, hsv, Imgproc.COLOR_BGR2HSV);
-        Core.inRange(hsv, GREEN_LOWER, GREEN_UPPER, greenMask);
-        Core.inRange(hsv, PURPLE_LOWER, PURPLE_UPPER, purpleMask);
-
-        class Detection {
-            int y;
-            int type;
-            Detection(int y, int type) {
-                this.y = y;
-                this.type = type;
-            }
-        }
-
-        ArrayList<Detection> detections = new ArrayList<>();
-
-        ArrayList<MatOfPoint> greenContours = new ArrayList<>();
-        Imgproc.findContours(greenMask, greenContours, new Mat(),
-                Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-        for (MatOfPoint c : greenContours) {
-            Rect r = Imgproc.boundingRect(c);
-            if (r.width > RAMP_SIZE_THRESHOLD && r.height > RAMP_SIZE_THRESHOLD) {
-                detections.add(new Detection(r.y, 1));
-                Imgproc.rectangle(frame, r, new Scalar(0, 255, 0), 2);
-            }
-        }
-
-        ArrayList<MatOfPoint> purpleContours = new ArrayList<>();
-        Imgproc.findContours(purpleMask, purpleContours, new Mat(),
-                Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-        for (MatOfPoint c : purpleContours) {
-            Rect r = Imgproc.boundingRect(c);
-            if (r.width > RAMP_SIZE_THRESHOLD && r.height > RAMP_SIZE_THRESHOLD) {
-                detections.add(new Detection(r.y, 2));
-                Imgproc.rectangle(frame, r, new Scalar(255, 0, 255), 2);
-            }
-        }
-
-        detections.sort(Comparator.comparingInt(d -> d.y));
-
-        for (int i = 0; i < rampOrder.length; i++) {
-            rampOrder[i] = 0;
-        }
-
-        int start = Math.max(0, rampOrder.length - detections.size());
-        for (int i = 0; i < detections.size() && i < rampOrder.length; i++) {
-            rampOrder[start + i] = detections.get(i).type;
-        }
-
-        return detections.size();
-    }
 
     public double groundDistancePinpoint(double x, double y, String allianceColor){
         //method overrload
@@ -391,74 +194,108 @@ public class visionToolsClean {
         vyErrCov = (1 - K) * vyErrCov;
         return vyEstimate;
     }
+    public double TurretAngle360(
+            double moveAway,
+            double xcoeff,
+            double ycoeff,
+            Pose2D robotPos,
+            double xVelocity,
+            double yVelocity,
+            double headingVelocity,
+            double gear,
+            double sec,
+            double currentPos,
+            String alliance
+    ) {
+        double xPos = robotPos.getX(DistanceUnit.METER);
+        double yPos = robotPos.getY(DistanceUnit.METER);
 
-    public double pinpointTurretMoving( double xcoeff,double ycoeff, Pose2D robotPos, double xVelocity, double yVelocity, double headingVelocity, double gear,double sec, double currentPos, String alliance){
-        double vx = xVelocity;
-        double vy = yVelocity;
-        double dist = groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER), alliance);
-        double flightTime = sec * ((7.0 / 30.0) * dist + 0.05);
+        double dist = groundDistancePinpoint(xPos, yPos, alliance);
+
         double heading = robotPos.getHeading(AngleUnit.DEGREES);
         double adjustedHeading = heading + 90;
-        if(adjustedHeading < 0 ){ adjustedHeading+= 360; }
+        if (adjustedHeading < 0) adjustedHeading += 360;
 
-        double robotX = robotPos.getX(DistanceUnit.METER) + (vx * flightTime);
-        double robotY = robotPos.getY(DistanceUnit.METER) + (vy * flightTime);
-        double offset = -0.0765;
-        double curX = robotX +Math.sin(Math.toRadians(adjustedHeading))*offset;//Cartesian Y
-        double curY = robotY -xcoeff* Math.cos(Math.toRadians(adjustedHeading))*offset;//flipped Cartesian X
-        double curYaw = robotPos.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
+        double robotX = xPos;
+        double robotY = yPos;
+        double turretOffsetMeters = -0.0765;
+
+        double sinH = Math.sin(Math.toRadians(adjustedHeading));
+        double cosH = Math.cos(Math.toRadians(adjustedHeading));
+
+        double curX = robotX + xcoeff * sinH * turretOffsetMeters;
+        double curY = robotY + ycoeff * cosH * turretOffsetMeters;
+
+        double curYaw = heading;
 
         double goalX = 1.8288;
-        double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
-        if(curX < -0.95){
-            goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
-        }
-        double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
+        double goalYRed = -1.8288;
+        double goalYBlue = 1.8288;
+        double goalY = alliance.equals("Red") ? goalYRed : goalYBlue;
+        double startingAngle = 270;
+        double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;
+        turretOffset = ((turretOffset + 185) % 370) - 185;//5 deg overlap
 
-        double turretPos = 0.5 + (turretOffset * (33.0/gear) / 1800.0);
+        double turretCenter = 0.5;
+        double ticksPerDegree = (33.0 / gear) / 1800.0;
 
-        return Range.clip(turretPos, 0.23   , 0.65);
+        double turretPos = turretCenter + turretOffset * ticksPerDegree;
+
+        return Range.clip(turretPos, 0.237, 0.763);//Range.clip(turretPos, 0.23, 0.65);
     }
-    public double pinpointTurretShootingAndMoving(double moveAway, double xcoeff,double ycoeff, Pose2D robotPos, double xVelocity, double yVelocity, double headingVelocity, double gear,double sec, double currentPos, String alliance){
-        double vx = xVelocity;
-        double vy = yVelocity;
-        double dist = groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER), alliance);
-        double flightTime = sec * ((7.0 / 30.0) * dist + 0.05);
+
+    public double TurretAngle(
+            double moveAway,
+            double xcoeff,
+            double ycoeff,
+            Pose2D robotPos,
+            double xVelocity,
+            double yVelocity,
+            double headingVelocity,
+            double gear,
+            double sec,
+            double currentPos,
+            String alliance
+    ) {
+        double xPos = robotPos.getX(DistanceUnit.METER);
+        double yPos = robotPos.getY(DistanceUnit.METER);
+
+        double dist = groundDistancePinpoint(xPos, yPos, alliance);
+
         double heading = robotPos.getHeading(AngleUnit.DEGREES);
         double adjustedHeading = heading + 90;
-        if(adjustedHeading < 0 ){ adjustedHeading+= 360; }
+        if (adjustedHeading < 0) adjustedHeading += 360;
 
-        double robotX = robotPos.getX(DistanceUnit.METER) + (vx * flightTime);
-        double robotY = robotPos.getY(DistanceUnit.METER) + (vy * flightTime);
-        double edist = groundDistancePinpoint(robotX,robotY,alliance);
-        if(edist>dist){
-            sec+=moveAway;
-            flightTime = sec * ((7.0 / 30.0) * dist + 0.05);
-            robotX = robotPos.getX(DistanceUnit.METER) + (vx * flightTime);
-            robotY = robotPos.getY(DistanceUnit.METER) + (vy * flightTime);
-        }
-        double offset = -0.0765;
-        double curX = robotX +Math.sin(Math.toRadians(adjustedHeading))*offset;//Cartesian Y
-        double curY = robotY -xcoeff* Math.cos(Math.toRadians(adjustedHeading))*offset;//flipped Cartesian X
-        double curYaw = robotPos.getHeading(AngleUnit.DEGREES); //+ 0.1 * headingVelocity;
+        double robotX = xPos;
+        double robotY = yPos;
+        double turretOffsetMeters = -0.0765;
+
+        double sinH = Math.sin(Math.toRadians(adjustedHeading));
+        double cosH = Math.cos(Math.toRadians(adjustedHeading));
+
+        double curX = robotX + xcoeff * sinH * turretOffsetMeters;
+        double curY = robotY + ycoeff * cosH * turretOffsetMeters;
+
+        double curYaw = heading;
 
         double goalX = 1.8288;
-        double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
-        if(curX < -0.95){
-            goalY = (alliance.equals("Red")) ? -1.6588 : 1.8288;
-        }
-        double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
+        double goalYRed = -1.8288;
+        double goalYBlue = 1.8288;
+        double goalY = alliance.equals("Red") ? goalYRed : goalYBlue;
+        double startingAngle = 90;
+        double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
         double turretOffset = turretAngle - curYaw;
 
-        double turretPos = 0.5 + (turretOffset * (33.0/gear) / 1800.0);
+        double turretCenter = 0.5;
+        double ticksPerDegree = (33.0 / gear) / 1800.0;
 
-        return Range.clip(turretPos, 0.23   , 0.65);
+        double turretPos = turretCenter + turretOffset * ticksPerDegree;
+
+        return Range.clip(turretPos, 0.23, 0.65);
     }
-    public double FlywheelSpeedRegressor(Pose2D robotPos, double xVelocity, double yVelocity,double moveAwayAdjustment, double sec, double currentVelocity, String allianceColor) {
 
-        //double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
-        //double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
+    public double CalculatedFlywheelSpeed(Pose2D robotPos, double xVelocity, double yVelocity, double moveAwayAdjustment, double sec, double currentVelocity, String allianceColor) {
         double vx = xVelocity;
         double vy = yVelocity;
 

@@ -297,7 +297,6 @@ public class FinalTeleop extends OpMode {
         last1 = last2 = last3 = null;
 
         turretEncoder = hardwareMap.get(AnalogInput.class, "turretEncoder");
-
         leftFrontMotor = hardwareMap.get(DcMotorEx.class, "LF");
         rightFrontMotor = hardwareMap.get(DcMotorEx.class, "RF");
         leftBackMotor = hardwareMap.get(DcMotorEx.class, "LB");
@@ -401,9 +400,9 @@ public class FinalTeleop extends OpMode {
         velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
         hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-        turretPos = vision.pinpointTurretShootingAndMoving(moveAwayTurret,-xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+        turretPos = vision.TurretAngle360(moveAwayTurret,-xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
-        flywheelSpeed = Math.min(0,vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
+        flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
 
         prism.configureSolidLayer(0, 0, 1, BRIGHT_ON, 0, 0, 0);
         prism.configureSolidLayer(1, 2, 3, BRIGHT_ON, 0, 0, 0);
@@ -519,9 +518,9 @@ public class FinalTeleop extends OpMode {
                 velY = vision.getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER),kalmanQ, kalmanR);
                 velH = vision.getFilteredVelocityY(pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES),kalmanQ, kalmanR);
                 hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-                turretPos = vision.pinpointTurretShootingAndMoving(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+                turretPos = vision.TurretAngle360(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
-                flywheelSpeed = Math.min(0,vision.FlywheelSpeedRegressor(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
+                flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
 
             }
             pinpoint.update();
@@ -796,7 +795,7 @@ public class FinalTeleop extends OpMode {
                 leftHood.setPosition(lockedHoodHeight);
                 rightHood.setPosition(lockedHoodHeight);
             } else {
-                targetVelocity = vision.FlywheelSpeedRegressor(robotPos, velX, velY, moveAway, sec, flywheelCurrentVelocity, allianceColor)
+                targetVelocity = vision.CalculatedFlywheelSpeed(robotPos, velX, velY, moveAway, sec, flywheelCurrentVelocity, allianceColor)
                         + flywheelCorrection;
                 leftHood.setPosition(hoodHeight);
                 rightHood.setPosition(hoodHeight);
@@ -852,8 +851,8 @@ public class FinalTeleop extends OpMode {
         telemetry.addData("distance", groundDistance);
         if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {
             telemetry.addData("current voltage, ", currentVoltage);
-            telemetry.addData("leftservo",leftTurretServo.getPosition());
-            telemetry.addData("rightservo",rightTurretServo.getPosition());
+            telemetry.addData("leftturretservo",leftTurretServo.getPosition());
+            telemetry.addData("rightturretservo",rightTurretServo.getPosition());
             telemetry.addData("pinpoint turret",turretPos);
             telemetry.addData("flywheel", flywheelCurrentVelocity);
             telemetry.addData("targetVelocity", targetVelocity);
@@ -862,6 +861,7 @@ public class FinalTeleop extends OpMode {
             telemetry.addData("left kicker speed", leftKickerServo.getPower());
             telemetry.addData("right kicker speed", rightKickerServo.getPower());
             telemetry.addData("low voltage?", lowVoltage);
+            telemetry.addData("encoderposTurret", (turretEncoder.getVoltage()/ 3.2 * 360 ) % 360);
 
             telemetry.update();
             lastTelemetryUpdate = now;
