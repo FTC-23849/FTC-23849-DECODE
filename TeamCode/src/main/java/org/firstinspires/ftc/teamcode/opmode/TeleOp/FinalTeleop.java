@@ -86,10 +86,10 @@ public class FinalTeleop extends OpMode {
 //    public static double VKd = 0;
 //    public static double VkS = 0;
 //    public static double VkV = 0.00042;
-    public static double KpMaintain = 0.008;
-    public static double KiMaintain = 0.003;
+    public static double KpMaintain = 0.006;
+    public static double KiMaintain = 0.002;
 
-    public static double KpDriveRecovery = 0.015;
+    public static double KpDriveRecovery = 0.03;
 
     public static double KpRecovery = 0;
     public static double KiRecovery = 0.001;
@@ -176,7 +176,7 @@ public class FinalTeleop extends OpMode {
     // --- TELEOP RECYCLE TIMINGS (matches your updated auto default: 400 down, 600 intake) ---
     public static double RECYCLE_TONGUE_DOWN_MS = 400;
     public static double RECYCLE_INTAKE_RUN_MS  = 600;
-    public static double xcoeff = -1;
+    public static double xcoeff = 1;
     public static double ycoeff = 1;
     ElapsedTime recyclerTimer = new ElapsedTime();
     ElapsedTime kickerStartDelayTimer = new ElapsedTime();
@@ -350,7 +350,7 @@ public class FinalTeleop extends OpMode {
 
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
-        rightHood.setDirection(ServoImplEx.Direction.REVERSE);
+        leftHood.setDirection(ServoImplEx.Direction.REVERSE);
 
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
@@ -400,7 +400,7 @@ public class FinalTeleop extends OpMode {
         velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
         hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-        turretPos = vision.TurretAngle360(moveAwayTurret,-xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+        turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret,xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
         flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
 
@@ -518,7 +518,7 @@ public class FinalTeleop extends OpMode {
                 velY = vision.getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER),kalmanQ, kalmanR);
                 velH = vision.getFilteredVelocityY(pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES),kalmanQ, kalmanR);
                 hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-                turretPos = vision.TurretAngle360(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+                turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
                 flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
 
@@ -855,6 +855,9 @@ public class FinalTeleop extends OpMode {
             telemetry.addData("rightturretservo",rightTurretServo.getPosition());
             telemetry.addData("pinpoint turret",turretPos);
             telemetry.addData("flywheel", flywheelCurrentVelocity);
+            telemetry.addData("flywheell", leftShooterMotor.getVelocity() );
+            telemetry.addData("flywheelr", rightShooterMotor.getVelocity());
+
             telemetry.addData("targetVelocity", targetVelocity);
             telemetry.addData("PIDF Power", power);
             telemetry.addData("looptime", timer.milliseconds());

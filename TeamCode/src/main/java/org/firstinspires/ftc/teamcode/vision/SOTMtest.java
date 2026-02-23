@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
@@ -78,7 +79,7 @@ public class SOTMtest extends OpMode {
 
         double px = pose.getX(DistanceUnit.METER);
         double py = pose.getY(DistanceUnit.METER);
-
+        double pa = pose.getHeading(AngleUnit.DEGREES);
         double vxField = pinpoint.getVelX(DistanceUnit.METER);
         double vyField = pinpoint.getVelY(DistanceUnit.METER);
 
@@ -131,6 +132,12 @@ public class SOTMtest extends OpMode {
         dashboardTelemetry.addData("Estimated Dist", estimatedDist);
 
         dashboardTelemetry.addData("Flywheel Speed", speed);
+        telemetry.addData("heading (deg)", pa);
+        double heading = pa;
+        double adjustedHeading = heading + 90;
+        if (adjustedHeading < 0) adjustedHeading += 360;
+        telemetry.addData("adj heading (deg)", adjustedHeading);
+        telemetry.update();
         dashboardTelemetry.update();
     }
 }

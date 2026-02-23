@@ -1,17 +1,21 @@
 package org.firstinspires.ftc.teamcode.RoadrunnerFiles.tuning;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.Drawing;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.TankDrive;
-
+@Config
+@TeleOp(name = "drivelocal")
 public class LocalizationTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
@@ -64,6 +68,10 @@ public class LocalizationTest extends LinearOpMode {
                 telemetry.addData("x", pose.position.x);
                 telemetry.addData("y", pose.position.y);
                 telemetry.addData("heading (deg)", Math.toDegrees(pose.heading.toDouble()));
+                double heading = Math.toDegrees(pose.heading.toDouble());
+                double adjustedHeading = heading + 90;
+                if (adjustedHeading < 0) adjustedHeading += 360;
+                telemetry.addData("adj heading (deg)", adjustedHeading);
                 telemetry.update();
 
                 TelemetryPacket packet = new TelemetryPacket();

@@ -55,7 +55,7 @@ public class visionToolsClean {
         }else{
             double height = 0.1;
             if(groundDistance > 1.9){
-                height = 0.4;
+                height = 0.28;
             }
 
             return Range.clip(height,0,0.4);
@@ -194,7 +194,7 @@ public class visionToolsClean {
         vyErrCov = (1 - K) * vyErrCov;
         return vyEstimate;
     }
-    public double TurretAngle360(
+    public double CalculateTurretAngle360NEW(
             double moveAway,
             double xcoeff,
             double ycoeff,
@@ -207,8 +207,53 @@ public class visionToolsClean {
             double currentPos,
             String alliance
     ) {
-        double xPos = robotPos.getX(DistanceUnit.METER);
-        double yPos = robotPos.getY(DistanceUnit.METER);
+        double yPos = robotPos.getX(DistanceUnit.METER);
+        double xPos = -1*robotPos.getY(DistanceUnit.METER);
+
+        double dist = groundDistancePinpoint(xPos, yPos, alliance);
+
+        double heading = robotPos.getHeading(AngleUnit.DEGREES);
+        double adjustedHeading = heading + 90;
+        if (adjustedHeading < 0) adjustedHeading += 360;
+
+        double robotX = xPos;
+        double robotY = yPos;
+        double turretOffsetMeters = -0.0765;
+
+        double sinH = Math.sin(Math.toRadians(adjustedHeading));
+        double cosH = Math.cos(Math.toRadians(adjustedHeading));
+
+        double curX = robotX + xcoeff * cosH * turretOffsetMeters;
+        double curY = robotY + ycoeff * sinH * turretOffsetMeters;
+
+
+        double goalY = 1.8288;
+        double goalXRed = 1.8288;
+        double goalXBlue = -1.8288;
+        double goalX = alliance.equals("Red") ? goalXRed : goalXBlue;
+        double startingAngle = (180+adjustedHeading)%360;
+        double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalY - curY,goalX - curX));
+        turretAngle = ((turretAngle + 180) % 360) - 180;
+        double turretCenter = 0.5;
+        double ticksPerDegree = (33.0 / gear) / 1800.0;
+        double turretPos = turretCenter - turretAngle * ticksPerDegree;
+        return Range.clip(turretPos, 0.237, 0.763);//Range.clip(turretPos, 0.23, 0.65);
+    }
+    public double CalculateTurretAngle360(
+            double moveAway,
+            double xcoeff,
+            double ycoeff,
+            Pose2D robotPos,
+            double xVelocity,
+            double yVelocity,
+            double headingVelocity,
+            double gear,
+            double sec,
+            double currentPos,
+            String alliance
+    ) {
+        double yPos = robotPos.getX(DistanceUnit.METER);
+        double xPos = -1*robotPos.getY(DistanceUnit.METER);
 
         double dist = groundDistancePinpoint(xPos, yPos, alliance);
 
@@ -228,14 +273,14 @@ public class visionToolsClean {
 
         double curYaw = heading;
 
-        double goalX = 1.8288;
-        double goalYRed = -1.8288;
-        double goalYBlue = 1.8288;
-        double goalY = alliance.equals("Red") ? goalYRed : goalYBlue;
+        double goalY = 1.8288;
+        double goalXRed = 1.8288;
+        double goalXBlue = -1.8288;
+        double goalX = alliance.equals("Red") ? goalXRed : goalXBlue;
         double startingAngle = 270;
-        double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
+        double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalY - curY,goalX - curX));
         double turretOffset = turretAngle - curYaw;
-        turretOffset = ((turretOffset + 185) % 370) - 185;//5 deg overlap
+        turretOffset = ((turretOffset + 180) % 360) - 180;//5 deg overlap
 
         double turretCenter = 0.5;
         double ticksPerDegree = (33.0 / gear) / 1800.0;
@@ -244,6 +289,57 @@ public class visionToolsClean {
 
         return Range.clip(turretPos, 0.237, 0.763);//Range.clip(turretPos, 0.23, 0.65);
     }
+    //OLD CLASS:
+//    public double CalculateTurretAngle360(
+//            double moveAway,
+//            double xcoeff,
+//            double ycoeff,
+//            Pose2D robotPos,
+//            double xVelocity,
+//            double yVelocity,
+//            double headingVelocity,
+//            double gear,
+//            double sec,
+//            double currentPos,
+//            String alliance
+//    ) {
+//        double xPos = robotPos.getX(DistanceUnit.METER);
+//        double yPos = robotPos.getY(DistanceUnit.METER);
+//
+//        double dist = groundDistancePinpoint(xPos, yPos, alliance);
+//
+//        double heading = robotPos.getHeading(AngleUnit.DEGREES);
+//        double adjustedHeading = heading + 90;
+//        if (adjustedHeading < 0) adjustedHeading += 360;
+//
+//        double robotX = xPos;
+//        double robotY = yPos;
+//        double turretOffsetMeters = -0.0765;
+//
+//        double sinH = Math.sin(Math.toRadians(adjustedHeading));
+//        double cosH = Math.cos(Math.toRadians(adjustedHeading));
+//
+//        double curX = robotX + xcoeff * sinH * turretOffsetMeters;
+//        double curY = robotY + ycoeff * cosH * turretOffsetMeters;
+//
+//        double curYaw = heading;
+//
+//        double goalX = 1.8288;
+//        double goalYRed = -1.8288;
+//        double goalYBlue = 1.8288;
+//        double goalY = alliance.equals("Red") ? goalYRed : goalYBlue;
+//        double startingAngle = 270;
+//        double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
+//        double turretOffset = turretAngle - curYaw;
+//        turretOffset = ((turretOffset + 185) % 370) - 185;//5 deg overlap
+//
+//        double turretCenter = 0.5;
+//        double ticksPerDegree = (33.0 / gear) / 1800.0;
+//
+//        double turretPos = turretCenter + turretOffset * ticksPerDegree;
+//
+//        return Range.clip(turretPos, 0.237, 0.763);//Range.clip(turretPos, 0.23, 0.65);
+//    }
 
     public double TurretAngle(
             double moveAway,
