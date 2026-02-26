@@ -79,26 +79,28 @@ public class FinalTeleop extends OpMode {
     public static double lockedFlywheelVelocity = -1600;
     public static double lockedHoodHeight = 0.1;
     public static double TargetVelocity = -1200;
-    public static double red = 2;
-    public static double blue = -2;
+    public static double red = 0;
+    public static double blue = 0;
+    //more for left, less for right
+    public static double turretZeroCorrection = 0.009;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
 //    public static double VkS = 0;
 //    public static double VkV = 0.00042;
-    public static double KpMaintain = 0.006;
+    public static double KpMaintain = 0.0035;
     public static double KiMaintain = 0.002;
 
     public static double KpDriveRecovery = 0.03;
 
     public static double KpRecovery = 0;
     public static double KiRecovery = 0.001;
-    public static double KsRecovery = 1;
+    public static double KsRecovery = 0.7;
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055 ;
 
 
-    public static double recoveryThreshold = 80;
+    public static double recoveryThreshold = 60;
     public static double maintainThreshold = 40;
     public static double defaultVoltage = 13.15;
     public static double sec = 0;
@@ -131,7 +133,7 @@ public class FinalTeleop extends OpMode {
     CustomGoBildaPrismRgbLedDriver prism;
     double totalCurrent;
     double groundDistance = 0;
-    double turretPos = 0.5;
+    double turretPos = 0.5+turretZeroCorrection;
     double hoodHeight = 0;
     double flywheelSpeed = 0;
     boolean tipped = false;
@@ -400,7 +402,7 @@ public class FinalTeleop extends OpMode {
         velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
         hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-        turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret,xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+        turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret,xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(),turretZeroCorrection, allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
         flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
 
@@ -500,8 +502,8 @@ public class FinalTeleop extends OpMode {
         }
         
         if(firstLoop){
-            leftTurretServo.setPosition(0.5);
-            rightTurretServo.setPosition(0.5);
+            leftTurretServo.setPosition(0.5+turretZeroCorrection);
+            rightTurretServo.setPosition(0.5+turretZeroCorrection);
 
             leftTongueServo.setPosition(Globals.tongueIntake);
             rightTongueServo.setPosition(Globals.tongueIntake);
@@ -518,7 +520,7 @@ public class FinalTeleop extends OpMode {
                 velY = vision.getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER),kalmanQ, kalmanR);
                 velH = vision.getFilteredVelocityY(pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES),kalmanQ, kalmanR);
                 hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-                turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(), allianceColor) + turretCorrection;
+                turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(),turretZeroCorrection, allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
                 flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
 
@@ -727,8 +729,8 @@ public class FinalTeleop extends OpMode {
         if (gamepad2.leftBumperWasReleased()){
             useTurret = !useTurret;
             if(!useTurret) {
-                leftTurretServo.setPosition(0.5);
-                rightTurretServo.setPosition(0.5);
+                leftTurretServo.setPosition(0.5+turretZeroCorrection);
+                rightTurretServo.setPosition(0.5+turretZeroCorrection);
             }
         }
         if (gamepad2.rightBumperWasReleased()){
@@ -818,8 +820,8 @@ public class FinalTeleop extends OpMode {
 
         if (!rightBumperTrue && !leftBumperTrue) {
             //telemetry.addData("slowing down flywheel", 0);
-            leftTurretServo.setPosition(0.5);
-            rightTurretServo.setPosition(0.5);
+            leftTurretServo.setPosition(0.5+turretZeroCorrection);
+            rightTurretServo.setPosition(0.5+turretZeroCorrection);
 
             leftShooterMotor.setPower(0);
             rightShooterMotor.setPower(0);

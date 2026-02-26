@@ -53,10 +53,14 @@ public class visionToolsClean {
         if (groundDistance == -1) {
             return currentHood;
         }else{
-            double height = 0.1;
+            double height = 0;
             if(groundDistance > 1.9){
+                height = 0.15;
+            }
+            if(groundDistance > 2.77){
                 height = 0.28;
             }
+
 
             return Range.clip(height,0,0.4);
 
@@ -205,6 +209,7 @@ public class visionToolsClean {
             double gear,
             double sec,
             double currentPos,
+            double turretZero,
             String alliance
     ) {
         double yPos = robotPos.getX(DistanceUnit.METER);
@@ -234,7 +239,8 @@ public class visionToolsClean {
         double startingAngle = (180+adjustedHeading)%360;
         double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalY - curY,goalX - curX));
         turretAngle = ((turretAngle + 180) % 360) - 180;
-        double turretCenter = 0.5;
+        //more for left, less for right (turretZero)
+        double turretCenter = 0.5+turretZero;
         double ticksPerDegree = (33.0 / gear) / 1800.0;
         double turretPos = turretCenter - turretAngle * ticksPerDegree;
         return Range.clip(turretPos, 0.237, 0.763);//Range.clip(turretPos, 0.23, 0.65);
@@ -420,9 +426,6 @@ public class visionToolsClean {
         }
         double adjustedHeading =  robotPos.getHeading(AngleUnit.DEGREES)+ 90;
         if(adjustedHeading < 0 ){ adjustedHeading+= 360; }
-
-        ax = ax - Math.sin(Math.toRadians(adjustedHeading))*offset;//Cartesian Y
-        ay = ay + Math.cos(Math.toRadians(adjustedHeading))*offset;
         estimatedDist = groundDistancePinpoint(ax,ay,allianceColor);
 
         double x = estimatedDist;
@@ -431,18 +434,21 @@ public class visionToolsClean {
         double x4 = x2 * x2;
         double speed = 0;
         if(estimatedDist < 1.9) {
-            speed = -1638.8889 * x3
-                    + 7088.8889 * x2
-                    - 10416.9444 * x
-                    + 3942.4444;
+            speed = 921.0393 * x3
+                    - 4268.2529 * x2
+                    + 6309.4251 * x
+                    - 3766.7349;
+        }else if(estimatedDist < 2.77){
+            speed = -39.2885 * x3
+                    + 206.9971 * x2
+                    - 454.5266 * x
+                    - 514.1186;
         }else{
             //−19.9936x3+191.7677x2−853.9049x−213.5501
 
-            speed = 29.5869 * x4
-                    - 400.0673 * x3
-                    + 1948.5589 * x2
-                    - 4318.8324 * x
-                    + 2218.1269;
+            speed = -27.0019 * x2
+                    - 39.1567 * x
+                    - 685.5843;
 
         }
 
