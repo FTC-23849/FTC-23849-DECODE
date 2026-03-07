@@ -82,7 +82,8 @@ public class FinalTeleop extends OpMode {
     public static double red = 0;
     public static double blue = 0;
     //more for left, less for right
-    public static double turretZeroCorrection = 0.009;
+    public static double turretZeroCorrection = 0.006;
+    public static double turretZeroCorrection2 = 0;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
@@ -402,7 +403,7 @@ public class FinalTeleop extends OpMode {
         velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
         hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-        turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret,xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(),turretZeroCorrection, allianceColor) + turretCorrection;
+        turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret,xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
         flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
 
@@ -520,7 +521,7 @@ public class FinalTeleop extends OpMode {
                 velY = vision.getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER),kalmanQ, kalmanR);
                 velH = vision.getFilteredVelocityY(pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES),kalmanQ, kalmanR);
                 hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-                turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(),turretZeroCorrection, allianceColor) + turretCorrection;
+                turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(),turretZeroCorrection, turretZeroCorrection2,allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
                 flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
 

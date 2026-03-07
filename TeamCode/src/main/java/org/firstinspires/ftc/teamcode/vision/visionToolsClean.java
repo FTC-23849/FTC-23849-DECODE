@@ -210,6 +210,7 @@ public class visionToolsClean {
             double sec,
             double currentPos,
             double turretZero,
+            double turretZero2,
             String alliance
     ) {
         double yPos = robotPos.getX(DistanceUnit.METER);
@@ -233,8 +234,8 @@ public class visionToolsClean {
 
 
         double goalY = 1.8288;
-        double goalXRed = 1.8288;
-        double goalXBlue = -1.8288;
+        double goalXRed = 1.7138;
+        double goalXBlue = -1.7138;
         double goalX = alliance.equals("Red") ? goalXRed : goalXBlue;
         double startingAngle = (180+adjustedHeading)%360;
         double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalY - curY,goalX - curX));
@@ -243,7 +244,11 @@ public class visionToolsClean {
         double turretCenter = 0.5+turretZero;
         double ticksPerDegree = (33.0 / gear) / 1800.0;
         double turretPos = turretCenter - turretAngle * ticksPerDegree;
-        return Range.clip(turretPos, 0.237, 0.763);//Range.clip(turretPos, 0.23, 0.65);
+        if(turretPos<0.5){
+            turretPos-=turretZero;
+            turretPos+=turretZero2;
+        }
+        return Range.clip(turretPos, 0.246, 0.764 );//Range.clip(turretPos, 0.23, 0.65);
     }
     public double CalculateTurretAngle360(
             double moveAway,
@@ -293,7 +298,7 @@ public class visionToolsClean {
 
         double turretPos = turretCenter + turretOffset * ticksPerDegree;
 
-        return Range.clip(turretPos, 0.237, 0.763);//Range.clip(turretPos, 0.23, 0.65);
+        return Range.clip(turretPos, 0.25, 0.75);//Range.clip(turretPos, 0.23, 0.65);
     }
     //OLD CLASS:
 //    public double CalculateTurretAngle360(
@@ -437,18 +442,18 @@ public class visionToolsClean {
             speed = 921.0393 * x3
                     - 4268.2529 * x2
                     + 6309.4251 * x
-                    - 3766.7349;
+                    - 3796.7349;
         }else if(estimatedDist < 2.77){
             speed = -39.2885 * x3
                     + 206.9971 * x2
                     - 454.5266 * x
-                    - 514.1186;
+                    - 544.1186;
         }else{
             //−19.9936x3+191.7677x2−853.9049x−213.5501
 
             speed = -27.0019 * x2
                     - 39.1567 * x
-                    - 685.5843;
+                    - 715.5843;
 
         }
 
