@@ -7,7 +7,6 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -38,10 +37,9 @@ import org.firstinspires.ftc.teamcode.vision.visionToolsClean;
 
 import java.util.List;
 
-@Disabled
 @TeleOp
 @Config
-public class FinalTeleop extends OpMode {
+public class FinalTeleopIntakeTesting extends OpMode {
     List<LynxModule> hubs;
     private VoltageSensor myControlHubVoltageSensor;
     Limelight3A limelight;
@@ -70,27 +68,11 @@ public class FinalTeleop extends OpMode {
     private Servo rgbLight;
     private DigitalChannel bottomLeftLaser;
     private DigitalChannel bottomRightLaser;
+
+
     private PIDVelocityController3 velocityPID;
     public Pose2D robotPos;
     public static double currentVelocity;
-    boolean LockedModeEnabled = false;
-    Pose2D AnchorPos = null;
-    double AnchorxPos;
-    double AnchoryPos;
-    double AnchorYaw;
-
-    double lastHeadingErrorLocked = 0;
-    double lastXErrorLocked = 0;
-    double lastYErrorLocked = 0;
-
-    public static double kP_Lock = 0.1;
-    public static double kD_Lock = 0.01;
-
-    public static double kPRot_Lock = 0.08;
-    public static double kDRot_Lock = 0.001;
-
-    ElapsedTime timer = new ElapsedTime();
-    double lastTime = 0;
     public double velX;
     public double velY;
     public double velH;
@@ -137,7 +119,7 @@ public class FinalTeleop extends OpMode {
     boolean purpleSortingEnabled = false;
     boolean greenSortingEnabled = false;
     boolean lowVoltage = false;
-    ElapsedTime lockedPostimer = new ElapsedTime();
+    ElapsedTime timer = new ElapsedTime();
     ElapsedTime recycleIntakeTimer = new ElapsedTime();
     AnalogInput turretEncoder;
     private NormalizedColorSensor colorLeft1;
@@ -162,6 +144,7 @@ public class FinalTeleop extends OpMode {
 //    public static double Ki = 0.0048;
 //    public static double Kd = 0.00;
     double currentSpeed = 0;
+    boolean rightBumperTrue = false;
     boolean leftBumperTrue = false;
     int attempts = 0;
     int status = 0;
@@ -275,13 +258,11 @@ public class FinalTeleop extends OpMode {
 
     // track B state for edge detection
     boolean lastBPressed = false;
-
+    
     boolean thirdBallPresent;
 
     @Override
     public void init() {
-        lockedPostimer.reset();
-        lastTime = lockedPostimer.seconds();
         hubs = hardwareMap.getAll(LynxModule.class);
 
         for (LynxModule hub : hubs) {
@@ -508,15 +489,10 @@ public class FinalTeleop extends OpMode {
 
     @Override
     public void loop() {
-        double currentTime = lockedPostimer.seconds();
-        double dt = currentTime - lastTime;
-        lastTime = currentTime;
-        if(dt <= 0) dt = 0.001;
-
         for (LynxModule hub : hubs) {
             hub.clearBulkCache();
         }
-
+        
         thirdBallPresent = bottomLeftLaser.getState() || bottomRightLaser.getState();
 
         if (thirdBallPresent) {
@@ -525,7 +501,7 @@ public class FinalTeleop extends OpMode {
         } else {
             zoneLight.setPosition(0.0);
         }
-
+        
         if(firstLoop){
             leftTurretServo.setPosition(0.5+turretZeroCorrection);
             rightTurretServo.setPosition(0.5+turretZeroCorrection);
@@ -583,23 +559,25 @@ public class FinalTeleop extends OpMode {
         lastLoopTime = runTime.milliseconds();
         telemetry.addData("tipped", tipped);
 
-        // -------------------- DRIVE (allowed when unlocked) --------------------
-        if(!LockedModeEnabled) {
-            double y = -gamepad1.left_stick_y; // Y is reversed
-            double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
-            double rx = gamepad1.right_stick_x;
+        telemetry.addData("Front Intake Velocity", (frontIntakeMotor.getVelocity() * 60) / 103.8);
+        telemetry.addData("Back Intake Velocity", (backIntakeMotor.getVelocity() * 60) / 103.8);
 
-            double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-            double frontLeftPower = (y + x + rx) / denominator;
-            double backLeftPower = (y - x + rx) / denominator;
-            double frontRightPower = (y - x - rx) / denominator;
-            double backRightPower = (y + x - rx) / denominator;
+        // -------------------- DRIVE (always allowed) --------------------
+        double y = -gamepad1.left_stick_y; // Y is reversed
+        double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
+        double rx = gamepad1.right_stick_x;
 
-            leftFrontMotor.setPower(frontLeftPower);
-            leftBackMotor.setPower(backLeftPower);
-            rightFrontMotor.setPower(frontRightPower);
-            rightBackMotor.setPower(backRightPower);
-        }
+        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+        double frontLeftPower = (y + x + rx) / denominator;
+        double backLeftPower = (y - x + rx) / denominator;
+        double frontRightPower = (y - x - rx) / denominator;
+        double backRightPower = (y + x - rx) / denominator;
+
+        leftFrontMotor.setPower(frontLeftPower);
+        leftBackMotor.setPower(backLeftPower);
+        rightFrontMotor.setPower(frontRightPower);
+        rightBackMotor.setPower(backRightPower);
+
 
         // ----------------- RECYCLE TRIGGER + SAFE LOCKOUT -----------------
         if ((gamepad1.dpadDownWasReleased() || gamepad2.dpadRightWasReleased()) && !recyclerIsRunning) {
@@ -639,6 +617,7 @@ public class FinalTeleop extends OpMode {
 
             if (gamepad1.right_trigger > 0.1) {
                 frontIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                backIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 frontIntakeMotor.setPower(-Globals.frontIntakeIntakeSpeed);
                 backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
                 leftTongueServo.setPosition(Globals.tongueIntake);
@@ -662,29 +641,35 @@ public class FinalTeleop extends OpMode {
                 leftTongueServo.setPosition(Globals.tongueShoot);
                 rightTongueServo.setPosition(Globals.tongueShoot);
 
-                if (groundDistance> 2.88) {
-                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
-                        leftKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
-                        rightKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
-                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                        frontIntakeMotor.setPower(-1*Globals.frontIntakeShootSpeed);
-                    } else {
-                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                        frontIntakeMotor.setPower(0.7);
-                    }
-                } else {
-                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
-                        leftKickerServo.setPower(Globals.rollerKickerShoot);
-                        rightKickerServo.setPower(Globals.rollerKickerShoot);
-                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                        frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
-                    } else {
-                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                        frontIntakeMotor.setPower(0.5);
-                    }
-                }
+                //frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
+                leftKickerServo.setPower(Globals.rollerKickerShoot);
+                rightKickerServo.setPower(Globals.rollerKickerShoot);
 
-                backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
+//                if (groundDistance> 2.88) {
+//                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
+//                        leftKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
+//                        rightKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
+//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//                        frontIntakeMotor.setPower(-1*Globals.frontIntakeShootSpeed);
+//                    } else {
+//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//                        frontIntakeMotor.setPower(0.7);
+//                    }
+//                } else {
+//                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
+//                        leftKickerServo.setPower(Globals.rollerKickerShoot);
+//                        rightKickerServo.setPower(Globals.rollerKickerShoot);
+//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//                        frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
+//                    } else {
+//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//                        frontIntakeMotor.setPower(0.5);
+//                    }
+//                }
+
+                //backIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                backIntakeMotor.setPower(-Globals.backIntakeShootSpeed);
                 shooting = true;
 
             } else if (gamepad1.dpad_up) {
@@ -714,7 +699,16 @@ public class FinalTeleop extends OpMode {
                 closezone = 1;
             }
         }
-
+        if (gamepad1.back) {
+            if (leftTurretServo.getPosition() < 0.84) {
+                turretCorrection += 0.0005;
+            }
+        }
+        if (gamepad1.start) {
+            if (leftTurretServo.getPosition() > 0.34) {
+                turretCorrection -= 0.0005;
+            }
+        }
         if (gamepad2.back) {
             if (leftTurretServo.getPosition() < 0.84) {
                 turretCorrection += 0.0005;
@@ -740,15 +734,9 @@ public class FinalTeleop extends OpMode {
         if(gamepad2.bWasReleased()){
             lowVoltage=!lowVoltage;
         }
-        if(gamepad1.start){
+        if(gamepad1.right_bumper){
             pinpoint.recalibrateIMU();
         }
-        //Locked
-        LockedModeEnabled = gamepad1.right_bumper;
-        if(!LockedModeEnabled){
-            AnchorPos = null;
-        }
-        runLockedMode(pinpoint,leftFrontMotor,rightFrontMotor,leftBackMotor,rightBackMotor,dt);
         if (gamepad2.leftBumperWasReleased()){
             useTurret = !useTurret;
             if(!useTurret) {
@@ -812,7 +800,7 @@ public class FinalTeleop extends OpMode {
             leftBumperTrue = !leftBumperTrue;
         }
 
-        if (leftBumperTrue) {
+        if (leftBumperTrue && !rightBumperTrue) {
             flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
 
             if (!usePower) {
@@ -841,7 +829,7 @@ public class FinalTeleop extends OpMode {
 
         }
 
-        if (!leftBumperTrue) {
+        if (!rightBumperTrue && !leftBumperTrue) {
             //telemetry.addData("slowing down flywheel", 0);
             leftTurretServo.setPosition(0.5+turretZeroCorrection);
             rightTurretServo.setPosition(0.5+turretZeroCorrection);
@@ -850,7 +838,7 @@ public class FinalTeleop extends OpMode {
             rightShooterMotor.setPower(0);
         }
 
-        if (leftBumperTrue) {
+        if (leftBumperTrue && !rightBumperTrue) {
             //telemetry.addData("Power", vision.TurretPower(limelight, 0.5));
             if (useTurret) {
 
@@ -944,76 +932,6 @@ public class FinalTeleop extends OpMode {
         applyToLayer(prism, 2, ArtifactColor.UNKNOWN);
     }
 
-    public void runLockedMode(
-            GoBildaPinpointDriver pinpoint,
-            DcMotorEx lf,
-            DcMotorEx rf,
-            DcMotorEx lb,
-            DcMotorEx rb,
-            double dt
-    ){
-        if(LockedModeEnabled&&AnchorPos == null){
-            AnchorPos = pinpoint.getPosition();
-
-            AnchorxPos = -1 * AnchorPos.getY(DistanceUnit.METER);
-            AnchoryPos = AnchorPos.getX(DistanceUnit.METER);
-
-            Pose2D robotPos = pinpoint.getPosition();
-
-            double heading = robotPos.getHeading(AngleUnit.DEGREES);
-            double adjustedHeading = heading + 90;
-
-            if(adjustedHeading < 0) adjustedHeading += 360;
-
-            AnchorYaw = adjustedHeading;
-        }
-
-
-        if(LockedModeEnabled){
-
-            Pose2D robotPos = pinpoint.getPosition();
-
-            double heading = robotPos.getHeading(AngleUnit.DEGREES);
-            double adjustedHeading = heading + 90;
-
-            if(adjustedHeading < 0) adjustedHeading += 360;
-
-            double headingError = AnchorYaw - adjustedHeading;
-            headingError = ((headingError + 180) % 360) - 180;
-
-            double headingDerivative = (headingError - lastHeadingErrorLocked) / dt;
-
-            double rotPower = kPRot_Lock * headingError + kDRot_Lock * headingDerivative;
-
-            lastHeadingErrorLocked = headingError;
-
-            double xPos = -1 * robotPos.getY(DistanceUnit.METER);
-            double yPos = robotPos.getX(DistanceUnit.METER);
-
-            double xError = (AnchorxPos - xPos) * 100;
-            double yError = (AnchoryPos - yPos) * 100;
-
-            double xDerivative = (xError - lastXErrorLocked) / dt;
-            double yDerivative = (yError - lastYErrorLocked) / dt;
-
-            double xPower = kP_Lock * xError + kD_Lock * xDerivative;
-            double yPower = kP_Lock * yError + kD_Lock * yDerivative;
-
-            lastXErrorLocked = xError;
-            lastYErrorLocked = yError;
-
-            double lfPower = yPower + xPower - rotPower;
-            double rfPower = yPower - xPower + rotPower;
-            double lbPower = yPower - xPower - rotPower;
-            double rbPower = yPower + xPower + rotPower;
-
-            lf.setPower(Math.max(-1, Math.min(1, lfPower)));
-            rf.setPower(Math.max(-1, Math.min(1, rfPower)));
-            lb.setPower(Math.max(-1, Math.min(1, lbPower)));
-            rb.setPower(Math.max(-1, Math.min(1, rbPower)));
-        }
-    }
-
     private void applyToLayer(CustomGoBildaPrismRgbLedDriver prism, int layer, ArtifactColor c) {
         int[] rgb;
         int bright;
@@ -1061,7 +979,7 @@ public class FinalTeleop extends OpMode {
             leftKickerServo.setPower(0.0);
             rightKickerServo.setPower(0.0);
 
-            frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            //frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             frontIntakeMotor.setPower(-1.0);
             backIntakeMotor.setPower(0.0);
             return;
