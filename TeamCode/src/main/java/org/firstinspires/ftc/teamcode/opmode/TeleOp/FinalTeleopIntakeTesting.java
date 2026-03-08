@@ -7,7 +7,6 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -38,10 +37,9 @@ import org.firstinspires.ftc.teamcode.vision.visionToolsClean;
 
 import java.util.List;
 
-@Disabled
 @TeleOp
 @Config
-public class FinalTeleop extends OpMode {
+public class FinalTeleopIntakeTesting extends OpMode {
     List<LynxModule> hubs;
     private VoltageSensor myControlHubVoltageSensor;
     Limelight3A limelight;
@@ -561,6 +559,9 @@ public class FinalTeleop extends OpMode {
         lastLoopTime = runTime.milliseconds();
         telemetry.addData("tipped", tipped);
 
+        telemetry.addData("Front Intake Velocity", (frontIntakeMotor.getVelocity() * 60) / 103.8);
+        telemetry.addData("Back Intake Velocity", (backIntakeMotor.getVelocity() * 60) / 103.8);
+
         // -------------------- DRIVE (always allowed) --------------------
         double y = -gamepad1.left_stick_y; // Y is reversed
         double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
@@ -616,6 +617,7 @@ public class FinalTeleop extends OpMode {
 
             if (gamepad1.right_trigger > 0.1) {
                 frontIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                backIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 frontIntakeMotor.setPower(-Globals.frontIntakeIntakeSpeed);
                 backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
                 leftTongueServo.setPosition(Globals.tongueIntake);
@@ -639,29 +641,35 @@ public class FinalTeleop extends OpMode {
                 leftTongueServo.setPosition(Globals.tongueShoot);
                 rightTongueServo.setPosition(Globals.tongueShoot);
 
-                if (groundDistance> 2.88) {
-                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
-                        leftKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
-                        rightKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
-                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                        frontIntakeMotor.setPower(-1*Globals.frontIntakeShootSpeed);
-                    } else {
-                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                        frontIntakeMotor.setPower(0.7);
-                    }
-                } else {
-                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
-                        leftKickerServo.setPower(Globals.rollerKickerShoot);
-                        rightKickerServo.setPower(Globals.rollerKickerShoot);
-                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                        frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
-                    } else {
-                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                        frontIntakeMotor.setPower(0.5);
-                    }
-                }
+                //frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
+                leftKickerServo.setPower(Globals.rollerKickerShoot);
+                rightKickerServo.setPower(Globals.rollerKickerShoot);
 
-                backIntakeMotor.setPower(Globals.backIntakeShootSpeed);
+//                if (groundDistance> 2.88) {
+//                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
+//                        leftKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
+//                        rightKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
+//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//                        frontIntakeMotor.setPower(-1*Globals.frontIntakeShootSpeed);
+//                    } else {
+//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//                        frontIntakeMotor.setPower(0.7);
+//                    }
+//                } else {
+//                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
+//                        leftKickerServo.setPower(Globals.rollerKickerShoot);
+//                        rightKickerServo.setPower(Globals.rollerKickerShoot);
+//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//                        frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
+//                    } else {
+//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//                        frontIntakeMotor.setPower(0.5);
+//                    }
+//                }
+
+                //backIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                backIntakeMotor.setPower(-Globals.backIntakeShootSpeed);
                 shooting = true;
 
             } else if (gamepad1.dpad_up) {
@@ -971,7 +979,7 @@ public class FinalTeleop extends OpMode {
             leftKickerServo.setPower(0.0);
             rightKickerServo.setPower(0.0);
 
-            frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            //frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             frontIntakeMotor.setPower(-1.0);
             backIntakeMotor.setPower(0.0);
             return;
