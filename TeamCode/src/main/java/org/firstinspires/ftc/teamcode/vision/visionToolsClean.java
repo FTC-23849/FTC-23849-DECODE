@@ -234,7 +234,7 @@ public class visionToolsClean {
 
 
         double goalY = 1.8288;
-        double goalXRed = 1.7138;
+        double goalXRed = 1.6138;
         double goalXBlue = -1.7138;
         double goalX = alliance.equals("Red") ? goalXRed : goalXBlue;
         double startingAngle = (180+adjustedHeading)%360;
@@ -442,18 +442,18 @@ public class visionToolsClean {
             speed = 921.0393 * x3
                     - 4268.2529 * x2
                     + 6309.4251 * x
-                    - 3796.7349;
+                    - 3766.7349;
         }else if(estimatedDist < 2.77){
             speed = -39.2885 * x3
                     + 206.9971 * x2
                     - 454.5266 * x
-                    - 544.1186;
+                    - 514.1186;
         }else{
             //−19.9936x3+191.7677x2−853.9049x−213.5501
 
             speed = -27.0019 * x2
                     - 39.1567 * x
-                    - 715.5843;
+                    - 685.5843;
 
         }
 

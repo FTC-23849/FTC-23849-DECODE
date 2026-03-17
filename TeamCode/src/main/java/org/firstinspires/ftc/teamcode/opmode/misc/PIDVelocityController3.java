@@ -67,16 +67,18 @@ public class PIDVelocityController3 {
         }
 
         double pid = (Kp * error) + (Ki * integralSum);
-
+        if(Math.abs(error)>400){
+            pid = (0.8 * error) + (Ki * integralSum);
+        }
         double ff = 0;
         if (targetVelocity != 0) {
             ff = (kV * targetVelocity) + (kS * Math.signum(error));
         }
         double output = 0;
         if(lowVoltage){
-            output = (pid + ff) * (normalVoltage / batteryVoltage);
+            output = (pid + ff) * 0.95;
         }else{
-            output = (pid + ff) *0.95; //(normalVoltage / batteryVoltage);
+            output = (pid + ff) * (normalVoltage * normalVoltage) / (batteryVoltage * batteryVoltage);; //(normalVoltage / batteryVoltage);
         }
 
         return Math.max(-1.0, Math.min(1.0, output));

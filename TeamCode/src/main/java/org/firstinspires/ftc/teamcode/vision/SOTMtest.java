@@ -175,47 +175,9 @@ public class SOTMtest extends OpMode {
         }
 
         if(LockedModeEnabled){
-
-            double heading = robotPos.getHeading(AngleUnit.DEGREES);
-            double adjustedHeading = heading + 90;
-
-            if(adjustedHeading < 0) adjustedHeading += 360;
-
-            double headingError = AnchorYaw - adjustedHeading;
-
-            headingError = ((headingError + 180) % 360) - 180;
-
-            double headingDerivative = (headingError - lastHeadingError) / dt;
-
-            double rotPower = kPRot * headingError + kDRot * headingDerivative;
-
-            lastHeadingError = headingError;
-
-            double xPos = -1 * robotPos.getY(DistanceUnit.METER);
-            double yPos = robotPos.getX(DistanceUnit.METER);
-
-            double xError = (AnchorxPos - xPos) * 100;
-            double yError = (AnchoryPos - yPos) * 100;
-
-            double xDerivative = (xError - lastXError) / dt;
-            double yDerivative = (yError - lastYError) / dt;
-
-            double xPower = kP * xError + kD * xDerivative;
-            double yPower = kP * yError + kD * yDerivative;
-
-            lastXError = xError;
-            lastYError = yError;
-
-            double lfPower = yPower + xPower - rotPower;
-            double rfPower = yPower - xPower + rotPower;
-            double lbPower = yPower - xPower - rotPower;
-            double rbPower = yPower + xPower + rotPower;
-
-            lf.setPower(Math.max(-1, Math.min(1, lfPower)));
-            rf.setPower(Math.max(-1, Math.min(1, rfPower)));
-            lb.setPower(Math.max(-1, Math.min(1, lbPower)));
-            rb.setPower(Math.max(-1, Math.min(1, rbPower)));
+            runLockedPos(robotPos, dt);
         }
+
 
         if(estimatedDist < 1.9){
             speed = 638.8889 * x3 - 3788.8889 * x2 + 6576.9444 * x - 4590.4444;
@@ -262,5 +224,46 @@ public class SOTMtest extends OpMode {
 
         telemetry.update();
         dashboardTelemetry.update();
+    }
+
+    public void runLockedPos(Pose2D robotPos, double dt){
+
+        double heading = robotPos.getHeading(AngleUnit.DEGREES);
+        double adjustedHeading = heading + 90;
+
+        if(adjustedHeading < 0) adjustedHeading += 360;
+
+        double headingError = AnchorYaw - adjustedHeading;
+        headingError = ((headingError + 180) % 360) - 180;
+
+        double headingDerivative = (headingError - lastHeadingError) / dt;
+        double rotPower = kPRot * headingError + kDRot * headingDerivative;
+
+        lastHeadingError = headingError;
+
+        double xPos = -1 * robotPos.getY(DistanceUnit.METER);
+        double yPos = robotPos.getX(DistanceUnit.METER);
+
+        double xError = (AnchorxPos - xPos) * 100;
+        double yError = (AnchoryPos - yPos) * 100;
+
+        double xDerivative = (xError - lastXError) / dt;
+        double yDerivative = (yError - lastYError) / dt;
+
+        double xPower = kP * xError + kD * xDerivative;
+        double yPower = kP * yError + kD * yDerivative;
+
+        lastXError = xError;
+        lastYError = yError;
+
+        double lfPower = yPower + xPower - rotPower;
+        double rfPower = yPower - xPower + rotPower;
+        double lbPower = yPower - xPower - rotPower;
+        double rbPower = yPower + xPower + rotPower;
+
+        lf.setPower(Math.max(-1, Math.min(1, lfPower)));
+        rf.setPower(Math.max(-1, Math.min(1, rfPower)));
+        lb.setPower(Math.max(-1, Math.min(1, lbPower)));
+        rb.setPower(Math.max(-1, Math.min(1, rbPower)));
     }
 }
