@@ -1012,41 +1012,44 @@ public class visionTools {
         return new Pose2D(DistanceUnit.INCH, x, y, AngleUnit.RADIANS, Math.toRadians(deg));
     }
     public double pinpointTurretMovingAUTO(Pose2D pose2d,double gear,double sec, double currentPos, String alliance){
+    double turretZeroCorrection = 0.00;
+    Double turretZeroCorrection2 = -0.004;
+        double yPos = pose2d.getX(DistanceUnit.METER);
+        double xPos = -1*pose2d.getY(DistanceUnit.METER);
 
-        //double vx = getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER));
-        //double vy = getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER));
+        double dist = groundDistancePinpoint(xPos, yPos, alliance);
 
-        double dist = groundDistancePinpoint(pose2d.getX(DistanceUnit.METER),
-                pose2d.getY(DistanceUnit.METER),alliance);
-        double flightTime = sec * dist;
+        double heading = pose2d.getHeading(AngleUnit.DEGREES);
+        double adjustedHeading = heading + 90;
+        if (adjustedHeading < 0) adjustedHeading += 360;
 
-        double curX = pose2d.getX(DistanceUnit.METER) /*+ (vx * flightTime)*/;
-        double curY = pose2d.getY(DistanceUnit.METER) /*+ (vy * flightTime)*/;
+        double robotX = xPos;
+        double robotY = yPos;
+        double turretOffsetMeters = -0.0765;
 
-        double curYaw = pose2d.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
+        double sinH = Math.sin(Math.toRadians(adjustedHeading));
+        double cosH = Math.cos(Math.toRadians(adjustedHeading));
 
-        double goalX = 1.6288;
-        double goalY = (alliance.equals("Red")) ? -1.6288 : 1.6288;
+        double curX = robotX + cosH * turretOffsetMeters;
+        double curY = robotY + sinH * turretOffsetMeters;
 
-        if(dist > 3.0) {
-            goalX = 1.6288;
-            goalY = (alliance.equals("Blue")) ? 1.6288 : -1.6288;
+
+        double goalY = 1.8288;
+        double goalXRed = 1.6138;
+        double goalXBlue = -1.7138;
+        double goalX = alliance.equals("Red") ? goalXRed : goalXBlue;
+        double startingAngle = (180+adjustedHeading)%360;
+        double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalY - curY,goalX - curX));
+        turretAngle = ((turretAngle + 180) % 360) - 180;
+        //more for left, less for right (turretZero)
+        double turretCenter = 0.5+turretZeroCorrection;
+        double ticksPerDegree = (33.0 / gear) / 1800.0;
+        double turretPos = turretCenter - turretAngle * ticksPerDegree;
+        if(turretPos<0.5){
+            turretPos-=turretZeroCorrection;
+            turretPos+=turretZeroCorrection2;
         }
-
-        if(curX > 1.2){
-            goalX = 1.5288;
-            goalY = (alliance.equals("Blue")) ? 1.5288 : -1.5288;
-        } else if(curX > 0){
-            goalX = 1.7288;
-            goalY = (alliance.equals("Blue")) ? 1.7288 : -1.7288;
-        }
-
-        double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));
-        double turretOffset = turretAngle - curYaw;
-
-        double turretPos = 0.5 + (turretOffset * (33.0/gear) / 1800.0);
-
-        return Range.clip(turretPos, 0.25, 0.625);
+        return Range.clip(turretPos, 0.246, 0.764 );//Range.clip(turretPos, 0.23, 0.65);
     }
 
     public double hoodHeightRegressorAUTO(Pose2D pose, double currentHood, String allianceColor){

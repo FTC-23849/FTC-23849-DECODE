@@ -82,8 +82,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double red = 0;
     public static double blue = 0;
     //more for left, less for right
-    public static double turretZeroCorrection = 0.006;
-    public static double turretZeroCorrection2 = 0;
+    public static double turretZeroCorrection = 0.00;
+    public static double turretZeroCorrection2 = -0.004;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
@@ -107,7 +107,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double sec = 0;
     public static double moveAway = 0;
     public static double moveAwayTurret = 0;
-    public static double gear = 12.7;
+    public static double gear = 13.1;
     double currentVoltage;
     double closezone = 1;
     boolean firstLoop = true;
@@ -119,7 +119,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     boolean purpleSortingEnabled = false;
     boolean greenSortingEnabled = false;
     boolean lowVoltage = false;
-    boolean LockedModeEnabled = false;
+    public static boolean LockedModeEnabled = false;
     Pose2D AnchorPos = null;
     double AnchorxPos;
     double AnchoryPos;
@@ -129,11 +129,11 @@ public class FinalTeleopIntakeTesting extends OpMode {
     double lastXErrorLocked = 0;
     double lastYErrorLocked = 0;
 
-    public static double kP_Lock = 0.12;
-    public static double kD_Lock = 0.001;
+    public static double kP_Lock = 0.15;
+    public static double kD_Lock = 0.01;
 
-    public static double kPRot_Lock = 0.03;
-    public static double kDRot_Lock = 0.00;
+    public static double kPRot_Lock = 0.08;
+    public static double kDRot_Lock = 0.01;
     double lastTime = 0;
     ElapsedTime lockedPostimer = new ElapsedTime();
 
@@ -542,8 +542,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
         currentVoltage = myControlHubVoltageSensor.getVoltage();
         double now = runTime.milliseconds();
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
+            robotPos = pinpoint.getPosition();
             if(leftBumperTrue){
-                robotPos = pinpoint.getPosition();
                 velX = vision.getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER),kalmanQ, kalmanR);
                 velY = vision.getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER),kalmanQ, kalmanR);
                 velH = vision.getFilteredVelocityY(pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES),kalmanQ, kalmanR);
@@ -590,7 +590,6 @@ public class FinalTeleopIntakeTesting extends OpMode {
         telemetry.addData("Back Intake Velocity", (backIntakeMotor.getVelocity() * 60) / 103.8);
 
         // -------------------- DRIVE --------------------
-        if(!LockedModeEnabled) {
             double y = -gamepad1.left_stick_y; // Y is reversed
             double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
             double rx = gamepad1.right_stick_x;
@@ -600,7 +599,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
             double backLeftPower = (y - x + rx) / denominator;
             double frontRightPower = (y - x - rx) / denominator;
             double backRightPower = (y + x - rx) / denominator;
-
+        if(!LockedModeEnabled) {
             leftFrontMotor.setPower(frontLeftPower);
             leftBackMotor.setPower(backLeftPower);
             rightFrontMotor.setPower(frontRightPower);
@@ -757,35 +756,31 @@ public class FinalTeleopIntakeTesting extends OpMode {
             pinpoint.recalibrateIMU();
         }
         //Locked
-        LockedModeEnabled = gamepad1.right_bumper;
-        if(LockedModeEnabled){
-            if(AnchorPos == null){
+        if(gamepad1.rightBumperWasReleased()){
+            LockedModeEnabled = !LockedModeEnabled;
 
-                lastXErrorLocked = 0;
-                lastYErrorLocked = 0;
-                lastHeadingErrorLocked = 0;
+            if(LockedModeEnabled){
+                AnchorPos = pinpoint.getPosition();
 
-                Pose2D lockPose = pinpoint.getPosition();
+                AnchorxPos = -1 * AnchorPos.getY(DistanceUnit.METER);
+                AnchoryPos = AnchorPos.getX(DistanceUnit.METER);
 
-                double ax = -1 * lockPose.getY(DistanceUnit.METER);
-                double ay = lockPose.getX(DistanceUnit.METER);
-
-                AnchorxPos = ax;
-                AnchoryPos = ay;
-
-                double heading = lockPose.getHeading(AngleUnit.DEGREES);
+                double heading = robotPos.getHeading(AngleUnit.DEGREES);
                 double adjustedHeading = heading + 90;
 
                 if(adjustedHeading < 0) adjustedHeading += 360;
 
                 AnchorYaw = adjustedHeading;
-
-                AnchorPos = lockPose;
+            }else{
+                AnchorPos = null;
+                lastXErrorLocked = 0;
+                lastYErrorLocked = 0;
+                lastHeadingErrorLocked = 0;
             }
+        }
 
+        if(LockedModeEnabled){
             runLockedPos(robotPos, dt);
-        }else{
-            AnchorPos = null;
         }
 
         if (gamepad2.leftBumperWasReleased()){
@@ -1122,83 +1117,83 @@ public class FinalTeleopIntakeTesting extends OpMode {
             default:     rgbLight.setPosition(LED_OFF_POS);    break;
         }
     }
-    public void runLockedMode(
-            GoBildaPinpointDriver pinpoint,
-            DcMotorEx lf,
-            DcMotorEx rf,
-            DcMotorEx lb,
-            DcMotorEx rb,
-            double dt
-    ){
-        if(LockedModeEnabled&&AnchorPos == null){
-            AnchorPos = pinpoint.getPosition();
-
-            AnchorxPos = -1 * AnchorPos.getY(DistanceUnit.METER);
-            AnchoryPos = AnchorPos.getX(DistanceUnit.METER);
-
-            Pose2D robotPos = pinpoint.getPosition();
-
-            double heading = robotPos.getHeading(AngleUnit.DEGREES);
-            double adjustedHeading = heading + 90;
-
-            if(adjustedHeading < 0) adjustedHeading += 360;
-
-            AnchorYaw = adjustedHeading;
-        }
-
-        double now = runTime.milliseconds();
-        if(LockedModeEnabled && now - lastPIDUpdate >= PIDthrottleMS){
-
-            Pose2D robotPos = pinpoint.getPosition();
-
-            double heading = robotPos.getHeading(AngleUnit.DEGREES);
-            double adjustedHeading = heading + 90;
-
-            if(adjustedHeading < 0) adjustedHeading += 360;
-
-            double headingError = AnchorYaw - adjustedHeading;
-            headingError = ((headingError + 180) % 360) - 180;
-
-            double headingDerivative = (headingError - lastHeadingErrorLocked) / dt;
-
-            double rotPower = kPRot_Lock * headingError + kDRot_Lock * headingDerivative;
-
-            lastHeadingErrorLocked = headingError;
-
-            double xPos = -1 * robotPos.getY(DistanceUnit.METER);
-            double yPos = robotPos.getX(DistanceUnit.METER);
-
-            double xError = (AnchorxPos - xPos) * 100;
-            double yError = (AnchoryPos - yPos) * 100;
-
-            double headingRad = Math.toRadians(adjustedHeading);
-
-            double robotXError = xError * Math.cos(headingRad) + yError * Math.sin(headingRad);
-            double robotYError = -xError * Math.sin(headingRad) + yError * Math.cos(headingRad);
-
-            double xDerivative = (robotXError - lastXErrorLocked) / dt;
-            double yDerivative = (robotYError - lastYErrorLocked) / dt;
-
-            double xPower = kP_Lock * robotXError + kD_Lock * xDerivative;
-            double yPower = kP_Lock * robotYError + kD_Lock * yDerivative;
-
-            lastXErrorLocked = robotXError;
-            lastYErrorLocked = robotYError;
-
-            lastXErrorLocked = xError;
-            lastYErrorLocked = yError;
-
-            double lfPower = yPower + xPower - rotPower;
-            double rfPower = yPower - xPower + rotPower;
-            double lbPower = yPower - xPower - rotPower;
-            double rbPower = yPower + xPower + rotPower;
-
-            lf.setPower(Math.max(-1, Math.min(1, lfPower)));
-            rf.setPower(Math.max(-1, Math.min(1, rfPower)));
-            lb.setPower(Math.max(-1, Math.min(1, lbPower)));
-            rb.setPower(Math.max(-1, Math.min(1, rbPower)));
-        }
-    }
+//    public void runLockedMode(
+//            GoBildaPinpointDriver pinpoint,
+//            DcMotorEx lf,
+//            DcMotorEx rf,
+//            DcMotorEx lb,
+//            DcMotorEx rb,
+//            double dt
+//    ){
+//        if(LockedModeEnabled&&AnchorPos == null){
+//            AnchorPos = pinpoint.getPosition();
+//
+//            AnchorxPos = -1 * AnchorPos.getY(DistanceUnit.METER);
+//            AnchoryPos = AnchorPos.getX(DistanceUnit.METER);
+//
+//            Pose2D robotPos = pinpoint.getPosition();
+//
+//            double heading = robotPos.getHeading(AngleUnit.DEGREES);
+//            double adjustedHeading = heading + 90;
+//
+//            if(adjustedHeading < 0) adjustedHeading += 360;
+//
+//            AnchorYaw = adjustedHeading;
+//        }
+//
+//        double now = runTime.milliseconds();
+//        if(LockedModeEnabled && now - lastPIDUpdate >= PIDthrottleMS){
+//
+//            Pose2D robotPos = pinpoint.getPosition();
+//
+//            double heading = robotPos.getHeading(AngleUnit.DEGREES);
+//            double adjustedHeading = heading + 90;
+//
+//            if(adjustedHeading < 0) adjustedHeading += 360;
+//
+//            double headingError = AnchorYaw - adjustedHeading;
+//            headingError = ((headingError + 180) % 360) - 180;
+//
+//            double headingDerivative = (headingError - lastHeadingErrorLocked) / dt;
+//
+//            double rotPower = kPRot_Lock * headingError + kDRot_Lock * headingDerivative;
+//
+//            lastHeadingErrorLocked = headingError;
+//
+//            double xPos = -1 * robotPos.getY(DistanceUnit.METER);
+//            double yPos = robotPos.getX(DistanceUnit.METER);
+//
+//            double xError = (AnchorxPos - xPos) * 100;
+//            double yError = (AnchoryPos - yPos) * 100;
+//
+//            double headingRad = Math.toRadians(adjustedHeading);
+//
+//            double robotXError = xError * Math.cos(headingRad) + yError * Math.sin(headingRad);
+//            double robotYError = -xError * Math.sin(headingRad) + yError * Math.cos(headingRad);
+//
+//            double xDerivative = (robotXError - lastXErrorLocked) / dt;
+//            double yDerivative = (robotYError - lastYErrorLocked) / dt;
+//
+//            double xPower = kP_Lock * robotXError + kD_Lock * xDerivative;
+//            double yPower = kP_Lock * robotYError + kD_Lock * yDerivative;
+//
+//            lastXErrorLocked = robotXError;
+//            lastYErrorLocked = robotYError;
+//
+//            lastXErrorLocked = xError;
+//            lastYErrorLocked = yError;
+//
+//            double lfPower = yPower + xPower - rotPower;
+//            double rfPower = yPower - xPower + rotPower;
+//            double lbPower = yPower - xPower - rotPower;
+//            double rbPower = yPower + xPower + rotPower;
+//
+//            lf.setPower(Math.max(-1, Math.min(1, lfPower)));
+//            rf.setPower(Math.max(-1, Math.min(1, rfPower)));
+//            lb.setPower(Math.max(-1, Math.min(1, lbPower)));
+//            rb.setPower(Math.max(-1, Math.min(1, rbPower)));
+//        }
+//    }
 
     public void runLockedPos(Pose2D robotPos, double dt){
 
