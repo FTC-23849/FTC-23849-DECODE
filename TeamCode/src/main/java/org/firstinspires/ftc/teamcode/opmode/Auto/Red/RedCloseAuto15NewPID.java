@@ -86,7 +86,7 @@ public class RedCloseAuto15NewPID extends LinearOpMode {
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.580;
+    public static double turretStartPos = 0.5;
     //public static double turretShootPos = 0.580;
 
     public static double plainKickerPower = 0.0;
@@ -112,8 +112,8 @@ public class RedCloseAuto15NewPID extends LinearOpMode {
 
     public static double shootingSpeed = -0.58;
 
-    public static double shootingSpeedPID = -1390;
-    public static double turretOffset = -0.012;
+    public static double shootingSpeedPID = -860;
+    public static double turretOffset = 0.009;
 
     public static String allianceColor = "Red";
 
@@ -216,7 +216,7 @@ public class RedCloseAuto15NewPID extends LinearOpMode {
 
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
-        rightHood.setDirection(ServoImplEx.Direction.REVERSE);
+        leftHood.setDirection(ServoImplEx.Direction.REVERSE);
 
         //Limelight
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
@@ -228,8 +228,8 @@ public class RedCloseAuto15NewPID extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         // Pre-Auto robot initlization. MUST BE LAST
-        leftHood.setPosition(0.4);
-        rightHood.setPosition(0.4);
+        leftHood.setPosition(0.28);
+        rightHood.setPosition(0.28);
 
         leftTurretServo.setPosition(turretStartPos);
         rightTurretServo.setPosition(turretStartPos);
@@ -1069,7 +1069,7 @@ public class RedCloseAuto15NewPID extends LinearOpMode {
 
             if (power != 0.0) {
                 frontIntakeMotor.setPower(power);
-                backIntakeMotor.setPower(1);
+                backIntakeMotor.setPower(power);
             } else {
                 frontIntakeMotor.setPower(0.0);
                 backIntakeMotor.setPower(0.0);
