@@ -113,8 +113,8 @@ public class BlueCloseAuto15NewPID extends LinearOpMode {
 
     public static double shootingSpeed = -0.58;
 
-    public static double shootingSpeedPID = -1390;
-    public static double turretOffset = 0.000;
+    public static double shootingSpeedPID = -860;
+    public static double turretOffset = -0.009;
 
     public static String allianceColor = "Blue";
 
@@ -1070,7 +1070,7 @@ public class BlueCloseAuto15NewPID extends LinearOpMode {
 
             if (power != 0.0) {
                 frontIntakeMotor.setPower(power);
-                backIntakeMotor.setPower(1);
+                backIntakeMotor.setPower(power);
             } else {
                 frontIntakeMotor.setPower(0.0);
                 backIntakeMotor.setPower(0.0);

@@ -89,7 +89,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.385; /*0.39*/
+    public static double turretStartPos = 0.5; /*0.39*/
     //public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
@@ -113,7 +113,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
 
     public static double intakeShootingSpeed = -1.0;
 
-    public static double kickerSpeed = -1.0;
+    public static double kickerSpeed = 1.0;
 
     public static double shootingSpeed = -1.0;
 
@@ -123,10 +123,10 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
     public static boolean intakeLastSpike = true;
     public static boolean intakeSecondSpike = false;
 
-    public static double preloadShootingSpeed = -1815;
-    public static double cyclingShootingSpeed = -1800;
+    public static double preloadShootingSpeed = -1205;
+    public static double cyclingShootingSpeed = -1155;
     public static double shootingSpeedPID = preloadShootingSpeed;
-    public static double turretOffset = 0.0052;
+    public static double turretOffset = -0.0065;
 
     public static String allianceColor = "Blue";
 
@@ -224,7 +224,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
 
         leftKickerServo = hardwareMap.get(CRServoImplEx.class, "leftKickerServo");
         rightKickerServo = hardwareMap.get(CRServoImplEx.class, "rightKickerServo");
-        rightKickerServo.setDirection(CRServoImplEx.Direction.REVERSE);
+        leftKickerServo.setDirection(CRServoImplEx.Direction.REVERSE);
 
         leftTurretServo = hardwareMap.get(ServoImplEx.class, "leftTurretServo");
         rightTurretServo = hardwareMap.get(ServoImplEx.class, "rightTurretServo");
@@ -249,7 +249,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
 
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
-        rightHood.setDirection(ServoImplEx.Direction.REVERSE);
+        leftHood.setDirection(ServoImplEx.Direction.REVERSE);
 
         //Limelight
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
@@ -261,8 +261,8 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         // Pre-Auto robot initlization. MUST BE LAST
-        leftHood.setPosition(0.4);
-        rightHood.setPosition(0.4);
+        leftHood.setPosition(0.28);
+        rightHood.setPosition(0.28);
 
         leftTurretServo.setPosition(turretStartPos);
         rightTurretServo.setPosition(turretStartPos);
@@ -386,7 +386,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62, -60), Math.toRadians(270),
+                                                            new Vector2d(62, -66), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -396,7 +396,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62, -60), Math.toRadians(270),
+                                                            new Vector2d(62, -66), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -450,7 +450,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62 - blobOffset, -62), Math.toRadians(270),
+                                                            new Vector2d(62 - blobOffset, -66), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -460,7 +460,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62 - blobOffset, -62), Math.toRadians(270),
+                                                            new Vector2d(62 - blobOffset, -66), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -513,7 +513,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62 - blobOffset, -62), Math.toRadians(270),
+                                                            new Vector2d(62 - blobOffset, -66), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -523,7 +523,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62 - blobOffset, -62), Math.toRadians(270),
+                                                            new Vector2d(62 - blobOffset, -66), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -1121,7 +1121,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
 
             if (power != 0.0) {
                 frontIntakeMotor.setPower(power);
-                backIntakeMotor.setPower(1);
+                backIntakeMotor.setPower(power);
             } else {
                 frontIntakeMotor.setPower(0.0);
                 backIntakeMotor.setPower(0.0);

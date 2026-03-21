@@ -86,7 +86,7 @@ public class RedFarAutoCycling15NewPID extends LinearOpMode {
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.621; /*0.62*/
+    public static double turretStartPos = 0.5; /*0.62*/
     //public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
@@ -209,7 +209,7 @@ public class RedFarAutoCycling15NewPID extends LinearOpMode {
 
         leftKickerServo = hardwareMap.get(CRServoImplEx.class, "leftKickerServo");
         rightKickerServo = hardwareMap.get(CRServoImplEx.class, "rightKickerServo");
-        rightKickerServo.setDirection(CRServoImplEx.Direction.REVERSE);
+        leftKickerServo.setDirection(CRServoImplEx.Direction.REVERSE);
 
         leftTurretServo = hardwareMap.get(ServoImplEx.class, "leftTurretServo");
         rightTurretServo = hardwareMap.get(ServoImplEx.class, "rightTurretServo");
@@ -246,8 +246,8 @@ public class RedFarAutoCycling15NewPID extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         // Pre-Auto robot initlization. MUST BE LAST
-        leftHood.setPosition(0.4);
-        rightHood.setPosition(0.4);
+        leftHood.setPosition(0.28);
+        rightHood.setPosition(0.28);
 
         leftTurretServo.setPosition(turretStartPos);
         rightTurretServo.setPosition(turretStartPos);
@@ -1128,7 +1128,7 @@ public class RedFarAutoCycling15NewPID extends LinearOpMode {
 
             if (power != 0.0) {
                 frontIntakeMotor.setPower(power);
-                backIntakeMotor.setPower(1);
+                backIntakeMotor.setPower(power);
             } else {
                 frontIntakeMotor.setPower(0.0);
                 backIntakeMotor.setPower(0.0);
