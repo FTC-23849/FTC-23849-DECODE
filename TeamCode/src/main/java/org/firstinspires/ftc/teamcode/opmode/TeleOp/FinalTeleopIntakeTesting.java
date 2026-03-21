@@ -76,8 +76,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public double velX;
     public double velY;
     public double velH;
-    public static double lockedFlywheelVelocity = -1600;
-    public static double lockedHoodHeight = 0.1;
+    public static double lockedFlywheelVelocity = -920;
+    public static double lockedHoodHeight = 0.15;
     public static double TargetVelocity = -1200;
     public static double red = 0;
     public static double blue = 0;
@@ -89,14 +89,14 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //    public static double VKd = 0;
 //    public static double VkS = 0;
 //    public static double VkV = 0.00042;
-    public static double KpMaintain = 0.0035;
+    public static double KpMaintain = 0.003;
     public static double KiMaintain = 0.002;
 
     public static double KpDriveRecovery = 0.03;
 
     public static double KpRecovery = 0;
     public static double KiRecovery = 0.001;
-    public static double KsRecovery = 0.9;
+    public static double KsRecovery = 1;
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055 ;
 
@@ -129,11 +129,11 @@ public class FinalTeleopIntakeTesting extends OpMode {
     double lastXErrorLocked = 0;
     double lastYErrorLocked = 0;
 
-    public static double kP_Lock = 0.15;
+    public static double kP_Lock = 0.18;
     public static double kD_Lock = 0.01;
-
-    public static double kPRot_Lock = 0.08;
-    public static double kDRot_Lock = 0.01;
+    public static double PosDeadband = 10;
+    public static double kPRot_Lock = 0.06;
+    public static double kDRot_Lock = 0.002;
     double lastTime = 0;
     ElapsedTime lockedPostimer = new ElapsedTime();
 
@@ -182,7 +182,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     //throttling
     double lastPIDUpdate = 0;
     double lastPinpointUpdate = 0;
-    public static double pinpointThrottleMS =100;
+    public static double pinpointThrottleMS =50;
     public static double PIDthrottleMS =60;
     public static double telemeteryThrottleMS = 40000000;
     double lastTelemetryUpdate = 0;
@@ -542,6 +542,9 @@ public class FinalTeleopIntakeTesting extends OpMode {
         currentVoltage = myControlHubVoltageSensor.getVoltage();
         double now = runTime.milliseconds();
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
+            if(LockedModeEnabled){
+                runLockedPos(robotPos, dt);
+            }
             robotPos = pinpoint.getPosition();
             if(leftBumperTrue){
                 velX = vision.getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER),kalmanQ, kalmanR);
@@ -779,9 +782,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
             }
         }
 
-        if(LockedModeEnabled){
-            runLockedPos(robotPos, dt);
-        }
+
 
         if (gamepad2.leftBumperWasReleased()){
             useTurret = !useTurret;
@@ -908,6 +909,12 @@ public class FinalTeleopIntakeTesting extends OpMode {
         telemetry.addData("VelX", velX);
         telemetry.addData("VelY",velY);
         telemetry.addData("distance", groundDistance);
+        telemetry.addData("AnchorX", AnchorxPos);
+        telemetry.addData("AnchorY", AnchoryPos);
+        telemetry.addData("robotPosX", -1 * robotPos.getY(DistanceUnit.METER));
+        telemetry.addData("robotPosY", robotPos.getX(DistanceUnit.METER));
+        telemetry.addData("xError", (AnchorxPos - (-1 * robotPos.getY(DistanceUnit.METER))) * 100);
+        telemetry.addData("yError", (AnchoryPos - robotPos.getX(DistanceUnit.METER)) * 100);
         if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {
             telemetry.addData("current voltage, ", currentVoltage);
             telemetry.addData("leftturretservo",leftTurretServo.getPosition());
@@ -1215,6 +1222,14 @@ public class FinalTeleopIntakeTesting extends OpMode {
 
         double xError = (AnchorxPos - xPos) * 100;
         double yError = (AnchoryPos - yPos) * 100;
+        double distanceFromAnchor = Math.sqrt(xError * xError + yError * yError);
+        if (distanceFromAnchor < PosDeadband) {
+            xError = 0;
+            yError = 0;
+        }
+//        double headingRad = Math.toRadians(adjustedHeading);
+//        double xError =  xError * Math.cos(headingRad) - yError * Math.sin(headingRad);
+//        double yError = xError * Math.sin(headingRad) + yError * Math.cos(headingRad);
 
         double xDerivative = (xError - lastXErrorLocked) / dt;
         double yDerivative = (yError - lastYErrorLocked) / dt;
