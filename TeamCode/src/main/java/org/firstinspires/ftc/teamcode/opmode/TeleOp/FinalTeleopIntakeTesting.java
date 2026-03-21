@@ -1234,8 +1234,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
         double xDerivative = (xError - lastXErrorLocked) / dt;
         double yDerivative = (yError - lastYErrorLocked) / dt;
 
-        double xPower = kP_Lock * xError + kD_Lock * xDerivative;
-        double yPower = kP_Lock * yError + kD_Lock * yDerivative;
+        double xPower = kP_Lock * Math.signum(xError) * Math.sqrt(Math.abs(xError)) + kD_Lock * xDerivative;
+        double yPower = kP_Lock * Math.signum(yError) * Math.sqrt(Math.abs(yError)) + kD_Lock * yDerivative;
 
         lastXErrorLocked = xError;
         lastYErrorLocked = yError;
