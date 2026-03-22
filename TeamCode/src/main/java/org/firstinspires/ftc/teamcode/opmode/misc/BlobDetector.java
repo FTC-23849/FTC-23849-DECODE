@@ -13,23 +13,23 @@ public class BlobDetector {
     public String alliance = "Blue";
 
     public double PURPLE_H_LOW = 117;
-    public double PURPLE_S_LOW = 3;
-    public double PURPLE_V_LOW = 64;
+    public double PURPLE_S_LOW = 75;
+    public double PURPLE_V_LOW = 30;
 
     public double PURPLE_H_HIGH = 155;
-    public double PURPLE_S_HIGH = 231;
-    public double PURPLE_V_HIGH = 220;
+    public double PURPLE_S_HIGH = 240;
+    public double PURPLE_V_HIGH = 240;
 
-    public double GREEN_H_LOW = 68;
-    public double GREEN_S_LOW = 82;
-    public double GREEN_V_LOW = 0;
+    public double GREEN_H_LOW = 65;
+    public double GREEN_S_LOW = 120;
+    public double GREEN_V_LOW = 30;
 
-    public double GREEN_H_HIGH = 84;
+    public double GREEN_H_HIGH = 89;
     public double GREEN_S_HIGH = 255;
     public double GREEN_V_HIGH = 220;
 
     public double MIN_BLOB_AREA = 500.0;
-    public double MERGE_DISTANCE = 100.0;
+    public double MERGE_DISTANCE = 60.0;
 
     private final OpenCvCamera camera;
 

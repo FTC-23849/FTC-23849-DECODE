@@ -646,7 +646,7 @@ public class BlueCloseAuto15NewPID extends LinearOpMode {
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
             if (enableVelPID) {
-                flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
+                flywheelCurrentVelocity = /*(*/leftShooterMotor.getVelocity() /*+ rightShooterMotor.getVelocity()) / 2*/;
 
                 targetVelocity = speed;
 

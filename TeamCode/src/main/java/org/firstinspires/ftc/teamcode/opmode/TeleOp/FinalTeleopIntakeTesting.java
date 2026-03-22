@@ -82,8 +82,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double red = 0;
     public static double blue = 0;
     //more for left, less for right
-    public static double turretZeroCorrection = 0.00;
-    public static double turretZeroCorrection2 = -0.004;
+    public static double turretZeroCorrection = 0.003;
+    public static double turretZeroCorrection2 = -0.006;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
@@ -673,7 +673,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
                 rightTongueServo.setPosition(Globals.tongueShoot);
 
                 //frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
+                frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed*0.7);
                 leftKickerServo.setPower(Globals.rollerKickerShoot);
                 rightKickerServo.setPower(Globals.rollerKickerShoot);
 
@@ -700,7 +700,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //                }
 
                 //backIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                backIntakeMotor.setPower(-Globals.backIntakeShootSpeed);
+                backIntakeMotor.setPower(-Globals.backIntakeShootSpeed*0.7);
                 shooting = true;
 
             } else if (gamepad1.dpad_up) {
@@ -848,8 +848,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
         }
 
         if (leftBumperTrue && !rightBumperTrue) {
-            flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
-
+            //flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
+            flywheelCurrentVelocity = leftShooterMotor.getVelocity();
             if (!usePower) {
                 targetVelocity = lockedFlywheelVelocity + flywheelCorrection;
                 leftHood.setPosition(lockedHoodHeight);
@@ -1213,7 +1213,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
         headingError = ((headingError + 180) % 360) - 180;
 
         double headingDerivative = (headingError - lastHeadingErrorLocked) / dt;
-        double rotPower = kPRot_Lock * headingError + kDRot_Lock * headingDerivative;
+        double rotPower = kPRot_Lock * Math.signum(headingError) * Math.sqrt(Math.abs(headingError)) + kDRot_Lock * headingDerivative;
 
         lastHeadingErrorLocked = headingError;
 
