@@ -82,8 +82,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double red = 0;
     public static double blue = 0;
     //more for left, less for right
-    public static double turretZeroCorrection = 0.003;
-    public static double turretZeroCorrection2 = -0.006;
+    public static double turretZeroCorrection = 0.004;
+    public static double turretZeroCorrection2 = -0.002;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
@@ -107,7 +107,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double sec = 0;
     public static double moveAway = 0;
     public static double moveAwayTurret = 0;
-    public static double gear = 13.1;
+    public static double gear = 13;
     double currentVoltage;
     double closezone = 1;
     boolean firstLoop = true;
@@ -673,7 +673,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
                 rightTongueServo.setPosition(Globals.tongueShoot);
 
                 //frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed*0.7);
+                frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed*0.9);
                 leftKickerServo.setPower(Globals.rollerKickerShoot);
                 rightKickerServo.setPower(Globals.rollerKickerShoot);
 
@@ -700,7 +700,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //                }
 
                 //backIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                backIntakeMotor.setPower(-Globals.backIntakeShootSpeed*0.7);
+                backIntakeMotor.setPower(-Globals.backIntakeShootSpeed*0.9);
                 shooting = true;
 
             } else if (gamepad1.dpad_up) {
@@ -730,14 +730,14 @@ public class FinalTeleopIntakeTesting extends OpMode {
                 closezone = 1;
             }
         }
-        if (gamepad2.back) {
-            if (leftTurretServo.getPosition() < 0.84) {
-                turretCorrection += 0.0005;
+        if (gamepad2.backWasReleased()) {
+            if (leftTurretServo.getPosition() < 0.764) {
+                turretCorrection += 0.001;
             }
         }
-        if (gamepad2.start) {
-            if (leftTurretServo.getPosition() > 0.34) {
-                turretCorrection -= 0.0005;
+        if (gamepad2.startWasReleased()) {
+            if (leftTurretServo.getPosition() > 0.246) {
+                turretCorrection -= 0.001;
             }
         }
         if (gamepad2.dpad_up) {

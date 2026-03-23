@@ -234,8 +234,8 @@ public class visionToolsClean {
 
 
         double goalY = 1.8288;
-        double goalXRed = 1.6138;
-        double goalXBlue = -1.7138;
+        double goalXRed = 1.5788;
+        double goalXBlue = -1.5788;
         double goalX = alliance.equals("Red") ? goalXRed : goalXBlue;
         double startingAngle = (180+adjustedHeading)%360;
         double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalY - curY,goalX - curX));
@@ -448,14 +448,14 @@ public class visionToolsClean {
                     - 2469.13478 * x4;
 
         }else if(estimatedDist < 2.75){
-            speed = 7875.76427
+            speed = 7915.76427
                     - 10649.81464 * x
                     + 4307.95413 * x2
                     - 586.52521 * x3;
         }else{
             //−19.9936x3+191.7677x2−853.9049x−213.5501
 
-            speed = -110235.75593
+            speed = -110245.75593
                     + 188135.14001 * x
                     - 133074.55282 * x2
                     + 49553.07366 * x3
