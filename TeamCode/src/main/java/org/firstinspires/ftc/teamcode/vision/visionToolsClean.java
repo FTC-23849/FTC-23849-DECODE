@@ -111,18 +111,17 @@ public class visionToolsClean {
     public double mt2pinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, Limelight3A limelight){
         limelight.pipelineSwitch(9);
         limelight.start();
-        Pose2D pose2d = pinpoint.getPosition();
-        double robotYaw = pose2d.getHeading(AngleUnit.DEGREES);
-        limelight.updateRobotOrientation(robotYaw+180);
         LLResult result = limelight.getLatestResult();
         double mx,my,myaw = 0;
         if(result != null && result.isValid() && result.getBotpose() != null){
+            double mt1heading = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);
+            limelight.updateRobotOrientation(mt1heading);
             Pose3D botpose_mt2 = result.getBotpose_MT2();
             mx = botpose_mt2.getPosition().x;
             my = botpose_mt2.getPosition().y;
             myaw = result.getBotpose().getOrientation().getYaw(AngleUnit.DEGREES);
             //mx: 1.6364918134117126 my: -0.265005594950676
-            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mx-1,my*-1,AngleUnit.DEGREES,myaw-180/*2 deg right*/));
+            pinpoint.setPosition(new Pose2D(DistanceUnit.METER,mx*-1,my*-1,AngleUnit.DEGREES,myaw-180/*2 deg right*/));
 
         }
         return 0;
@@ -234,8 +233,11 @@ public class visionToolsClean {
 
 
         double goalY = 1.8288;
-        double goalXRed = 1.5788;
-        double goalXBlue = -1.5788;
+        double goalXRed = 1.6788;
+        double goalXBlue = -1.6788;
+        if(yPos > 0){
+            goalY = 1.6788;
+        }
         double goalX = alliance.equals("Red") ? goalXRed : goalXBlue;
         double startingAngle = (180+adjustedHeading)%360;
         double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalY - curY,goalX - curX));

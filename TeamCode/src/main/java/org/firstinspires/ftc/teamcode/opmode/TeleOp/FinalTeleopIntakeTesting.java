@@ -119,7 +119,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
     boolean purpleSortingEnabled = false;
     boolean greenSortingEnabled = false;
     boolean lowVoltage = false;
-    public static boolean LockedModeEnabled = false;
+    boolean LockedModeEnabled = false;
+    boolean ParkModeEnabled = false;
     Pose2D AnchorPos = null;
     double AnchorxPos;
     double AnchoryPos;
@@ -129,11 +130,11 @@ public class FinalTeleopIntakeTesting extends OpMode {
     double lastXErrorLocked = 0;
     double lastYErrorLocked = 0;
 
-    public static double kP_Lock = 0.18;
-    public static double kD_Lock = 0.01;
-    public static double PosDeadband = 10;
-    public static double kPRot_Lock = 0.06;
-    public static double kDRot_Lock = 0.002;
+    public static double kP_Lock = 0.13;
+    public static double kD_Lock = 0.0007;
+    public static double PosDeadband = 3;
+    public static double kPRot_Lock = 0.07;
+    public static double kDRot_Lock = 0.00028;
     double lastTime = 0;
     ElapsedTime lockedPostimer = new ElapsedTime();
 
@@ -542,7 +543,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
         currentVoltage = myControlHubVoltageSensor.getVoltage();
         double now = runTime.milliseconds();
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
-            if(LockedModeEnabled){
+            if(LockedModeEnabled ^ ParkModeEnabled){
                 runLockedPos(robotPos, dt);
             }
             robotPos = pinpoint.getPosition();
@@ -602,7 +603,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
             double backLeftPower = (y - x + rx) / denominator;
             double frontRightPower = (y - x - rx) / denominator;
             double backRightPower = (y + x - rx) / denominator;
-        if(!LockedModeEnabled) {
+        if(!LockedModeEnabled && !ParkModeEnabled)  {
             leftFrontMotor.setPower(frontLeftPower);
             leftBackMotor.setPower(backLeftPower);
             rightFrontMotor.setPower(frontRightPower);
@@ -752,16 +753,16 @@ public class FinalTeleopIntakeTesting extends OpMode {
         if(gamepad2.x){
             pinpoint.recalibrateIMU();
         }
-        if(gamepad2.bWasReleased()){
-            lowVoltage=!lowVoltage;
-        }
+//        if(gamepad2.bWasReleased()){
+//            lowVoltage=!lowVoltage;
+//        }
         if(gamepad1.start){
             pinpoint.recalibrateIMU();
         }
         //Locked
         if(gamepad1.rightBumperWasReleased()){
             LockedModeEnabled = !LockedModeEnabled;
-
+            AnchorPos = null;
             if(LockedModeEnabled){
                 AnchorPos = pinpoint.getPosition();
 
@@ -770,12 +771,10 @@ public class FinalTeleopIntakeTesting extends OpMode {
 
                 double heading = robotPos.getHeading(AngleUnit.DEGREES);
                 double adjustedHeading = heading + 90;
-
-                if(adjustedHeading < 0) adjustedHeading += 360;
+                adjustedHeading = ((adjustedHeading % 360) + 360) % 360;
 
                 AnchorYaw = adjustedHeading;
             }else{
-                AnchorPos = null;
                 lastXErrorLocked = 0;
                 lastYErrorLocked = 0;
                 lastHeadingErrorLocked = 0;
@@ -810,6 +809,22 @@ public class FinalTeleopIntakeTesting extends OpMode {
         if (gamepad1.dpad_right) {
             allianceColor = "Red";
         }
+        if (gamepad2.bWasReleased()) {
+            ParkModeEnabled = !ParkModeEnabled;
+            AnchorPos = null;
+            if(ParkModeEnabled) {
+                AnchorYaw = 90;
+                AnchoryPos = -0.716;
+                if(allianceColor.equals("Red")) {
+                    //Red
+                    AnchorxPos = -0.8832;
+                }else {
+                    //Blue
+                    AnchorxPos = 0.8832;
+                }
+            }
+
+        }
 
 
 //        if (rightBumperTrue && !leftBumperTrue) {
@@ -831,7 +846,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //        }
         if (gamepad1.x) {
             turretCorrection = 0;
-            vision.mt1pinpoint(red,blue,pinpoint,allianceColor, limelight);
+            vision.mt2pinpoint(pinpoint, limelight);
+            //vision.mt1pinpoint(red,blue,pinpoint,allianceColor, limelight);
         }
         if (gamepad2.a){
             if(allianceColor.equals("Blue")){
@@ -913,6 +929,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
         telemetry.addData("AnchorY", AnchoryPos);
         telemetry.addData("robotPosX", -1 * robotPos.getY(DistanceUnit.METER));
         telemetry.addData("robotPosY", robotPos.getX(DistanceUnit.METER));
+        telemetry.addData("Park? ", ParkModeEnabled);
         telemetry.addData("xError", (AnchorxPos - (-1 * robotPos.getY(DistanceUnit.METER))) * 100);
         telemetry.addData("yError", (AnchoryPos - robotPos.getX(DistanceUnit.METER)) * 100);
         if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {
@@ -1202,15 +1219,25 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //        }
 //    }
 
+
     public void runLockedPos(Pose2D robotPos, double dt){
 
         double heading = robotPos.getHeading(AngleUnit.DEGREES);
         double adjustedHeading = heading + 90;
+        adjustedHeading = ((adjustedHeading % 360) + 360) % 360;
 
-        if(adjustedHeading < 0) adjustedHeading += 360;
 
         double headingError = AnchorYaw - adjustedHeading;
-        headingError = ((headingError + 180) % 360) - 180;
+        if(LockedModeEnabled){
+        if (headingError > 180) {
+            headingError -= 360;
+        } else if (headingError < -180) {
+            headingError += 360;
+        }
+        }else{
+            headingError = ((headingError + 180) % 360) - 180;
+        }
+
 
         double headingDerivative = (headingError - lastHeadingErrorLocked) / dt;
         double rotPower = kPRot_Lock * Math.signum(headingError) * Math.sqrt(Math.abs(headingError)) + kDRot_Lock * headingDerivative;
@@ -1222,15 +1249,23 @@ public class FinalTeleopIntakeTesting extends OpMode {
 
         double xError = (AnchorxPos - xPos) * 100;
         double yError = (AnchoryPos - yPos) * 100;
+
+//        double headingRad = Math.toRadians(adjustedHeading);
+//        double xError =  xError * Math.cos(headingRad) - yError * Math.sin(headingRad);
+//        double yError = xError * Math.sin(headingRad) + yError * Math.cos(headingRad);
         double distanceFromAnchor = Math.sqrt(xError * xError + yError * yError);
+
+        //conveer error to robot space
+        double anchorAngle = Math.atan2(yError, xError);
+        double headingRad = Math.toRadians(adjustedHeading);
+        double relativeAngle = anchorAngle - headingRad;
+
+        xError = distanceFromAnchor* -Math.sin(relativeAngle);
+        yError = distanceFromAnchor * Math.cos(relativeAngle);
         if (distanceFromAnchor < PosDeadband) {
             xError = 0;
             yError = 0;
         }
-//        double headingRad = Math.toRadians(adjustedHeading);
-//        double xError =  xError * Math.cos(headingRad) - yError * Math.sin(headingRad);
-//        double yError = xError * Math.sin(headingRad) + yError * Math.cos(headingRad);
-
         double xDerivative = (xError - lastXErrorLocked) / dt;
         double yDerivative = (yError - lastYErrorLocked) / dt;
 

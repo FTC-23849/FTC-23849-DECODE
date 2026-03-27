@@ -9,7 +9,7 @@ public class PIDVelocityController3 {
 
     private double KpRecovery;
     private double KpRecoveryDrive;
-    private double KiRecovery;
+    private double KiRecovery;  
     private double KsRecovery;
 
     private double kS;
