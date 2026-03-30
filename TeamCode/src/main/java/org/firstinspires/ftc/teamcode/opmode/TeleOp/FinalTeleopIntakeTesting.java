@@ -82,13 +82,14 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double red = 0;
     public static double blue = 0;
     //more for left, less for right
-    public static double turretZeroCorrection = 0.004;
+    public static double turretZeroCorrection = 0.00;
     public static double turretZeroCorrection2 = -0.002;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
 //    public static double VkS = 0;
 //    public static double VkV = 0.00042;
+    public static double shotSpeed = 0.9;
     public static double KpMaintain = 0.003;
     public static double KiMaintain = 0.002;
 
@@ -120,20 +121,21 @@ public class FinalTeleopIntakeTesting extends OpMode {
     boolean greenSortingEnabled = false;
     boolean lowVoltage = false;
     boolean LockedModeEnabled = false;
+    boolean rightBumperFirstTime = false;
+    boolean rightBumperHeld = false;
     boolean ParkModeEnabled = false;
     Pose2D AnchorPos = null;
     double AnchorxPos;
     double AnchoryPos;
     double AnchorYaw;
-
     double lastHeadingErrorLocked = 0;
     double lastXErrorLocked = 0;
     double lastYErrorLocked = 0;
 
-    public static double kP_Lock = 0.13;
+    public static double kP_Lock = 0.16;
     public static double kD_Lock = 0.0007;
     public static double PosDeadband = 3;
-    public static double kPRot_Lock = 0.07;
+    public static double kPRot_Lock = 0.08;
     public static double kDRot_Lock = 0.00028;
     double lastTime = 0;
     ElapsedTime lockedPostimer = new ElapsedTime();
@@ -674,7 +676,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
                 rightTongueServo.setPosition(Globals.tongueShoot);
 
                 //frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed*0.9);
+                frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed*shotSpeed);
                 leftKickerServo.setPower(Globals.rollerKickerShoot);
                 rightKickerServo.setPower(Globals.rollerKickerShoot);
 
@@ -701,7 +703,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //                }
 
                 //backIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                backIntakeMotor.setPower(-Globals.backIntakeShootSpeed*0.9);
+                backIntakeMotor.setPower(-Globals.backIntakeShootSpeed*shotSpeed);
                 shooting = true;
 
             } else if (gamepad1.dpad_up) {
@@ -753,14 +755,35 @@ public class FinalTeleopIntakeTesting extends OpMode {
         if(gamepad2.x){
             pinpoint.recalibrateIMU();
         }
-//        if(gamepad2.bWasReleased()){
-//            lowVoltage=!lowVoltage;
-//        }
-        if(gamepad1.start){
+        if(gamepad2.bWasReleased()){
+            lowVoltage=!lowVoltage;
+        }
+        if(lowVoltage){
+            shotSpeed = 0.7;
+        }else{
+            shotSpeed = 0.9;
+
+        }        if(gamepad1.start){
             pinpoint.recalibrateIMU();
         }
+        if(gamepad1.right_bumper){
+            shotSpeed = 0.7;
+            if(!rightBumperHeld){
+                rightBumperFirstTime = true;
+            }
+            else{
+                rightBumperFirstTime = false;
+            }
+            rightBumperHeld = true;
+        }
+        else{
+            rightBumperHeld = false;
+            rightBumperFirstTime = false;
+            LockedModeEnabled = false;
+        }
+
         //Locked
-        if(gamepad1.rightBumperWasReleased()){
+        if(rightBumperFirstTime){
             LockedModeEnabled = !LockedModeEnabled;
             AnchorPos = null;
             if(LockedModeEnabled){
@@ -809,22 +832,22 @@ public class FinalTeleopIntakeTesting extends OpMode {
         if (gamepad1.dpad_right) {
             allianceColor = "Red";
         }
-        if (gamepad2.bWasReleased()) {
-            ParkModeEnabled = !ParkModeEnabled;
-            AnchorPos = null;
-            if(ParkModeEnabled) {
-                AnchorYaw = 90;
-                AnchoryPos = -0.716;
-                if(allianceColor.equals("Red")) {
-                    //Red
-                    AnchorxPos = -0.8832;
-                }else {
-                    //Blue
-                    AnchorxPos = 0.8832;
-                }
-            }
-
-        }
+//        if (gamepad2.bWasReleased()) {
+//            ParkModeEnabled = !ParkModeEnabled;
+//            AnchorPos = null;
+//            if(ParkModeEnabled) {
+//                AnchorYaw = 90;
+//                AnchoryPos = -0.716;
+//                if(allianceColor.equals("Red")) {
+//                    //Red
+//                    AnchorxPos = -0.8832;
+//                }else {
+//                    //Blue
+//                    AnchorxPos = 0.8832;
+//                }
+//            }
+//
+//        }
 
 
 //        if (rightBumperTrue && !leftBumperTrue) {
@@ -846,8 +869,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //        }
         if (gamepad1.x) {
             turretCorrection = 0;
-            vision.mt2pinpoint(pinpoint, limelight);
-            //vision.mt1pinpoint(red,blue,pinpoint,allianceColor, limelight);
+            //vision.mt2pinpoint(pinpoint, limelight);
+            vision.mt1pinpoint(red,blue,pinpoint,allianceColor, limelight);
         }
         if (gamepad2.a){
             if(allianceColor.equals("Blue")){
@@ -948,6 +971,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
             telemetry.addData("right kicker speed", rightKickerServo.getPower());
             telemetry.addData("low voltage?", lowVoltage);
             telemetry.addData("encoderposTurret", (turretEncoder.getVoltage()/ 3.2 * 360 ) % 360);
+            telemetry.addData("rightBumperHeld", rightBumperHeld);
+            telemetry.addData("rightBumperFirstTime", rightBumperFirstTime);
 
             telemetry.update();
             lastTelemetryUpdate = now;
