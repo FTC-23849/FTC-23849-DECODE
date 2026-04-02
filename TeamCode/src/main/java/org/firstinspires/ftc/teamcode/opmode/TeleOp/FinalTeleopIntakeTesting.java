@@ -72,18 +72,21 @@ public class FinalTeleopIntakeTesting extends OpMode {
 
     private PIDVelocityController3 velocityPID;
     public Pose2D robotPos;
+    public Pose2D predictedPos;
     public static double currentVelocity;
     public double velX;
     public double velY;
     public double velH;
+    public static double sec = 0.6;
+    public static double turretSec = 0.9;
     public static double lockedFlywheelVelocity = -920;
     public static double lockedHoodHeight = 0.15;
     public static double TargetVelocity = -1200;
     public static double red = 0;
     public static double blue = 0;
     //more for left, less for right
-    public static double turretZeroCorrection = 0.00;
-    public static double turretZeroCorrection2 = -0.002;
+    public static double turretZeroCorrection = 0.0025;
+    public static double turretZeroCorrection2 = -0.006;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
@@ -105,9 +108,6 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double recoveryThreshold = 60;
     public static double maintainThreshold = 40;
     public static double defaultVoltage = 13.15;
-    public static double sec = 0;
-    public static double moveAway = 0;
-    public static double moveAwayTurret = 0;
     public static double gear = 13;
     double currentVoltage;
     double closezone = 1;
@@ -213,7 +213,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     // lock helper
     boolean cancelHeld = false;
     boolean lockIntakeKickerTongue = false;
-    double flywheelCorrection = 0;
+    public static double flywheelCorrection = 0;
     boolean useTurret = true;
     boolean usePower = true;
     private final float[] hsvBuf = new float[3];
@@ -424,13 +424,14 @@ public class FinalTeleopIntakeTesting extends OpMode {
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
         telemetry.setMsTransmissionInterval(120);
         robotPos = pinpoint.getPosition();
-        velX = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[0];
-        velY = vision.calculateVelocity(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),runTime.seconds())[1];
+        velX = pinpoint.getVelX(DistanceUnit.MM);
+        velY = pinpoint.getVelY(DistanceUnit.MM);
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
-        hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-        turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret,xcoeff,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
+        predictedPos = vision.predictPos(robotPos,velX,velY,velH,sec,turretSec);
+        hoodHeight = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
+        turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,predictedPos,gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
-        flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
+        flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(predictedPos, allianceColor));
 
         prism.configureSolidLayer(0, 0, 1, BRIGHT_ON, 0, 0, 0);
         prism.configureSolidLayer(1, 2, 3, BRIGHT_ON, 0, 0, 0);
@@ -549,14 +550,15 @@ public class FinalTeleopIntakeTesting extends OpMode {
                 runLockedPos(robotPos, dt);
             }
             robotPos = pinpoint.getPosition();
+            velX = pinpoint.getVelX(DistanceUnit.MM);
+            velY = pinpoint.getVelY(DistanceUnit.MM);
+            velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
+            predictedPos = vision.predictPos(robotPos,velX,velY,velH,sec,turretSec);
             if(leftBumperTrue){
-                velX = vision.getFilteredVelocityX(pinpoint.getVelX(DistanceUnit.METER),kalmanQ, kalmanR);
-                velY = vision.getFilteredVelocityY(pinpoint.getVelY(DistanceUnit.METER),kalmanQ, kalmanR);
-                velH = vision.getFilteredVelocityY(pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES),kalmanQ, kalmanR);
                 hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-                turretPos = vision.CalculateTurretAngle360NEW(moveAwayTurret , xcoeff  ,ycoeff,robotPos,velX,velY,velH,gear,sec,leftTurretServo.getPosition(),turretZeroCorrection, turretZeroCorrection2,allianceColor) + turretCorrection;
+                turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,predictedPos,gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
-                flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(robotPos,velX,velY,moveAway, sec, flywheelCurrentVelocity, allianceColor));
+                flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(predictedPos, allianceColor));
 
             }
             pinpoint.update();
@@ -894,7 +896,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
                 leftHood.setPosition(lockedHoodHeight);
                 rightHood.setPosition(lockedHoodHeight);
             } else {
-                targetVelocity = vision.CalculatedFlywheelSpeed(robotPos, velX, velY, moveAway, sec, flywheelCurrentVelocity, allianceColor)
+                targetVelocity = vision.CalculatedFlywheelSpeed(predictedPos, allianceColor)
                         + flywheelCorrection;
                 leftHood.setPosition(hoodHeight);
                 rightHood.setPosition(hoodHeight);
@@ -945,17 +947,20 @@ public class FinalTeleopIntakeTesting extends OpMode {
         }
         telemetry.addData("Error", flywheelCurrentVelocity-targetVelocity );
         telemetry.addData("Correction",flywheelCorrection);
-        telemetry.addData("VelX", velX);
-        telemetry.addData("VelY",velY);
         telemetry.addData("distance", groundDistance);
-        telemetry.addData("AnchorX", AnchorxPos);
-        telemetry.addData("AnchorY", AnchoryPos);
-        telemetry.addData("robotPosX", -1 * robotPos.getY(DistanceUnit.METER));
-        telemetry.addData("robotPosY", robotPos.getX(DistanceUnit.METER));
-        telemetry.addData("Park? ", ParkModeEnabled);
-        telemetry.addData("xError", (AnchorxPos - (-1 * robotPos.getY(DistanceUnit.METER))) * 100);
-        telemetry.addData("yError", (AnchoryPos - robotPos.getX(DistanceUnit.METER)) * 100);
+        telemetry.addData("low voltage?", lowVoltage);
         if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {
+            telemetry.addData("Predicted Pos",predictedPos);
+            telemetry.addData("Robot Pos",robotPos);
+            telemetry.addData("VelX", velX);
+            telemetry.addData("VelY",velY);
+            telemetry.addData("AnchorX", AnchorxPos);
+            telemetry.addData("AnchorY", AnchoryPos);
+            telemetry.addData("robotPosX", -1 * robotPos.getY(DistanceUnit.METER));
+            telemetry.addData("robotPosY", robotPos.getX(DistanceUnit.METER));
+            telemetry.addData("Park? ", ParkModeEnabled);
+            telemetry.addData("xError", (AnchorxPos - (-1 * robotPos.getY(DistanceUnit.METER))) * 100);
+            telemetry.addData("yError", (AnchoryPos - robotPos.getX(DistanceUnit.METER)) * 100);
             telemetry.addData("current voltage, ", currentVoltage);
             telemetry.addData("leftturretservo",leftTurretServo.getPosition());
             telemetry.addData("rightturretservo",rightTurretServo.getPosition());
@@ -969,7 +974,6 @@ public class FinalTeleopIntakeTesting extends OpMode {
             telemetry.addData("looptime", timer.milliseconds());
             telemetry.addData("left kicker speed", leftKickerServo.getPower());
             telemetry.addData("right kicker speed", rightKickerServo.getPower());
-            telemetry.addData("low voltage?", lowVoltage);
             telemetry.addData("encoderposTurret", (turretEncoder.getVoltage()/ 3.2 * 360 ) % 360);
             telemetry.addData("rightBumperHeld", rightBumperHeld);
             telemetry.addData("rightBumperFirstTime", rightBumperFirstTime);

@@ -198,15 +198,10 @@ public class visionToolsClean {
         return vyEstimate;
     }
     public double CalculateTurretAngle360NEW(
-            double moveAway,
             double xcoeff,
             double ycoeff,
             Pose2D robotPos,
-            double xVelocity,
-            double yVelocity,
-            double headingVelocity,
             double gear,
-            double sec,
             double currentPos,
             double turretZero,
             double turretZero2,
@@ -404,52 +399,33 @@ public class visionToolsClean {
         return Range.clip(turretPos, 0.23, 0.65);
     }
 
-    public double CalculatedFlywheelSpeed(Pose2D robotPos, double xVelocity, double yVelocity, double moveAwayAdjustment, double sec, double currentVelocity, String allianceColor) {
-        double vx = xVelocity;
-        double vy = yVelocity;
-
+    public double CalculatedFlywheelSpeed(Pose2D robotPos, String allianceColor) {
         double px = robotPos.getX(DistanceUnit.METER);
         double py = robotPos.getY(DistanceUnit.METER);
         double currentDist = groundDistancePinpoint(px,py,allianceColor);
-        double flightTime = sec * (7.0 / 30.0) * currentDist + 0.05;
-
-        double[] accel = calculateAcceleration(vx, vy);
-        double acx = accel[0];
-        double acy = accel[1];
-
-        double ax = px + vx * flightTime + 0.5 * acx * flightTime * flightTime;
-        double ay = py + vy * flightTime + 0.5 * acy * flightTime * flightTime;
-        double estimatedDist = groundDistancePinpoint(ax,ay,allianceColor);
-        if(currentDist < estimatedDist){
-            flightTime = (sec+moveAwayAdjustment) * (7.0 / 30.0) * currentDist + 0.05;
-            ax = px+vx*flightTime;
-            ay = py+vy*flightTime;
-            estimatedDist = groundDistancePinpoint(ax,ay,allianceColor);
-        }
-
         double offset = 0.0508;
-        if(estimatedDist < 1.9) {
+        if(currentDist < 1.9) {
             offset = 0.0254;
         }
         double adjustedHeading =  robotPos.getHeading(AngleUnit.DEGREES)+ 90;
         if(adjustedHeading < 0 ){ adjustedHeading+= 360; }
-        estimatedDist = groundDistancePinpoint(ax,ay,allianceColor);
+        currentDist = groundDistancePinpoint(px,py,allianceColor);
 
-        double x = estimatedDist;
+        double x = currentDist;
         double x2 = x * x;
         double x3 = x2 * x;
         double x4 = x2 * x2;
         double x5 = x2 * x3;
         double x6 = x3 * x3;
         double speed = 0;
-        if(estimatedDist < 1.9) {
+        if(currentDist < 1.9) {
             speed = -14788.14168
                     + 37374.67489 * x
                     - 36462.94734 * x2
                     + 15555.54901 * x3
                     - 2469.13478 * x4;
 
-        }else if(estimatedDist < 2.75){
+        }else if(currentDist< 2.75){
             speed = 7915.76427
                     - 10649.81464 * x
                     + 4307.95413 * x2
@@ -466,14 +442,16 @@ public class visionToolsClean {
                     - 50.36368 * x6;
 
         }
-
-        if (currentDist == -1) {
-            return currentVelocity;
-        } else {
-            return speed;
-        }
+        return speed;
     }
 
+    public Pose2D predictPos(Pose2D currPos, double xVel, double yVel, double hVel,double sec,double turretSec){
+        double predX = xVel*sec + currPos.getX(DistanceUnit.MM);
+        double predY = yVel*sec + currPos.getY(DistanceUnit.MM);
+        double predH = hVel*turretSec + currPos.getHeading(AngleUnit.DEGREES);
+        Pose2D predictedPos = new Pose2D(DistanceUnit.MM,predX,predY,AngleUnit.DEGREES,predH);
+        return predictedPos;
+    }
     public Pose2D RRtoPinpoint(MecanumDrive drive) {
         Pose2d pose = drive.localizer.getPose();
         double x = -pose.position.x;
