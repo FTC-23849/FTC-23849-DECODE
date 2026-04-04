@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.Auto.Red;
+package org.firstinspires.ftc.teamcode.opmode.Auto.InDevelopment;
 
 import androidx.annotation.NonNull;
 
@@ -39,7 +39,7 @@ import java.util.function.Function;
 
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class RedCloseAuto15NewPID extends LinearOpMode {
+public class RedCloseAuto18NewPID extends LinearOpMode {
 
     // Initialize all hardware
     Limelight3A limelight;
@@ -77,12 +77,12 @@ public class RedCloseAuto15NewPID extends LinearOpMode {
 
     public static double gateIntakeTime = 0.7;
 
-    public static double minVelDrive = 75;
-    public static double minAccelDrive = -65;
-    public static double maxAccelDrive = 65;
+    public static double minVelDrive = 250;
+    public static double minAccelDrive = -90;
+    public static double maxAccelDrive = 120;
 
     public static double shooterStartDelay = 0.0;
-    public static double shootingDelay = 0.8;
+    public static double shootingDelay = 0.6;
 
     public static double intakeStopDelay = 0.4;
 
@@ -329,7 +329,7 @@ public class RedCloseAuto15NewPID extends LinearOpMode {
                                             drive.actionBuilder(pose)
                                                     .setTangent(0)
                                                     .splineToLinearHeading(
-                                                            new Pose2d(16, 60, Math.toRadians(90)), (Math.PI/2),
+                                                            new Pose2d(16, 66, Math.toRadians(90)), (Math.PI/2),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -418,7 +418,86 @@ public class RedCloseAuto15NewPID extends LinearOpMode {
                                     // Score Gate Path (from *current* pose)
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
-                                                    .strafeToConstantHeading(new Vector2d(17, 30))
+                                                    .strafeToLinearHeading(new Vector2d(17, 30), Math.toRadians(90),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive))
+                                                    .splineToSplineHeading(
+                                                            new Pose2d(-12, 15, Math.toRadians(90)), (Math.PI),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                    )
+                                                    .build()
+                                    ),
+                                    new SequentialAction(
+                                            new SleepAction(1),
+                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
+                                    )
+                            ),
+
+                            // Repeat for correction
+                            new PathFromCurrentPose(drive, pose ->
+                                    drive.actionBuilder(pose)
+                                            .strafeToLinearHeading(
+                                                    new Vector2d(-12, 15), Math.toRadians(90),
+                                                    new TranslationalVelConstraint(minVelDrive),
+                                                    new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                            )
+                                            .build()
+                            ),
+
+                            new SleepAction(shooterStartDelay),
+                            new kickerShoot(),
+                            new SleepAction(shootingDelay),
+
+                            // Open Gate 2
+
+                            new ParallelAction(
+                                    // Open Gate Path (from *current* pose)
+                                    new PathFromCurrentPose(drive, pose ->
+                                            drive.actionBuilder(pose)
+                                                    .strafeToConstantHeading(
+                                                            new Vector2d(3, 15),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                    )
+//                                                .setTangent(0)
+                                                    .splineToLinearHeading(
+                                                            new Pose2d(3, 54, Math.toRadians(90)), (Math.PI/2),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                    )
+                                                    .strafeToLinearHeading(
+                                                            new Vector2d(15, 63), Math.toRadians(135),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                    )
+                                                    .build()
+                                    ),
+                                    new kickerIdle(false),
+                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
+                            ),
+
+                            // repeat for correction
+                            new PathFromCurrentPose(drive, pose ->
+                                    drive.actionBuilder(pose)
+                                            .strafeToLinearHeading(
+                                                    new Vector2d(17, 63), Math.toRadians(135),
+                                                    new TranslationalVelConstraint(minVelDrive),
+                                                    new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                            )
+                                            .build()
+                            ),
+
+                            // Allow balls to get intaked
+                            new SleepAction(gateIntakeTime),
+
+                            new ParallelAction(
+                                    // Score Gate Path (from *current* pose)
+                                    new PathFromCurrentPose(drive, pose ->
+                                            drive.actionBuilder(pose)
+                                                    .strafeToLinearHeading(new Vector2d(17, 30), Math.toRadians(90),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive))
                                                     .splineToSplineHeading(
                                                             new Pose2d(-12, 15, Math.toRadians(90)), (Math.PI),
                                                             new TranslationalVelConstraint(minVelDrive),

@@ -111,7 +111,7 @@ public class BlueFarAutoCyclingBlob extends LinearOpMode {
 
     public static double stallGraceMs    = 400;  // ms
 
-    public static double intakeShootingSpeed = -1.0;
+    public static double intakeShootingSpeed = -0.9;
 
     public static double kickerSpeed = 1.0;
 
