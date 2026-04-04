@@ -78,7 +78,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public double velY;
     public double velH;
     public static double sec = 0.6;
-    public static double turretSec = 0.9;
+    public static double turretSec = 0.2;
     public static double lockedFlywheelVelocity = -920;
     public static double lockedHoodHeight = 0.15;
     public static double TargetVelocity = -1200;
@@ -133,8 +133,9 @@ public class FinalTeleopIntakeTesting extends OpMode {
     double lastYErrorLocked = 0;
 
     public static double kP_Lock = 0.16;
+    public static double kP_Lock_Small = 0.07;
     public static double kD_Lock = 0.0007;
-    public static double PosDeadband = 3;
+    public static double PIDDeadband = 8;
     public static double kPRot_Lock = 0.08;
     public static double kDRot_Lock = 0.00028;
     double lastTime = 0;
@@ -1291,15 +1292,20 @@ public class FinalTeleopIntakeTesting extends OpMode {
 
         xError = distanceFromAnchor* -Math.sin(relativeAngle);
         yError = distanceFromAnchor * Math.cos(relativeAngle);
-        if (distanceFromAnchor < PosDeadband) {
-            xError = 0;
-            yError = 0;
-        }
         double xDerivative = (xError - lastXErrorLocked) / dt;
         double yDerivative = (yError - lastYErrorLocked) / dt;
+        double xPower ;
+        double yPower;
 
-        double xPower = kP_Lock * Math.signum(xError) * Math.sqrt(Math.abs(xError)) + kD_Lock * xDerivative;
-        double yPower = kP_Lock * Math.signum(yError) * Math.sqrt(Math.abs(yError)) + kD_Lock * yDerivative;
+        if(distanceFromAnchor< PIDDeadband){
+            xPower = kP_Lock_Small * Math.signum(xError) * Math.sqrt(Math.abs(xError)) + kD_Lock * xDerivative;
+            yPower = kP_Lock_Small * Math.signum(yError) * Math.sqrt(Math.abs(yError)) + kD_Lock * yDerivative;
+
+        }else{
+            xPower = kP_Lock * Math.signum(xError) * Math.sqrt(Math.abs(xError)) + kD_Lock * xDerivative;
+            yPower = kP_Lock * Math.signum(yError) * Math.sqrt(Math.abs(yError)) + kD_Lock * yDerivative;
+
+        }
 
         lastXErrorLocked = xError;
         lastYErrorLocked = yError;
