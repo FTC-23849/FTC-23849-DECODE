@@ -330,7 +330,7 @@ public class WideRedFarAutoCyclingBlob extends LinearOpMode {
                             new PathFromCurrentPose(drive, pose ->
                                     drive.actionBuilder(pose)
                                             .strafeToLinearHeading(
-                                                    new Vector2d(36, 58), Math.toRadians(90),
+                                                    new Vector2d(36, 60), Math.toRadians(90),
                                                     new TranslationalVelConstraint(minVelDrive),
                                                     new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                             )

@@ -77,8 +77,11 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public double velX;
     public double velY;
     public double velH;
-    public static double sec = 0.6;
-    public static double turretSec = 0.2;
+    public static double sec = 0.4;
+    public static double turretSec = 0.9;
+    public static double rotationalSec = 0.2;
+    public static double moveAway = 1.4;
+    public static double moveAwayTurret = 0.9;
     public static double lockedFlywheelVelocity = -920;
     public static double lockedHoodHeight = 0.15;
     public static double TargetVelocity = -1200;
@@ -114,7 +117,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     boolean firstLoop = true;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
-    double turretCorrection = 0;
+    public static double turretCorrection = 0.011;
     boolean shooting;
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
@@ -428,7 +431,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
         velX = pinpoint.getVelX(DistanceUnit.MM);
         velY = pinpoint.getVelY(DistanceUnit.MM);
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
-        predictedPos = vision.predictPos(robotPos,velX,velY,velH,sec,turretSec);
+        predictedPos = vision.predictPos(allianceColor,robotPos,velX,velY,velH,sec, rotationalSec,moveAway);
         hoodHeight = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
         turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,predictedPos,gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
@@ -554,10 +557,10 @@ public class FinalTeleopIntakeTesting extends OpMode {
             velX = pinpoint.getVelX(DistanceUnit.MM);
             velY = pinpoint.getVelY(DistanceUnit.MM);
             velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
-            predictedPos = vision.predictPos(robotPos,velX,velY,velH,sec,turretSec);
+            predictedPos = vision.predictPos(allianceColor,robotPos,velX,velY,velH,sec, rotationalSec,moveAway);
             if(leftBumperTrue){
-                hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-                turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,predictedPos,gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
+                hoodHeight = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
+                turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,vision.predictPos(allianceColor,robotPos,velX,velY,velH,turretSec, rotationalSec,moveAwayTurret),gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
                 flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(predictedPos, allianceColor));
 
@@ -871,7 +874,6 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //            rightTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight, 2) + turretCorrection);
 //        }
         if (gamepad1.x) {
-            turretCorrection = 0;
             //vision.mt2pinpoint(pinpoint, limelight);
             vision.mt1pinpoint(red,blue,pinpoint,allianceColor, limelight);
         }
@@ -947,7 +949,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
             rightTipper.setPosition(Globals.tipperExtended);
         }
         telemetry.addData("Error", flywheelCurrentVelocity-targetVelocity );
-        telemetry.addData("Correction",flywheelCorrection);
+        telemetry.addData("flywheel Correction",flywheelCorrection);
+        telemetry.addData("turret Correction",turretCorrection);
         telemetry.addData("distance", groundDistance);
         telemetry.addData("low voltage?", lowVoltage);
         if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {

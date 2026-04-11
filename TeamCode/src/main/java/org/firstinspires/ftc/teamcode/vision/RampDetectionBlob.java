@@ -69,7 +69,7 @@ public class RampDetectionBlob extends LinearOpMode {
 
         camera.setPipeline(new BallDetectionPipeline());
         camera.openCameraDevice();
-        camera.startStreaming(camWidth, camHeight, OpenCvCameraRotation.UPSIDE_DOWN);
+        camera.startStreaming(camWidth, camHeight, OpenCvCameraRotation.UPRIGHT);
         camera.showFpsMeterOnViewport(false);
     }
 
