@@ -66,7 +66,7 @@ public class BlobDetector {
 
     public void start() {
         camera.openCameraDevice();
-        camera.startStreaming(camWidth, camHeight, OpenCvCameraRotation.UPSIDE_DOWN);
+        camera.startStreaming(camWidth, camHeight, OpenCvCameraRotation.UPRIGHT);
         camera.showFpsMeterOnViewport(false);
 
     }

@@ -16,19 +16,19 @@ public class RampDetector {
     public double PURPLE_V_LOW = 30;
 
     public double PURPLE_H_HIGH = 155;
-    public double PURPLE_S_HIGH = 240;
+    public double PURPLE_S_HIGH = 254;
     public double PURPLE_V_HIGH = 240;
 
-    public double GREEN_H_LOW = 65;
+    public double GREEN_H_LOW = 55;
     public double GREEN_S_LOW = 82;
     public double GREEN_V_LOW = 30;
 
     public double GREEN_H_HIGH = 89;
     public double GREEN_S_HIGH = 255;
-    public double GREEN_V_HIGH = 220;
+    public double GREEN_V_HIGH = 255;
 
-    public double MIN_BLOB_AREA = 10.0;
-    public double MAX_BLOB_AREA = 100.0;
+    public double MIN_BLOB_AREA = 50.0;
+    public double MAX_BLOB_AREA = 400.0;
 
     private volatile int ballCount = 0;
 
