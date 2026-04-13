@@ -103,6 +103,11 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //    public static double VkS = 0;
 //    public static double VkV = 0.00042;
     public static double shotSpeed = 0.9;
+    public static double defaultShotSpeed = 0.9;
+    public static double lowBatteryShotSpeed = 0.7;
+    public static double lockedPosShotSpeed = 0.7;
+    public static double moveTowardsGoalshotSpeed = 0.85;
+    public static double moveAwayFromGoalshotSpeed = 0.75;
     public static double KpMaintain = 0.003;
     public static double KiMaintain = 0.002;
 
@@ -794,13 +799,13 @@ public class FinalTeleopIntakeTesting extends OpMode {
                             Math.pow(predictedPos.getY(DistanceUnit.CM) - goalY, 2)
             );
 
-            shotSpeed = predictedDist > actualDist ? 0.65 : 0.75;
+            shotSpeed = predictedDist > actualDist ? moveAwayFromGoalshotSpeed : moveTowardsGoalshotSpeed;
         }else if(lowVoltage){
-            shotSpeed = 0.7;
+            shotSpeed = lowBatteryShotSpeed;
         }else if(LockedModeEnabled){
-            shotSpeed = 0.7;
+            shotSpeed = lockedPosShotSpeed;
         }else{
-            shotSpeed = 0.9;
+            shotSpeed = defaultShotSpeed;
 
         }if(gamepad1.start){
             pinpoint.recalibrateIMU();
