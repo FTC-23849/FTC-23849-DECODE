@@ -73,15 +73,22 @@ public class FinalTeleopIntakeTesting extends OpMode {
     private PIDVelocityController3 velocityPID;
     public Pose2D robotPos;
     public Pose2D predictedPos;
+    public double predDistance;
     public static double currentVelocity;
     public double velX;
     public double velY;
     public double velH;
-    public static double sec = 0.4;
-    public static double turretSec = 0.9;
-    public static double rotationalSec = 0.2;
-    public static double moveAway = 1.4;
-    public static double moveAwayTurret = 0.9;
+    public static double moveAwayFar = 1.2;
+    public static double moveAwayTurretFar = 1.4;
+    public static double secFar = 0.8;
+    public static double turretSecFar = 1.1;
+
+    public static double moveAwayClose = 1.2;
+    public static double moveAwayTurretClose = 1.2;
+    public static double secClose = 0.6;
+    public static double turretSecClose = 0.9;
+
+    public static double rotationalSec = 0;
     public static double lockedFlywheelVelocity = -920;
     public static double lockedHoodHeight = 0.15;
     public static double TargetVelocity = -1200;
@@ -431,7 +438,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
         velX = pinpoint.getVelX(DistanceUnit.MM);
         velY = pinpoint.getVelY(DistanceUnit.MM);
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
-        predictedPos = vision.predictPos(allianceColor,robotPos,velX,velY,velH,sec, rotationalSec,moveAway);
+        predictedPos = vision.predictPos(allianceColor,robotPos,velX,velY,velH,secFar, rotationalSec,moveAwayFar);
         hoodHeight = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
         turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,predictedPos,gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
@@ -524,6 +531,12 @@ public class FinalTeleopIntakeTesting extends OpMode {
         lastTime = currentTime;
         if(dt <= 0) dt = 0.001;
 
+        boolean isFarZone = robotPos.getX(DistanceUnit.MM) <= 0;
+        double moveAway       = isFarZone ? moveAwayFar       : moveAwayClose;
+        double moveAwayTurret = isFarZone ? moveAwayTurretFar : moveAwayTurretClose;
+        double sec            = isFarZone ? secFar            : secClose;
+        double turretSec      = isFarZone ? turretSecFar      : turretSecClose;
+
         for (LynxModule hub : hubs) {
             hub.clearBulkCache();
         }
@@ -550,14 +563,18 @@ public class FinalTeleopIntakeTesting extends OpMode {
         currentVoltage = myControlHubVoltageSensor.getVoltage();
         double now = runTime.milliseconds();
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
+            robotPos = pinpoint.getPosition();
             if(LockedModeEnabled ^ ParkModeEnabled){
                 runLockedPos(robotPos, dt);
             }
-            robotPos = pinpoint.getPosition();
             velX = pinpoint.getVelX(DistanceUnit.MM);
             velY = pinpoint.getVelY(DistanceUnit.MM);
             velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
             predictedPos = vision.predictPos(allianceColor,robotPos,velX,velY,velH,sec, rotationalSec,moveAway);
+            predDistance = Math.sqrt(
+                    Math.pow(predictedPos.getX(DistanceUnit.CM) - robotPos.getX(DistanceUnit.CM), 2) +
+                            Math.pow(predictedPos.getY(DistanceUnit.CM) - robotPos.getY(DistanceUnit.CM), 2)
+            );
             if(leftBumperTrue){
                 hoodHeight = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
                 turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,vision.predictPos(allianceColor,robotPos,velX,velY,velH,turretSec, rotationalSec,moveAwayTurret),gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
@@ -764,16 +781,31 @@ public class FinalTeleopIntakeTesting extends OpMode {
         if(gamepad2.bWasReleased()){
             lowVoltage=!lowVoltage;
         }
-        if(lowVoltage){
+        if (predDistance > 10) {
+            double goalX = allianceColor.equals("Red") ? -165 : 165;
+            double goalY = 0;
+
+            double actualDist = Math.sqrt(
+                    Math.pow(robotPos.getX(DistanceUnit.CM) - goalX, 2) +
+                            Math.pow(robotPos.getY(DistanceUnit.CM) - goalY, 2)
+            );
+            double predictedDist = Math.sqrt(
+                    Math.pow(predictedPos.getX(DistanceUnit.CM) - goalX, 2) +
+                            Math.pow(predictedPos.getY(DistanceUnit.CM) - goalY, 2)
+            );
+
+            shotSpeed = predictedDist > actualDist ? 0.65 : 0.75;
+        }else if(lowVoltage){
+            shotSpeed = 0.7;
+        }else if(LockedModeEnabled){
             shotSpeed = 0.7;
         }else{
             shotSpeed = 0.9;
 
-        }        if(gamepad1.start){
+        }if(gamepad1.start){
             pinpoint.recalibrateIMU();
         }
         if(gamepad1.right_bumper){
-            shotSpeed = 0.7;
             if(!rightBumperHeld){
                 rightBumperFirstTime = true;
             }
