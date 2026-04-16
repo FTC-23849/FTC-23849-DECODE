@@ -52,6 +52,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     CRServoImplEx leftKickerServo;
     ServoImplEx leftTurretServo;
     ServoImplEx rightTurretServo;
+    ServoImplEx frontTurretServo;
     CRServoImplEx rightKickerServo;
     DcMotorEx leftShooterMotor;
     DcMotorEx rightShooterMotor;
@@ -365,6 +366,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
 
         leftTurretServo = hardwareMap.get(ServoImplEx.class, "leftTurretServo");
         rightTurretServo = hardwareMap.get(ServoImplEx.class, "rightTurretServo");
+        frontTurretServo = hardwareMap.get(ServoImplEx.class, "frontTurretServo");
 
         leftTongueServo = hardwareMap.get(ServoImplEx.class, "leftGateServo");
         rightTongueServo = hardwareMap.get(ServoImplEx.class, "rightGateServo");
@@ -386,6 +388,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
         kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
         leftTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
         rightTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
+        frontTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
 //        leftTurretServo.setPosition(0.5);
 //        rightTurretServo.setPosition(0.5);
 //
@@ -558,6 +561,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
         if(firstLoop){
             leftTurretServo.setPosition(0.5+turretZeroCorrection);
             rightTurretServo.setPosition(0.5+turretZeroCorrection);
+            frontTurretServo.setPosition(0.5+turretZeroCorrection);
 
             leftTongueServo.setPosition(Globals.tongueIntake);
             rightTongueServo.setPosition(Globals.tongueIntake);
@@ -854,6 +858,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
             if(!useTurret) {
                 leftTurretServo.setPosition(0.5+turretZeroCorrection);
                 rightTurretServo.setPosition(0.5+turretZeroCorrection);
+                frontTurretServo.setPosition(0.5+turretZeroCorrection);
             }
         }
         if (gamepad2.rightBumperWasReleased()){
@@ -961,6 +966,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
             //telemetry.addData("slowing down flywheel", 0);
             leftTurretServo.setPosition(0.5+turretZeroCorrection);
             rightTurretServo.setPosition(0.5+turretZeroCorrection);
+            frontTurretServo.setPosition(0.5+turretZeroCorrection);
 
             leftShooterMotor.setPower(0);
             rightShooterMotor.setPower(0);
@@ -975,6 +981,9 @@ public class FinalTeleopIntakeTesting extends OpMode {
                         turretPos
                 );
                 rightTurretServo.setPosition(
+                        turretPos
+                );
+                frontTurretServo.setPosition(
                         turretPos
                 );
             }
@@ -1005,6 +1014,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
             telemetry.addData("current voltage, ", currentVoltage);
             telemetry.addData("leftturretservo",leftTurretServo.getPosition());
             telemetry.addData("rightturretservo",rightTurretServo.getPosition());
+            telemetry.addData("frontturretservo",frontTurretServo.getPosition());
             telemetry.addData("pinpoint turret",turretPos);
             telemetry.addData("flywheel", flywheelCurrentVelocity);
             telemetry.addData("flywheell", leftShooterMotor.getVelocity() );
