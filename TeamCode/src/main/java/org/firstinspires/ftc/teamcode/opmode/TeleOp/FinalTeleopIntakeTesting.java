@@ -84,20 +84,20 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double secFar = 0.8;
     public static double turretSecFar = 1.1;
 
-    public static double moveAwayClose = 1.2;
-    public static double moveAwayTurretClose = 1.2;
+    public static double moveAwayClose = 2;
+    public static double moveAwayTurretClose = 0.6;
     public static double secClose = 0.6;
-    public static double turretSecClose = 0.9;
+    public static double turretSecClose = 0.8;
 
-    public static double rotationalSec = 0;
+    public static double rotationalSec = 0.1;
     public static double lockedFlywheelVelocity = -920;
     public static double lockedHoodHeight = 0.15;
     public static double TargetVelocity = -1200;
     public static double red = 0;
     public static double blue = 0;
     //more for left, less for right
-    public static double turretZeroCorrection = 0.0025;
-    public static double turretZeroCorrection2 = -0.006;
+    public static double turretZeroCorrection = -0.006;
+    public static double turretZeroCorrection2 = -0.018;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
