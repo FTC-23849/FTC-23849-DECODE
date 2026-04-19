@@ -670,8 +670,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //        int tagID = 0;
 //        for (LLResultTypes.FiducialResult fiducial : fiducials) {
 //            tagID = fiducial.getFiducialId();
-//        }
-//        telemetry.addData("Tag ID", tagID);
+//        telemetry.addData("Tag ID//        }", tagID);
 
         // -------------------- INTAKE / KICKERS / TONGUE -------------------
         // Disabled ONLY when recycle owns these actuators
@@ -707,35 +706,20 @@ public class FinalTeleopIntakeTesting extends OpMode {
                 leftTongueServo.setPosition(Globals.tongueShoot);
                 rightTongueServo.setPosition(Globals.tongueShoot);
 
-                //frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed*shotSpeed);
-                leftKickerServo.setPower(Globals.rollerKickerShoot);
-                rightKickerServo.setPower(Globals.rollerKickerShoot);
-
-//                if (groundDistance> 2.88) {
-//                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
-//                        leftKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
-//                        rightKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
-//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//                        frontIntakeMotor.setPower(-1*Globals.frontIntakeShootSpeed);
-//                    } else {
-//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//                        frontIntakeMotor.setPower(0.7);
-//                    }
-//                } else {
-//                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
-//                        leftKickerServo.setPower(Globals.rollerKickerShoot);
-//                        rightKickerServo.setPower(Globals.rollerKickerShoot);
-//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//                        frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
-//                    } else {
-//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//                        frontIntakeMotor.setPower(0.5);
-//                    }
-//                }
+                if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
+                    leftKickerServo.setPower(Globals.rollerKickerShoot);
+                    rightKickerServo.setPower(Globals.rollerKickerShoot);
+                    frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed*shotSpeed);
+                    backIntakeMotor.setPower(-Globals.backIntakeShootSpeed*shotSpeed);
+                } else {
+                    frontIntakeMotor.setPower(0.7);
+                    leftKickerServo.setPower(Globals.rollerKickerShoot);
+                    rightKickerServo.setPower(Globals.rollerKickerShoot);
+                }
+//
+//
 
                 //backIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                backIntakeMotor.setPower(-Globals.backIntakeShootSpeed*shotSpeed);
                 shooting = true;
 
             } else if (gamepad1.dpad_up) {
