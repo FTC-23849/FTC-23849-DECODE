@@ -706,6 +706,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
                 leftTongueServo.setPosition(Globals.tongueShoot);
                 rightTongueServo.setPosition(Globals.tongueShoot);
 
+
                 if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
                     leftKickerServo.setPower(Globals.rollerKickerShoot);
                     rightKickerServo.setPower(Globals.rollerKickerShoot);
