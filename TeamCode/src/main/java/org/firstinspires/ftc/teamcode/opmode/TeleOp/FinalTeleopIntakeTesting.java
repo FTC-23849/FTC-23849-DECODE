@@ -97,7 +97,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double blue = 0;
     //more for left, less for right
     public static double turretZeroCorrection = -0.006;
-    public static double turretZeroCorrection2 = -0.018;
+    public static double turretZeroCorrection2 = -0.008;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
@@ -124,7 +124,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double recoveryThreshold = 60;
     public static double maintainThreshold = 40;
     public static double defaultVoltage = 13.15;
-    public static double gear = 13;
+    public static double gear = 12.5;
     double currentVoltage;
     double closezone = 1;
     boolean firstLoop = true;
