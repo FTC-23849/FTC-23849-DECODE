@@ -68,7 +68,7 @@ public class Globals {
     public static double KICKER_RECYCLE = 0.31;
 
     //new kicker
-    public static double kickerStartDelay = 200;
+    public static double kickerStartDelay = 100;
 
 
     // Shooter

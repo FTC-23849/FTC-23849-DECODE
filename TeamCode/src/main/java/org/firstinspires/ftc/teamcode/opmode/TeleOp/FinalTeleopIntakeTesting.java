@@ -52,6 +52,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     CRServoImplEx leftKickerServo;
     ServoImplEx leftTurretServo;
     ServoImplEx rightTurretServo;
+    ServoImplEx frontTurretServo;
     CRServoImplEx rightKickerServo;
     DcMotorEx leftShooterMotor;
     DcMotorEx rightShooterMotor;
@@ -73,26 +74,41 @@ public class FinalTeleopIntakeTesting extends OpMode {
     private PIDVelocityController3 velocityPID;
     public Pose2D robotPos;
     public Pose2D predictedPos;
+    public double predDistance;
     public static double currentVelocity;
     public double velX;
     public double velY;
     public double velH;
-    public static double sec = 0.6;
-    public static double turretSec = 0.9;
+    public static double moveAwayFar = 1.2;
+    public static double moveAwayTurretFar = 1.4;
+    public static double secFar = 0.8;
+    public static double turretSecFar = 1.1;
+
+    public static double moveAwayClose = 2;
+    public static double moveAwayTurretClose = 0.6;
+    public static double secClose = 0.6;
+    public static double turretSecClose = 0.8;
+
+    public static double rotationalSec = 0.1;
     public static double lockedFlywheelVelocity = -920;
     public static double lockedHoodHeight = 0.15;
     public static double TargetVelocity = -1200;
     public static double red = 0;
     public static double blue = 0;
     //more for left, less for right
-    public static double turretZeroCorrection = 0.0025;
-    public static double turretZeroCorrection2 = -0.006;
+    public static double turretZeroCorrection = -0.006;
+    public static double turretZeroCorrection2 = -0.018;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
 //    public static double VkS = 0;
 //    public static double VkV = 0.00042;
     public static double shotSpeed = 0.9;
+    public static double defaultShotSpeed = 0.9;
+    public static double lowBatteryShotSpeed = 0.7;
+    public static double lockedPosShotSpeed = 0.7;
+    public static double moveTowardsGoalshotSpeed = 0.85;
+    public static double moveAwayFromGoalshotSpeed = 0.75;
     public static double KpMaintain = 0.003;
     public static double KiMaintain = 0.002;
 
@@ -114,7 +130,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     boolean firstLoop = true;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
-    double turretCorrection = 0;
+    public static double turretCorrection = 0.011;
     boolean shooting;
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
@@ -133,8 +149,9 @@ public class FinalTeleopIntakeTesting extends OpMode {
     double lastYErrorLocked = 0;
 
     public static double kP_Lock = 0.16;
+    public static double kP_Lock_Small = 0.07;
     public static double kD_Lock = 0.0007;
-    public static double PosDeadband = 3;
+    public static double PIDDeadband = 8;
     public static double kPRot_Lock = 0.08;
     public static double kDRot_Lock = 0.00028;
     double lastTime = 0;
@@ -349,6 +366,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
 
         leftTurretServo = hardwareMap.get(ServoImplEx.class, "leftTurretServo");
         rightTurretServo = hardwareMap.get(ServoImplEx.class, "rightTurretServo");
+        frontTurretServo = hardwareMap.get(ServoImplEx.class, "frontTurretServo");
 
         leftTongueServo = hardwareMap.get(ServoImplEx.class, "leftGateServo");
         rightTongueServo = hardwareMap.get(ServoImplEx.class, "rightGateServo");
@@ -370,6 +388,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
         kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
         leftTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
         rightTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
+        frontTurretServo.setPwmRange(new PwmControl.PwmRange(500,2500));
 //        leftTurretServo.setPosition(0.5);
 //        rightTurretServo.setPosition(0.5);
 //
@@ -427,7 +446,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
         velX = pinpoint.getVelX(DistanceUnit.MM);
         velY = pinpoint.getVelY(DistanceUnit.MM);
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
-        predictedPos = vision.predictPos(robotPos,velX,velY,velH,sec,turretSec);
+        predictedPos = vision.predictPos(allianceColor,robotPos,velX,velY,velH,secFar, rotationalSec,moveAwayFar);
         hoodHeight = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
         turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,predictedPos,gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
@@ -520,6 +539,12 @@ public class FinalTeleopIntakeTesting extends OpMode {
         lastTime = currentTime;
         if(dt <= 0) dt = 0.001;
 
+        boolean isFarZone = robotPos.getX(DistanceUnit.MM) <= 0;
+        double moveAway       = isFarZone ? moveAwayFar       : moveAwayClose;
+        double moveAwayTurret = isFarZone ? moveAwayTurretFar : moveAwayTurretClose;
+        double sec            = isFarZone ? secFar            : secClose;
+        double turretSec      = isFarZone ? turretSecFar      : turretSecClose;
+
         for (LynxModule hub : hubs) {
             hub.clearBulkCache();
         }
@@ -536,6 +561,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
         if(firstLoop){
             leftTurretServo.setPosition(0.5+turretZeroCorrection);
             rightTurretServo.setPosition(0.5+turretZeroCorrection);
+            frontTurretServo.setPosition(0.5+turretZeroCorrection);
 
             leftTongueServo.setPosition(Globals.tongueIntake);
             rightTongueServo.setPosition(Globals.tongueIntake);
@@ -546,17 +572,21 @@ public class FinalTeleopIntakeTesting extends OpMode {
         currentVoltage = myControlHubVoltageSensor.getVoltage();
         double now = runTime.milliseconds();
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
+            robotPos = pinpoint.getPosition();
             if(LockedModeEnabled ^ ParkModeEnabled){
                 runLockedPos(robotPos, dt);
             }
-            robotPos = pinpoint.getPosition();
             velX = pinpoint.getVelX(DistanceUnit.MM);
             velY = pinpoint.getVelY(DistanceUnit.MM);
             velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
-            predictedPos = vision.predictPos(robotPos,velX,velY,velH,sec,turretSec);
+            predictedPos = vision.predictPos(allianceColor,robotPos,velX,velY,velH,sec, rotationalSec,moveAway);
+            predDistance = Math.sqrt(
+                    Math.pow(predictedPos.getX(DistanceUnit.CM) - robotPos.getX(DistanceUnit.CM), 2) +
+                            Math.pow(predictedPos.getY(DistanceUnit.CM) - robotPos.getY(DistanceUnit.CM), 2)
+            );
             if(leftBumperTrue){
-                hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
-                turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,predictedPos,gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
+                hoodHeight = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
+                turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,vision.predictPos(allianceColor,robotPos,velX,velY,velH,turretSec, rotationalSec,moveAwayTurret),gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
                 flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(predictedPos, allianceColor));
 
@@ -640,8 +670,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //        int tagID = 0;
 //        for (LLResultTypes.FiducialResult fiducial : fiducials) {
 //            tagID = fiducial.getFiducialId();
-//        }
-//        telemetry.addData("Tag ID", tagID);
+//        telemetry.addData("Tag ID//        }", tagID);
 
         // -------------------- INTAKE / KICKERS / TONGUE -------------------
         // Disabled ONLY when recycle owns these actuators
@@ -677,35 +706,21 @@ public class FinalTeleopIntakeTesting extends OpMode {
                 leftTongueServo.setPosition(Globals.tongueShoot);
                 rightTongueServo.setPosition(Globals.tongueShoot);
 
-                //frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed*shotSpeed);
-                leftKickerServo.setPower(Globals.rollerKickerShoot);
-                rightKickerServo.setPower(Globals.rollerKickerShoot);
 
-//                if (groundDistance> 2.88) {
-//                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
-//                        leftKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
-//                        rightKickerServo.setPower(Globals.rollerKickerShoot * 0.5);
-//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//                        frontIntakeMotor.setPower(-1*Globals.frontIntakeShootSpeed);
-//                    } else {
-//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//                        frontIntakeMotor.setPower(0.7);
-//                    }
-//                } else {
-//                    if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
-//                        leftKickerServo.setPower(Globals.rollerKickerShoot);
-//                        rightKickerServo.setPower(Globals.rollerKickerShoot);
-//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//                        frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed);
-//                    } else {
-//                        frontIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//                        frontIntakeMotor.setPower(0.5);
-//                    }
-//                }
+                if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay) {
+                    leftKickerServo.setPower(Globals.rollerKickerShoot);
+                    rightKickerServo.setPower(Globals.rollerKickerShoot);
+                    frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed*shotSpeed);
+                    backIntakeMotor.setPower(-Globals.backIntakeShootSpeed*shotSpeed);
+                } else {
+                    frontIntakeMotor.setPower(0.7);
+                    leftKickerServo.setPower(Globals.rollerKickerShoot);
+                    rightKickerServo.setPower(Globals.rollerKickerShoot);
+                }
+//
+//
 
                 //backIntakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                backIntakeMotor.setPower(-Globals.backIntakeShootSpeed*shotSpeed);
                 shooting = true;
 
             } else if (gamepad1.dpad_up) {
@@ -760,16 +775,31 @@ public class FinalTeleopIntakeTesting extends OpMode {
         if(gamepad2.bWasReleased()){
             lowVoltage=!lowVoltage;
         }
-        if(lowVoltage){
-            shotSpeed = 0.7;
-        }else{
-            shotSpeed = 0.9;
+        if (predDistance > 10) {
+            double goalX = allianceColor.equals("Red") ? -165 : 165;
+            double goalY = 0;
 
-        }        if(gamepad1.start){
+            double actualDist = Math.sqrt(
+                    Math.pow(robotPos.getX(DistanceUnit.CM) - goalX, 2) +
+                            Math.pow(robotPos.getY(DistanceUnit.CM) - goalY, 2)
+            );
+            double predictedDist = Math.sqrt(
+                    Math.pow(predictedPos.getX(DistanceUnit.CM) - goalX, 2) +
+                            Math.pow(predictedPos.getY(DistanceUnit.CM) - goalY, 2)
+            );
+
+            shotSpeed = predictedDist > actualDist ? moveAwayFromGoalshotSpeed : moveTowardsGoalshotSpeed;
+        }else if(lowVoltage){
+            shotSpeed = lowBatteryShotSpeed;
+        }else if(LockedModeEnabled){
+            shotSpeed = lockedPosShotSpeed;
+        }else{
+            shotSpeed = defaultShotSpeed;
+
+        }if(gamepad1.start){
             pinpoint.recalibrateIMU();
         }
         if(gamepad1.right_bumper){
-            shotSpeed = 0.7;
             if(!rightBumperHeld){
                 rightBumperFirstTime = true;
             }
@@ -813,6 +843,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
             if(!useTurret) {
                 leftTurretServo.setPosition(0.5+turretZeroCorrection);
                 rightTurretServo.setPosition(0.5+turretZeroCorrection);
+                frontTurretServo.setPosition(0.5+turretZeroCorrection);
             }
         }
         if (gamepad2.rightBumperWasReleased()){
@@ -870,7 +901,6 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //            rightTurretServo.setPosition(vision.adjustedTurretAngle(position, limelight, 2) + turretCorrection);
 //        }
         if (gamepad1.x) {
-            turretCorrection = 0;
             //vision.mt2pinpoint(pinpoint, limelight);
             vision.mt1pinpoint(red,blue,pinpoint,allianceColor, limelight);
         }
@@ -921,6 +951,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
             //telemetry.addData("slowing down flywheel", 0);
             leftTurretServo.setPosition(0.5+turretZeroCorrection);
             rightTurretServo.setPosition(0.5+turretZeroCorrection);
+            frontTurretServo.setPosition(0.5+turretZeroCorrection);
 
             leftShooterMotor.setPower(0);
             rightShooterMotor.setPower(0);
@@ -937,6 +968,9 @@ public class FinalTeleopIntakeTesting extends OpMode {
                 rightTurretServo.setPosition(
                         turretPos
                 );
+                frontTurretServo.setPosition(
+                        turretPos
+                );
             }
         }
 
@@ -946,7 +980,8 @@ public class FinalTeleopIntakeTesting extends OpMode {
             rightTipper.setPosition(Globals.tipperExtended);
         }
         telemetry.addData("Error", flywheelCurrentVelocity-targetVelocity );
-        telemetry.addData("Correction",flywheelCorrection);
+        telemetry.addData("flywheel Correction",flywheelCorrection);
+        telemetry.addData("turret Correction",turretCorrection);
         telemetry.addData("distance", groundDistance);
         telemetry.addData("low voltage?", lowVoltage);
         if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {
@@ -964,6 +999,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
             telemetry.addData("current voltage, ", currentVoltage);
             telemetry.addData("leftturretservo",leftTurretServo.getPosition());
             telemetry.addData("rightturretservo",rightTurretServo.getPosition());
+            telemetry.addData("frontturretservo",frontTurretServo.getPosition());
             telemetry.addData("pinpoint turret",turretPos);
             telemetry.addData("flywheel", flywheelCurrentVelocity);
             telemetry.addData("flywheell", leftShooterMotor.getVelocity() );
@@ -1291,15 +1327,20 @@ public class FinalTeleopIntakeTesting extends OpMode {
 
         xError = distanceFromAnchor* -Math.sin(relativeAngle);
         yError = distanceFromAnchor * Math.cos(relativeAngle);
-        if (distanceFromAnchor < PosDeadband) {
-            xError = 0;
-            yError = 0;
-        }
         double xDerivative = (xError - lastXErrorLocked) / dt;
         double yDerivative = (yError - lastYErrorLocked) / dt;
+        double xPower ;
+        double yPower;
 
-        double xPower = kP_Lock * Math.signum(xError) * Math.sqrt(Math.abs(xError)) + kD_Lock * xDerivative;
-        double yPower = kP_Lock * Math.signum(yError) * Math.sqrt(Math.abs(yError)) + kD_Lock * yDerivative;
+        if(distanceFromAnchor< PIDDeadband){
+            xPower = kP_Lock_Small * Math.signum(xError) * Math.sqrt(Math.abs(xError)) + kD_Lock * xDerivative;
+            yPower = kP_Lock_Small * Math.signum(yError) * Math.sqrt(Math.abs(yError)) + kD_Lock * yDerivative;
+
+        }else{
+            xPower = kP_Lock * Math.signum(xError) * Math.sqrt(Math.abs(xError)) + kD_Lock * xDerivative;
+            yPower = kP_Lock * Math.signum(yError) * Math.sqrt(Math.abs(yError)) + kD_Lock * yDerivative;
+
+        }
 
         lastXErrorLocked = xError;
         lastYErrorLocked = yError;

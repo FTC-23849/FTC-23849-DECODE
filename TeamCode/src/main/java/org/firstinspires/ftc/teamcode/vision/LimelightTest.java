@@ -43,6 +43,8 @@ public class LimelightTest extends OpMode {
             telemetry.addData("Ty",llResult.getTy());
             telemetry.addData("Ta",llResult.getTa());
 
+        }else{
+            telemetry.addLine("not detecting anything");
         }
     }
 }

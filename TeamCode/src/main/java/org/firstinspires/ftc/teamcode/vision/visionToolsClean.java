@@ -223,13 +223,13 @@ public class visionToolsClean {
         double sinH = Math.sin(Math.toRadians(adjustedHeading));
         double cosH = Math.cos(Math.toRadians(adjustedHeading));
 
-        double curX = robotX + xcoeff * cosH * turretOffsetMeters;
-        double curY = robotY + ycoeff * sinH * turretOffsetMeters;
+        double curX = robotX + turretOffsetMeters * (xcoeff * cosH - ycoeff * sinH);
+        double curY = robotY + turretOffsetMeters * (xcoeff * sinH + ycoeff * cosH);
 
 
         double goalY = 1.8288;
-        double goalXRed = 1.6788;
-        double goalXBlue = -1.6788;
+        double goalXRed = 1.8288;
+        double goalXBlue = -1.8288;
         if(yPos > 0){
             goalY = 1.6788;
         }
@@ -419,14 +419,14 @@ public class visionToolsClean {
         double x6 = x3 * x3;
         double speed = 0;
         if(currentDist < 1.9) {
-            speed = -14788.14168
+            speed = -14808.14168
                     + 37374.67489 * x
                     - 36462.94734 * x2
                     + 15555.54901 * x3
                     - 2469.13478 * x4;
 
         }else if(currentDist< 2.75){
-            speed = 7915.76427
+            speed = 7895.76427
                     - 10649.81464 * x
                     + 4307.95413 * x2
                     - 586.52521 * x3;
@@ -445,9 +445,15 @@ public class visionToolsClean {
         return speed;
     }
 
-    public Pose2D predictPos(Pose2D currPos, double xVel, double yVel, double hVel,double sec,double turretSec){
+    public Pose2D predictPos(String allianceColor,Pose2D currPos, double xVel, double yVel, double hVel,double sec,double turretSec, double moveAway){
         double predX = xVel*sec + currPos.getX(DistanceUnit.MM);
         double predY = yVel*sec + currPos.getY(DistanceUnit.MM);
+        double currDist = groundDistancePinpoint(currPos.getX(DistanceUnit.METER),currPos.getY(DistanceUnit.METER),allianceColor);
+        double predDist = groundDistancePinpoint(predX/1000,predY/1000,allianceColor);
+        if(predDist>currDist){
+            predX = xVel*moveAway + currPos.getX(DistanceUnit.MM);
+            predY = yVel*moveAway + currPos.getY(DistanceUnit.MM);
+        }
         double predH = hVel*turretSec + currPos.getHeading(AngleUnit.DEGREES);
         Pose2D predictedPos = new Pose2D(DistanceUnit.MM,predX,predY,AngleUnit.DEGREES,predH);
         return predictedPos;
