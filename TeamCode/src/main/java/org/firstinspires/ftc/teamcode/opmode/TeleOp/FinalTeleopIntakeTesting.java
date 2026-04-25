@@ -129,7 +129,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     boolean firstLoop = true;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
-    public static double turretCorrection = 0.01;
+    public static double turretCorrection = 0.004;
     boolean shooting;
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
@@ -448,7 +448,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
         predictedPos = vision.predictPos(allianceColor,robotPos,velX,velY,velH,secFar, rotationalSec,moveAwayFar);
         hoodHeight = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
         turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,predictedPos,gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
-        groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
+        groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
         flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(predictedPos, allianceColor));
 
         prism.configureSolidLayer(0, 0, 1, BRIGHT_ON, 0, 0, 0);

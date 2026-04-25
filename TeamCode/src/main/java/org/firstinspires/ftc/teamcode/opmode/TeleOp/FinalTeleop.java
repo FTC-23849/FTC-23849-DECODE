@@ -421,7 +421,7 @@ public class FinalTeleop extends OpMode {
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
         hoodHeight = vision.hoodHeightRegressor(robotPos, leftHood.getPosition(), allianceColor);
         turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,robotPos,gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
-        groundDistance = vision.groundDistancePinpoint(pinpoint,allianceColor);
+        groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
         flywheelSpeed = Math.min(0,vision.CalculatedFlywheelSpeed(robotPos, allianceColor));
 
         prism.configureSolidLayer(0, 0, 1, BRIGHT_ON, 0, 0, 0);

@@ -36,23 +36,10 @@ public class visionToolsClean {
         return groundDistance;
     }
 
-    public double groundDistancePinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
-        double x = pinpoint.getPosition().getX(DistanceUnit.METER);
-        double y = pinpoint.getPosition().getY(DistanceUnit.METER);
-        double groundDistance = 0;
-        if (allianceColor.equals("Red")) {
-            groundDistance = Math.sqrt(((1.8288 - x) * (1.8288 - x)) + ((-1.8288 - y) * (-1.8288 - y)));
-        }if (allianceColor.equals("Blue")) {
-            groundDistance = Math.sqrt(((1.8288 - x) * (1.8288 - x)) + ((1.8288 - y) * (1.8288 - y)));
-        }
-        return  groundDistance ;
-    }
-
-
-
-
     public double hoodHeightRegressor(Pose2D robotPos, double currentHood, String allianceColor){
-        double groundDistance = groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
+        double yPos = robotPos.getX(DistanceUnit.METER);
+        double xPos = -1*robotPos.getY(DistanceUnit.METER);
+        double groundDistance = groundDistancePinpoint(xPos,yPos,allianceColor);
         if (groundDistance == -1) {
             return currentHood;
         }else{
@@ -448,7 +435,7 @@ public class visionToolsClean {
                     + 528.9893 * x3
                     - 3290.8152 * x2
                     + 8681.1264 * x
-                    - 9264.4227;
+                    - 9204.4227;
 
         }
         return speed;
