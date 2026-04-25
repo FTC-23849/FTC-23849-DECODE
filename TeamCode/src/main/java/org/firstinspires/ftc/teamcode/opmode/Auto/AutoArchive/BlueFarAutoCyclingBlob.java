@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.Auto.Blue;
+package org.firstinspires.ftc.teamcode.opmode.Auto.AutoArchive;
 
 import androidx.annotation.NonNull;
 
@@ -16,6 +16,7 @@ import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -34,14 +35,13 @@ import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.opmode.Auto.PoseStorage;
-import org.firstinspires.ftc.teamcode.opmode.Auto.Red.RedFarAutoCyclingBlob;
 import org.firstinspires.ftc.teamcode.opmode.misc.BlobDetector;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController3;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 
 import java.util.function.Function;
 
-//@Disabled
+@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
 public class BlueFarAutoCyclingBlob extends LinearOpMode {
