@@ -84,8 +84,10 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
 
     public static double recycleDelay = 0.4;
 
-    public static double turretStartPos = 0.34;
-    public static double turretShootPos = 0.420;
+    public static double turretStartPos = 0.5;
+    public static double turretShootPos = 0.80;
+
+    public static double hoodHeight = 0.28;
 
     public static double plainKickerPower = 0.0;
 
@@ -152,7 +154,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
     public void runOpMode() {
 
         // Instantiate MecanumDrive
-        Pose2d startPose = new Pose2d(-54.5, -45, Math.toRadians(225));
+        Pose2d startPose = new Pose2d(-55, -44.5, Math.toRadians(225));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         // Map motors and servos
@@ -203,7 +205,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
 
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
-        rightHood.setDirection(ServoImplEx.Direction.REVERSE);
+        leftHood.setDirection(ServoImplEx.Direction.REVERSE);
 
         //Limelight
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
@@ -215,8 +217,8 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         // Pre-Auto robot initlization. MUST BE LAST
-        leftHood.setPosition(0.4);
-        rightHood.setPosition(0.4);
+        leftHood.setPosition(hoodHeight);
+        rightHood.setPosition(hoodHeight);
 
         leftTurretServo.setPosition(turretStartPos);
         rightTurretServo.setPosition(turretStartPos);
@@ -260,8 +262,8 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                     // Preload Path from known start pose
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(-12, -15), Math.toRadians(270),
+                                                    .strafeToSplineHeading(
+                                                            new Vector2d(-24, -24), Math.toRadians(335),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -272,7 +274,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(-12, -15), Math.toRadians(270),
+                                                            new Vector2d(-24, -24), Math.toRadians(335),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -297,7 +299,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .setTangent(0)
-                                                    .splineToLinearHeading(
+                                                    .splineToSplineHeading(
                                                             new Pose2d(15, -60, Math.toRadians(270)), (-Math.PI/2),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)

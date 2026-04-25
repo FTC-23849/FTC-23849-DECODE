@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.vision;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -12,6 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 
+@Config
 public class visionToolsClean {
     public int[] rampOrder = new int[9];
     ElapsedTime timer = new ElapsedTime();
@@ -20,17 +22,18 @@ public class visionToolsClean {
     public double correctPos = 0;
     public double TurretPowerTxDebug;
     private double smoothTx = 0;
-
-
-    public double groundDistancePinpoint(double x, double y, String allianceColor){
-        //method overrload
+    //Actual middle is 1.8288, 1.8288
+    public static double GoalY = 1.8288;
+    public static double GoalXRed = 1.7288;
+    public static double GoalXBlue = -1.7288;
+    public double groundDistancePinpoint(double x, double y, String allianceColor) {
         double groundDistance = 0;
         if (allianceColor.equals("Red")) {
-            groundDistance = Math.sqrt(((1.8288 - x) * (1.8288 - x)) + ((-1.8288 - y) * (-1.8288 - y)));
-        }if (allianceColor.equals("Blue")) {
-            groundDistance = Math.sqrt(((1.8288 - x) * (1.8288 - x)) + ((1.8288 - y) * (1.8288 - y)));
+            groundDistance = Math.sqrt(((GoalXRed - x) * (GoalXRed - x)) + ((GoalY - y) * (GoalY - y)));
+        } if (allianceColor.equals("Blue")) {
+            groundDistance = Math.sqrt(((GoalXBlue - x) * (GoalXBlue - x)) + ((GoalY - y) * (GoalY - y)));
         }
-        return  groundDistance;
+        return groundDistance;
     }
 
     public double groundDistancePinpoint(org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver pinpoint, String allianceColor){
@@ -226,13 +229,19 @@ public class visionToolsClean {
         double curX = robotX + turretOffsetMeters * (xcoeff * cosH - ycoeff * sinH);
         double curY = robotY + turretOffsetMeters * (xcoeff * sinH + ycoeff * cosH);
 
-
-        double goalY = 1.8288;
-        double goalXRed = 1.8288;
-        double goalXBlue = -1.8288;
         if(yPos > 0){
-            goalY = 1.6788;
+            GoalY = 1.6788;
+            GoalXRed = 1.7288;
+            GoalXBlue = -1.7288;
+
+        }else{
+            GoalY = 1.8288;
         }
+
+        double goalY = GoalY;
+        double goalXRed = GoalXRed;
+        double goalXBlue = GoalXBlue;
+
         double goalX = alliance.equals("Red") ? goalXRed : goalXBlue;
         double startingAngle = (180+adjustedHeading)%360;
         double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalY - curY,goalX - curX));
@@ -400,16 +409,21 @@ public class visionToolsClean {
     }
 
     public double CalculatedFlywheelSpeed(Pose2D robotPos, String allianceColor) {
-        double px = robotPos.getX(DistanceUnit.METER);
-        double py = robotPos.getY(DistanceUnit.METER);
-        double currentDist = groundDistancePinpoint(px,py,allianceColor);
-        double offset = 0.0508;
-        if(currentDist < 1.9) {
-            offset = 0.0254;
-        }
-        double adjustedHeading =  robotPos.getHeading(AngleUnit.DEGREES)+ 90;
-        if(adjustedHeading < 0 ){ adjustedHeading+= 360; }
-        currentDist = groundDistancePinpoint(px,py,allianceColor);
+        double py = robotPos.getX(DistanceUnit.METER);
+        double px = -1 * robotPos.getY(DistanceUnit.METER);
+
+        double heading = robotPos.getHeading(AngleUnit.DEGREES);
+        double adjustedHeading = heading + 90;
+        if (adjustedHeading < 0) adjustedHeading += 360;
+
+        double turretOffsetMeters = -0.0765;
+        double sinH = Math.sin(Math.toRadians(adjustedHeading));
+        double cosH = Math.cos(Math.toRadians(adjustedHeading));
+
+        double curX = px + turretOffsetMeters * (cosH - sinH);
+        double curY = py + turretOffsetMeters * (sinH + cosH);
+
+        double currentDist = groundDistancePinpoint(curX, curY, allianceColor);
 
         double x = currentDist;
         double x2 = x * x;
@@ -419,27 +433,22 @@ public class visionToolsClean {
         double x6 = x3 * x3;
         double speed = 0;
         if(currentDist < 1.9) {
-            speed = -14808.14168
-                    + 37374.67489 * x
-                    - 36462.94734 * x2
-                    + 15555.54901 * x3
-                    - 2469.13478 * x4;
+            speed = 31.7460 * x2
+                    - 428.254 * x
+                    - 209.4921;
 
         }else if(currentDist< 2.75){
-            speed = 7895.76427
-                    - 10649.81464 * x
-                    + 4307.95413 * x2
-                    - 586.52521 * x3;
+            speed = 58.0514 * x2
+                    - 491.1754 * x
+                    - 167.2411;
         }else{
             //−19.9936x3+191.7677x2−853.9049x−213.5501
 
-            speed = -110285.75593
-                    + 188135.14001 * x
-                    - 133074.55282 * x2
-                    + 49553.07366 * x3
-                    - 10257.33467 * x4
-                    + 1119.53079 * x5
-                    - 50.36368 * x6;
+            speed = -31.2108 * x4
+                    + 528.9893 * x3
+                    - 3290.8152 * x2
+                    + 8681.1264 * x
+                    - 9264.4227;
 
         }
         return speed;
@@ -486,7 +495,7 @@ public class visionToolsClean {
         double curYaw = pose2d.getHeading(AngleUnit.DEGREES) /*+ (flightTime * 0.3) * pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)*/;
 
         double goalX = 1.8288;
-        double goalY = (alliance.equals("Red")) ? -1.8288 : 1.8288;
+        double goalY = (alliance.equals("Red")) ? -1.6788 : 1.6788;
 
 
         double turretAngle = 90 - Math.toDegrees(Math.atan2(goalX - curX, goalY - curY));

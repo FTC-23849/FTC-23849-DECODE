@@ -97,7 +97,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double blue = 0;
     //more for left, less for right
     public static double turretZeroCorrection = -0.006;
-    public static double turretZeroCorrection2 = -0.018;
+    public static double turretZeroCorrection2 = -0.013;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;
@@ -120,17 +120,16 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055 ;
 
-
     public static double recoveryThreshold = 60;
     public static double maintainThreshold = 40;
     public static double defaultVoltage = 13.15;
-    public static double gear = 13;
+    public static double gear = 12.5;
     double currentVoltage;
     double closezone = 1;
     boolean firstLoop = true;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
-    public static double turretCorrection = 0.011;
+    public static double turretCorrection = 0.01;
     boolean shooting;
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
@@ -183,7 +182,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
 //    public static double Kd = 0.00;
     double currentSpeed = 0;
     boolean rightBumperTrue = false;
-    boolean leftBumperTrue = false;
+    boolean backButtonTrue = false;
     int attempts = 0;
     int status = 0;
     ElapsedTime cycleTimer = new ElapsedTime();
@@ -571,6 +570,31 @@ public class FinalTeleopIntakeTesting extends OpMode {
         }
         currentVoltage = myControlHubVoltageSensor.getVoltage();
         double now = runTime.milliseconds();
+        if(gamepad1.left_bumper){
+            moveAwayFar = 1.2;
+            moveAwayTurretFar = 1.4;
+            secFar = 0.8;
+            turretSecFar = 1.1;
+
+            rotationalSec = 0.1;
+
+            moveAwayClose = 2;
+             moveAwayTurretClose = 0.6;
+            secClose = 0.6;
+            turretSecClose = 0.8;
+        }else{
+            moveAwayFar = 0;
+            moveAwayTurretFar = 0;
+            secFar = 0;
+            turretSecFar = 0;
+
+            rotationalSec = 0;
+
+            moveAwayClose = 0;
+            moveAwayTurretClose = 0;
+            secClose = 0;
+            turretSecClose = 0;
+        }
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
             robotPos = pinpoint.getPosition();
             if(LockedModeEnabled ^ ParkModeEnabled){
@@ -584,7 +608,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
                     Math.pow(predictedPos.getX(DistanceUnit.CM) - robotPos.getX(DistanceUnit.CM), 2) +
                             Math.pow(predictedPos.getY(DistanceUnit.CM) - robotPos.getY(DistanceUnit.CM), 2)
             );
-            if(leftBumperTrue){
+            if(backButtonTrue){
                 hoodHeight = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
                 turretPos = vision.CalculateTurretAngle360NEW(xcoeff,ycoeff,vision.predictPos(allianceColor,robotPos,velX,velY,velH,turretSec, rotationalSec,moveAwayTurret),gear,leftTurretServo.getPosition(),turretZeroCorrection,turretZeroCorrection2, allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
@@ -914,11 +938,11 @@ public class FinalTeleopIntakeTesting extends OpMode {
 
 
         // far zone shoot
-        if (gamepad1.leftBumperWasReleased()) {
-            leftBumperTrue = !leftBumperTrue;
+        if (gamepad1.backWasReleased()) {
+            backButtonTrue = !backButtonTrue;
         }
 
-        if (leftBumperTrue && !rightBumperTrue) {
+        if (backButtonTrue && !rightBumperTrue) {
             //flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2;
             flywheelCurrentVelocity = leftShooterMotor.getVelocity();
             if (!usePower) {
@@ -947,7 +971,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
 
         }
 
-        if (!rightBumperTrue && !leftBumperTrue) {
+        if (!rightBumperTrue && !backButtonTrue) {
             //telemetry.addData("slowing down flywheel", 0);
             leftTurretServo.setPosition(0.5+turretZeroCorrection);
             rightTurretServo.setPosition(0.5+turretZeroCorrection);
@@ -957,7 +981,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
             rightShooterMotor.setPower(0);
         }
 
-        if (leftBumperTrue && !rightBumperTrue) {
+        if (backButtonTrue && !rightBumperTrue) {
             //telemetry.addData("Power", vision.TurretPower(limelight, 0.5));
             if (useTurret) {
 

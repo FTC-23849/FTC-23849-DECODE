@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.Auto.Red;
+package org.firstinspires.ftc.teamcode.opmode.Auto.InDevelopment;
 
 import androidx.annotation.NonNull;
 
@@ -28,10 +28,11 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.DroidLib.CRAxonPDController;
+import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
-import org.firstinspires.ftc.teamcode.opmode.Auto.Blue.BlueFarAutoCyclingBlob;
 import org.firstinspires.ftc.teamcode.opmode.Auto.PoseStorage;
 import org.firstinspires.ftc.teamcode.opmode.misc.BlobDetector;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController3;
@@ -42,7 +43,7 @@ import java.util.function.Function;
 //@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class RedFarAutoCyclingBlob extends LinearOpMode {
+public class BlueFarAutoCycling21 extends LinearOpMode {
 
     // Initialize all hardware
     Limelight3A limelight;
@@ -60,7 +61,6 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
     DcMotorEx rightShooterMotor;
     ServoImplEx leftTipper;
     ServoImplEx rightTipper;
-
     AnalogInput kickerEncoder;
     AnalogInput turretEncoder;
     NormalizedColorSensor leftIntakeColorSensor;
@@ -79,16 +79,21 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
 //    public static double minAccelIntaking = -40;
 //    public static double maxAccelIntaking = 40;
 
-    public static double minVelDrive = 90;
-    public static double minAccelDrive = -80;
-    public static double maxAccelDrive = 80;
+    public static double minVelDrive = 130;
+    public static double minAccelDrive = -120;
+    public static double maxAccelDrive = 110;
+
+    public static double IntakeRamMinVelDrive = 150;
+    public static double IntakeRamMinAccelDrive = -130;
+    public static double IntakeRamMaxAccelDrive = 140;
+
 
     public static double shooterStartDelay = 0.1;
-    public static double shootingDelay = 1;
+    public static double shootingDelay = 0.8;
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.5; /*0.62*/
+    public static double turretStartPos = 0.5; /*0.39*/
     //public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
@@ -110,20 +115,24 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
 
     public static double stallGraceMs    = 400;  // ms
 
-    public static double intakeShootingSpeed = -1.0;
+    public static double intakeShootingSpeed = -0.9;
 
     public static double kickerSpeed = 1.0;
 
     public static double shootingSpeed = -1.0;
 
-    public static boolean kickersStarted = false;
+    public static boolean kickersStarted;
 
-    public static double preloadShootingSpeed = -1205;
-    public static double cyclingShootingSpeed = -1155;
+
+    public static boolean intakeLastSpike = true;
+    public static boolean intakeSecondSpike = false;
+
+    public static double preloadShootingSpeed = -1250;
+    public static double cyclingShootingSpeed = -1200;
     public static double shootingSpeedPID = preloadShootingSpeed;
-    public static double turretOffset = 0.003;
+    public static double turretOffset = -0.0065;
 
-    public static String allianceColor = "Red";
+    public static String allianceColor = "Blue";
 
     public static boolean enableTurretTracking = true;
     public static boolean enableVelPID = true;
@@ -139,8 +148,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
     public static boolean fourthCycleOffsetEnabled = false;
     public static boolean widenCycleOffsetEnabled = false;
 
-    public static double cyclingShootingY = 25;
-
+    public static double cyclingShootingY = -25;
 
     // vPID
     double flywheelCurrentVelocity;
@@ -184,16 +192,19 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
 
     ElapsedTime shooterTimer = new ElapsedTime();
 
-    private BlobDetector detector;
+    //private BlobDetector detector;
 
     visionTools vision = new visionTools();
+
+    CRAxonPDController kickerPID = new CRAxonPDController();
+    DroidForceMethods DFM = new DroidForceMethods();
 
 
     @Override
     public void runOpMode() {
 
         // Instantiate MecanumDrive
-        Pose2d startPose = new Pose2d(63, 14.5, Math.toRadians(90));
+        Pose2d startPose = new Pose2d(61.5, -14.5, Math.toRadians(270));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
 
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
@@ -265,13 +276,14 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
 
         plainKickerPower = 0.0;
 
+
         velocityPID = new PIDVelocityController3(
                 targetVelocity,
                 KpMaintain,KiMaintain,
                 KpRecovery,KiRecovery,KsRecovery
                 , KsFF, KvFF
         );
-        sleep(500);
+        sleep(1000);
 
         pinpoint.recalibrateIMU();
 
@@ -279,17 +291,17 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
         telemetry.addData("FINISHED",true);
         telemetry.update();
 
-        detector = new BlobDetector(
-                hardwareMap,
-                "Webcam 1",
-                640,
-                480,
-                135.0 / 346.0,
-                26,
-                "Red"
-        );
-
-        detector.start();
+//        detector = new BlobDetector(
+//                hardwareMap,
+//                "Webcam 1",
+//                640,
+//                480,
+//                135.0 / 346.0,
+//                26,
+//                "Blue"
+//        );
+//
+//        detector.start();
 
         waitForStart();
 
@@ -304,7 +316,6 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                     // Thread 1: Pathing + General Robot
                     new SequentialAction(
 
-                            //new setShooter(leftShooterMotor, rightShooterMotor, shootingSpeed),
                             new SleepAction(2),
                             new kickerShoot(),
 
@@ -315,7 +326,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(36, 28), Math.toRadians(90),
+                                                            new Vector2d(36, -28), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -331,7 +342,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                             new PathFromCurrentPose(drive, pose ->
                                     drive.actionBuilder(pose)
                                             .strafeToLinearHeading(
-                                                    new Vector2d(36, 58), Math.toRadians(90),
+                                                    new Vector2d(36, -60), Math.toRadians(270),
                                                     new TranslationalVelConstraint(minVelDrive),
                                                     new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                             )
@@ -344,7 +355,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62, cyclingShootingY), Math.toRadians(90),
+                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -360,7 +371,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                             new PathFromCurrentPose(drive, pose ->
                                     drive.actionBuilder(pose)
                                             .strafeToLinearHeading(
-                                                    new Vector2d(62, cyclingShootingY), Math.toRadians(90),
+                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
                                                     new TranslationalVelConstraint(minVelDrive),
                                                     new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                             )
@@ -379,20 +390,20 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62, 66), Math.toRadians(90),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                            new Vector2d(60.5, -63), Math.toRadians(270),
+                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
+                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
                                                     )
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(62, 50), Math.toRadians(90),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                    )
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(62, 66), Math.toRadians(90),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                    )
+//                                                    .strafeToLinearHeading(
+//                                                            new Vector2d(60.5, -50), Math.toRadians(270),
+//                                                            new TranslationalVelConstraint(minVelDrive),
+//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+//                                                    )
+//                                                    .strafeToLinearHeading(
+//                                                            new Vector2d(60.5, -66), Math.toRadians(270),
+//                                                            new TranslationalVelConstraint(minVelDrive),
+//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+//                                                    )
                                                     .build()
                                     ),
                                     new kickerIdle(false),
@@ -403,7 +414,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62, cyclingShootingY), Math.toRadians(90),
+                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -419,7 +430,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                             new PathFromCurrentPose(drive, pose ->
                                     drive.actionBuilder(pose)
                                             .strafeToLinearHeading(
-                                                    new Vector2d(62, cyclingShootingY), Math.toRadians(90),
+                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
                                                     new TranslationalVelConstraint(minVelDrive),
                                                     new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                             )
@@ -432,9 +443,10 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
 
                             new SleepAction(shootingDelay),
 
-                            new getBlobOffset(),
+                            //new getBlobOffset(),
 
                             new SleepAction(0.1),
+
 
                             //Intake Cycle 2
 
@@ -442,20 +454,20 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62 - blobOffset, 66), Math.toRadians(90),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                            new Vector2d(60.5 - blobOffset, -63), Math.toRadians(270),
+                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
+                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
                                                     )
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(62 - blobOffset, 50), Math.toRadians(90),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                    )
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(62 - blobOffset, 66), Math.toRadians(90),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                    )
+//                                                    .strafeToLinearHeading(
+//                                                            new Vector2d(60.5 - blobOffset, -50), Math.toRadians(270),
+//                                                            new TranslationalVelConstraint(minVelDrive),
+//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+//                                                    )
+//                                                    .strafeToLinearHeading(
+//                                                            new Vector2d(60.5 - blobOffset, -66), Math.toRadians(270),
+//                                                            new TranslationalVelConstraint(minVelDrive),
+//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+//                                                    )
                                                     .build()
                                     ),
                                     new kickerIdle(false),
@@ -466,7 +478,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62, cyclingShootingY), Math.toRadians(90),
+                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -482,7 +494,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                             new PathFromCurrentPose(drive, pose ->
                                     drive.actionBuilder(pose)
                                             .strafeToLinearHeading(
-                                                    new Vector2d(62, cyclingShootingY), Math.toRadians(90),
+                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
                                                     new TranslationalVelConstraint(minVelDrive),
                                                     new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                             )
@@ -495,7 +507,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
 
                             new SleepAction(shootingDelay),
 
-                            new getBlobOffset(),
+                            //new getBlobOffset(),
 
                             new SleepAction(0.1),
 
@@ -505,20 +517,20 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62 - blobOffset, 66), Math.toRadians(90),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                            new Vector2d(60.5 - blobOffset, -63), Math.toRadians(270),
+                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
+                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
                                                     )
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(62 - blobOffset, 50), Math.toRadians(90),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                    )
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(62 - blobOffset, 66), Math.toRadians(90),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                    )
+//                                                    .strafeToLinearHeading(
+//                                                            new Vector2d(60.5 - blobOffset, -50), Math.toRadians(270),
+//                                                            new TranslationalVelConstraint(minVelDrive),
+//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+//                                                    )
+//                                                    .strafeToLinearHeading(
+//                                                            new Vector2d(60.5 - blobOffset, -66), Math.toRadians(270),
+//                                                            new TranslationalVelConstraint(minVelDrive),
+//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+//                                                    )
                                                     .build()
                                     ),
                                     new kickerIdle(false),
@@ -529,7 +541,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62, cyclingShootingY), Math.toRadians(90),
+                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -545,7 +557,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
                             new PathFromCurrentPose(drive, pose ->
                                     drive.actionBuilder(pose)
                                             .strafeToLinearHeading(
-                                                    new Vector2d(62, cyclingShootingY), Math.toRadians(90),
+                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
                                                     new TranslationalVelConstraint(minVelDrive),
                                                     new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                             )
@@ -558,14 +570,130 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
 
                             new SleepAction(shootingDelay),
 
-
-                            //Park
+                            //Intake Cycle 4
 
                             new ParallelAction(
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(62, 40), Math.toRadians(90),
+                                                            new Vector2d(60.5 - blobOffset, -63), Math.toRadians(270),
+                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
+                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
+                                                    )
+//                                                    .strafeToLinearHeading(
+//                                                            new Vector2d(60.5 - blobOffset, -50), Math.toRadians(270),
+//                                                            new TranslationalVelConstraint(minVelDrive),
+//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+//                                                    )
+//                                                    .strafeToLinearHeading(
+//                                                            new Vector2d(60.5 - blobOffset, -66), Math.toRadians(270),
+//                                                            new TranslationalVelConstraint(minVelDrive),
+//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+//                                                    )
+                                                    .build()
+                                    ),
+                                    new kickerIdle(false),
+                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
+                            ),
+
+                            new ParallelAction(
+                                    new PathFromCurrentPose(drive, pose ->
+                                            drive.actionBuilder(pose)
+                                                    .strafeToLinearHeading(
+                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                    )
+                                                    .build()
+                                    ),
+                                    new SequentialAction(
+                                            new SleepAction(1),
+                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
+                                    )
+                            ),
+
+                            // repeat for correction
+                            new PathFromCurrentPose(drive, pose ->
+                                    drive.actionBuilder(pose)
+                                            .strafeToLinearHeading(
+                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                    new TranslationalVelConstraint(minVelDrive),
+                                                    new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                            )
+                                            .build()
+                            ),
+
+                            new SleepAction(shooterStartDelay),
+
+                            new kickerShoot(),
+
+                            new SleepAction(shootingDelay),
+
+                            //Intake Cycle 5
+
+                            new ParallelAction(
+                                    new PathFromCurrentPose(drive, pose ->
+                                            drive.actionBuilder(pose)
+                                                    .strafeToLinearHeading(
+                                                            new Vector2d(60.5 - blobOffset, -63), Math.toRadians(270),
+                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
+                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
+                                                    )
+//                                                    .strafeToLinearHeading(
+//                                                            new Vector2d(60.5 - blobOffset, -50), Math.toRadians(270),
+//                                                            new TranslationalVelConstraint(minVelDrive),
+//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+//                                                    )
+//                                                    .strafeToLinearHeading(
+//                                                            new Vector2d(60.5 - blobOffset, -66), Math.toRadians(270),
+//                                                            new TranslationalVelConstraint(minVelDrive),
+//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+//                                                    )
+                                                    .build()
+                                    ),
+                                    new kickerIdle(false),
+                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
+                            ),
+
+                            new ParallelAction(
+                                    new PathFromCurrentPose(drive, pose ->
+                                            drive.actionBuilder(pose)
+                                                    .strafeToLinearHeading(
+                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                    )
+                                                    .build()
+                                    ),
+                                    new SequentialAction(
+                                            new SleepAction(1),
+                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
+                                    )
+                            ),
+
+                            // repeat for correction
+                            new PathFromCurrentPose(drive, pose ->
+                                    drive.actionBuilder(pose)
+                                            .strafeToLinearHeading(
+                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                    new TranslationalVelConstraint(minVelDrive),
+                                                    new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                            )
+                                            .build()
+                            ),
+
+                            new SleepAction(shooterStartDelay),
+
+                            new kickerShoot(),
+
+                            new SleepAction(shootingDelay),
+
+                            //Park
+                            new ParallelAction(
+                                    new PathFromCurrentPose(drive, pose ->
+                                            drive.actionBuilder(pose)
+                                                    .strafeToLinearHeading(
+                                                            new Vector2d(60.5, -40), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -596,6 +724,8 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
             drive.localizer.update();
 
             PoseStorage.currentPose = vision.RRtoPinpoint(drive);
+
+            //detector.stop();
 
             sleep(1000);
 
@@ -640,6 +770,18 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
             }
 
             return true; // keep running for whole auto
+        }
+    }
+
+    public class setPIDToCycling implements Action {
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+
+            shootingSpeedPID = cyclingShootingSpeed;
+
+            return false;
+
         }
     }
 
@@ -724,6 +866,8 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
             return keepRunning;
         }
     }
+
+
     public class updatePose implements Action {
 
         private MecanumDrive drive = null;
@@ -757,23 +901,23 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
         }
     }
 
-    public class getBlobOffset implements Action {
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            blobOffset = detector.getOffsetCm() / 2.54;
-
-            if (blobOffset < 5) {
-                blobOffset = 0;
-            } else {
-                blobOffset += 5;
-            }
-
-            return false;
-
-        }
-    }
+//    public class getBlobOffset implements Action {
+//
+//        @Override
+//        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+//
+//            blobOffset = detector.getOffsetCm() / 2.54;
+//
+//            if (blobOffset < 5) {
+//                blobOffset = 0;
+//            } else {
+//                blobOffset -= 5;
+//            }
+//
+//            return false;
+//
+//        }
+//    }
 
     // DO NOT USE FOR REGULAR USE. THIS IS A TEST METHOD
     public class debugTelemetry implements Action {
@@ -785,18 +929,6 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
             telemetry.update();
 
             return true;
-
-        }
-    }
-
-    public class setPIDToCycling implements Action {
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            shootingSpeedPID = cyclingShootingSpeed;
-
-            return false;
 
         }
     }
@@ -992,6 +1124,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
         }
     }
 
+
     public class setTurret implements Action {
 
         private final double pos;
@@ -1065,6 +1198,7 @@ public class RedFarAutoCyclingBlob extends LinearOpMode {
             return !kickersStarted;
         }
     }
+
 
     public class kickerIdle implements Action {
 
