@@ -82,12 +82,12 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
     public static double shooterStartDelay = 0.1;
     public static double shootingDelay = 1;
 
-    public static double recycleDelay = 0.4;
+    public static double recycleDelay = 1;
 
     public static double turretStartPos = 0.5;
     public static double turretShootPos = 0.80;
 
-    public static double hoodHeight = 0.28;
+    public static double hoodHeight = 0.15;
 
     public static double plainKickerPower = 0.0;
 
@@ -102,8 +102,11 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
 
     public static double shootingSpeed = -0.58;
 
-    public static double shootingSpeedPID = -1370;
-    public static double turretOffset = 0.01;
+    public static double initialShootingSpeedPID = -780;
+    public static double normalShootingSpeedPID = -790;
+    public static double turretOffset = 0.00;
+
+    public static double feedingSpeed = 0.9;
 
     public static String allianceColor = "Blue";
 
@@ -141,7 +144,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
     public static double defaultVoltage = Globals.defaultVoltage;
 
 
-    int obeliskID = -1;
+    public static int obeliskID = -1;
 
     // Initialize any instances of classes
     ElapsedTime recyclerTimer = new ElapsedTime();
@@ -198,10 +201,6 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
         rightTipper = hardwareMap.get(ServoImplEx.class, "rightTipper");
 
         kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
-
-        leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
-        rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
-        rightHood.setDirection(ServoImplEx.Direction.REVERSE);
 
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
@@ -279,9 +278,9 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .build()
-                                    ),
+                                    )//,
 
-                                    new setShooter(leftShooterMotor, rightShooterMotor, shootingSpeed)
+                                    //new setShooter(leftShooterMotor, rightShooterMotor, shootingSpeed)
                             ),
                             new getObeliskID(),
                             new SleepAction(0.3),
@@ -300,14 +299,15 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                             drive.actionBuilder(pose)
                                                     .setTangent(0)
                                                     .splineToSplineHeading(
-                                                            new Pose2d(15, -60, Math.toRadians(270)), (-Math.PI/2),
+                                                            new Pose2d(17, -64, Math.toRadians(270)), (-Math.PI/2),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .build()
                                     ),
                                     new kickerIdle(false),
-                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
+                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0),
+                                    new setPIDSpeedNormal()
                             ),
 
                             new ParallelAction(
@@ -316,7 +316,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                             drive.actionBuilder(pose)
                                                     // Gate Open
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(13, -50), Math.toRadians(270),
+                                                            new Vector2d(13, -48), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -327,7 +327,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(2, -62), Math.toRadians(270),
+                                                            new Vector2d(2, -52), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -348,6 +348,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
 
                                     new SequentialAction(
                                             new SleepAction(recycleDelay + 3.5),
+                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0),
                                             new recycle("PGP", frontIntakeMotor)
                                     )
                             ),
@@ -395,6 +396,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                     ),
                                     new SequentialAction(
                                             new SleepAction(recycleDelay),
+                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0),
                                             new recycle("PPG", frontIntakeMotor)
                                     )
                             ),
@@ -423,12 +425,12 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                             drive.actionBuilder(pose)
                                                     .setTangent(0)
                                                     .splineToLinearHeading(
-                                                            new Pose2d(33, -25, Math.toRadians(270)), (-Math.PI/2),
+                                                            new Pose2d(36, -25, Math.toRadians(270)), (-Math.PI/2),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(33, -62), Math.toRadians(270),
+                                                            new Vector2d(36, -64), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -451,6 +453,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                     ),
                                     new SequentialAction(
                                             new SleepAction(recycleDelay),
+                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0),
                                             new recycle("GPP", frontIntakeMotor)
                                     )
                             ),
@@ -489,7 +492,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                     ),
 
                     new SequentialAction(
-                            new startVelPIDPlain(shootingSpeedPID)
+                            new startVelPIDPlain(initialShootingSpeedPID)
                     ),
 
                     new SequentialAction(
@@ -663,12 +666,26 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
         }
     }
 
+    public class setPIDSpeedNormal implements Action {
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+
+            initialShootingSpeedPID = normalShootingSpeedPID;
+
+            return false;
+
+        }
+    }
+
     public class getObeliskID implements Action {
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
             obeliskID = vision.ObeliskID(limelight);
+            telemetry.addData("obelisk ID: ", obeliskID);
+            telemetry.update();
 
             return false;
 
@@ -795,7 +812,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
 
         // Default timings constructor: 400 ms tongue down, 400 ms intake
         public recycleArtifact(DcMotorEx frontIntakeMotor) {
-            this(frontIntakeMotor, 600, 1000);
+            this(frontIntakeMotor, 600, 1500);
         }
 
         // Optional: custom timings constructor
@@ -1028,8 +1045,8 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
             if (!kickersStarted && shooterTimer.milliseconds() >= 200) {
                 leftKickerServo.setPower(Globals.rollerKickerShoot);
                 rightKickerServo.setPower(Globals.rollerKickerShoot);
-                frontIntakeMotor.setPower(-1.0);
-                backIntakeMotor.setPower(-1.0);
+                frontIntakeMotor.setPower(-1.0 * feedingSpeed);
+                backIntakeMotor.setPower(-1.0 * feedingSpeed);
 
                 kickersStarted = true;
             }
@@ -1083,7 +1100,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
 
             if (power != 0.0) {
                 frontIntakeMotor.setPower(power);
-                backIntakeMotor.setPower(1);
+                backIntakeMotor.setPower(-1);
             } else {
                 frontIntakeMotor.setPower(0.0);
                 backIntakeMotor.setPower(0.0);

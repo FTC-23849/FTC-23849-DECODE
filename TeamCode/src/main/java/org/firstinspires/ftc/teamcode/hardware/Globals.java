@@ -49,7 +49,7 @@ public class Globals {
     public static double rollerKickerRecycle = 1.0;
     public static double tongueIntake = 0.03;
     public static double tongueShoot = 0.0;
-    public static double tongueRecycle = 0.2;
+    public static double tongueRecycle = 0.18;
 
     public static double kickerShoot = -0.6;
     public static double kickerRecycle = 0.4;
