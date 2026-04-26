@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.opmode.TeleOp;
 
-import android.graphics.Color;
+import  android.graphics.Color;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -25,6 +25,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
@@ -96,7 +97,7 @@ public class FinalTeleopFixedRecycling extends OpMode {
     public static double blue = 0;
 
     public static double turretZeroCorrection = -0.006;
-    public static double turretZeroCorrection2 = -0.013;
+    public static double turretZeroCorrection2 = -0.01;
 
     public static double shotSpeed = 0.9;
     public static double defaultShotSpeed = 0.9;
@@ -867,8 +868,13 @@ public class FinalTeleopFixedRecycling extends OpMode {
         }
 
         if (backButtonTrue && !rightBumperTrue) {
-            flywheelCurrentVelocity = leftShooterMotor.getVelocity();
-
+            if((leftShooterMotor.getVelocity() > 100) &&  (rightShooterMotor.getVelocity() == 0)) {
+                flywheelCurrentVelocity = leftShooterMotor.getVelocity();
+            }else if((rightShooterMotor.getVelocity() > 100) &&  (leftShooterMotor.getVelocity() == 0)) {
+                flywheelCurrentVelocity = rightShooterMotor.getVelocity();
+            }else{
+                flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity())/2;
+            }
             if (!usePower) {
                 targetVelocity = lockedFlywheelVelocity + flywheelCorrection;
                 leftHood.setPosition(lockedHoodHeight);
@@ -946,7 +952,8 @@ public class FinalTeleopFixedRecycling extends OpMode {
             telemetry.addData("flywheel", flywheelCurrentVelocity);
             telemetry.addData("flywheell", leftShooterMotor.getVelocity());
             telemetry.addData("flywheelr", rightShooterMotor.getVelocity());
-
+            telemetry.addData("left motor draw", leftShooterMotor.getCurrent(CurrentUnit.AMPS));
+            telemetry.addData("right motor draw", rightShooterMotor.getCurrent(CurrentUnit.AMPS));
             telemetry.addData("targetVelocity", targetVelocity);
             telemetry.addData("PIDF Power", power);
             telemetry.addData("looptime", timer.milliseconds());

@@ -97,7 +97,7 @@ public class FinalTeleopIntakeTesting extends OpMode {
     public static double blue = 0;
     //more for left, less for right
     public static double turretZeroCorrection = -0.006;
-    public static double turretZeroCorrection2 = -0.013;
+    public static double turretZeroCorrection2 = -0.01;
     //    public static double VKp = 0.02;
 //    public static double VKi = 0.003;
 //    public static double VKd = 0;

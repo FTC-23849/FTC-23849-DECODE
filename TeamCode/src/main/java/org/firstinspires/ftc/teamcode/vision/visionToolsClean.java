@@ -24,7 +24,7 @@ public class visionToolsClean {
     private double smoothTx = 0;
     //Actual middle is 1.8288, 1.8288
     public static double GoalY = 1.8288;
-    public static double GoalXRed = 1.7288;
+    public static double GoalXRed = 1.6788;
     public static double GoalXBlue = -1.7288;
     public double groundDistancePinpoint(double x, double y, String allianceColor) {
         double groundDistance = 0;
@@ -422,12 +422,12 @@ public class visionToolsClean {
         if(currentDist < 1.9) {
             speed = 31.7460 * x2
                     - 428.254 * x
-                    - 209.4921;
+                    - 189.4921;
 
         }else if(currentDist< 2.75){
             speed = 58.0514 * x2
                     - 491.1754 * x
-                    - 167.2411;
+                    - 57.2411;
         }else{
             //−19.9936x3+191.7677x2−853.9049x−213.5501
 
@@ -435,7 +435,7 @@ public class visionToolsClean {
                     + 528.9893 * x3
                     - 3290.8152 * x2
                     + 8681.1264 * x
-                    - 9204.4227;
+                    - 9184.4227;
 
         }
         return speed;
