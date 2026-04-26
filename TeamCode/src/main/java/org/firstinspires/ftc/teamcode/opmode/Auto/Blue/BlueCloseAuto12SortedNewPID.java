@@ -32,9 +32,9 @@ import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.opmode.Auto.PoseStorage;
-import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController2;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController3;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 import java.util.function.Function;
 
@@ -70,19 +70,22 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
     ServoImplEx rightTongueServo;
     GoBildaPinpointDriver pinpoint;
 
+    DigitalChannel bottomLeftLaser;
+    DigitalChannel bottomRightLaser;
+
     // Initialize all parameters
 //    public static double minVelIntaking = 40;
 //    public static double minAccelIntaking = -40;
 //    public static double maxAccelIntaking = 40;
 
-    public static double minVelDrive = 65;
-    public static double minAccelDrive = -55;
-    public static double maxAccelDrive = 55;
+    public static double minVelDrive = 90;
+    public static double minAccelDrive = -70;
+    public static double maxAccelDrive = 70;
 
     public static double shooterStartDelay = 0.1;
-    public static double shootingDelay = 1;
+    public static double shootingDelay = 1.5;
 
-    public static double recycleDelay = 1;
+    public static double recycleDelay = 0.4;
 
     public static double turretStartPos = 0.5;
     public static double turretShootPos = 0.80;
@@ -102,13 +105,16 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
 
     public static double shootingSpeed = -0.58;
 
-    public static double initialShootingSpeedPID = -780;
-    public static double normalShootingSpeedPID = -790;
-    public static double turretOffset = 0.00;
+    public static double shootingSpeedPID = -860;
+    public static double turretOffset = -0.009;
 
-    public static double feedingSpeed = 0.9;
+    public static double feedingSpeed = 0.4;
 
     public static String allianceColor = "Blue";
+
+    public static double THIRD_BALL_CONFIRM_MS = 200;
+    public static double RECYCLE_INTAKE_MAX_MS = 2000;
+    public static double THIRD_BALL_CHECK_DELAY_MS = 300;
 
     // vPID
     double flywheelCurrentVelocity;
@@ -206,6 +212,12 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
         leftHood.setDirection(ServoImplEx.Direction.REVERSE);
 
+        bottomLeftLaser = hardwareMap.get(DigitalChannel.class, "bottomLeftLaser");
+        bottomRightLaser = hardwareMap.get(DigitalChannel.class, "bottomRightLaser");
+
+        bottomLeftLaser.setMode(DigitalChannel.Mode.INPUT);
+        bottomRightLaser.setMode(DigitalChannel.Mode.INPUT);
+
         //Limelight
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
         limelight.pipelineSwitch(8);
@@ -214,6 +226,9 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
         limelight.start();
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
+        pinpoint.recalibrateIMU();
+        sleep(1000);
 
         // Pre-Auto robot initlization. MUST BE LAST
         leftHood.setPosition(hoodHeight);
@@ -238,8 +253,6 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
 
         obeliskRead = false;
 
-        pinpoint.recalibrateIMU();
-
         sleep(500);
         telemetry.addData("FINISHED",true);
         telemetry.update();
@@ -262,7 +275,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToSplineHeading(
-                                                            new Vector2d(-24, -24), Math.toRadians(335),
+                                                            new Vector2d(-12, -15), Math.toRadians(345),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -273,7 +286,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(-24, -24), Math.toRadians(335),
+                                                            new Vector2d(-12, -15), Math.toRadians(345),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -306,8 +319,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                                     .build()
                                     ),
                                     new kickerIdle(false),
-                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0),
-                                    new setPIDSpeedNormal()
+                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
                             ),
 
                             new ParallelAction(
@@ -327,7 +339,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(2, -52), Math.toRadians(270),
+                                                            new Vector2d(2, -50), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -492,7 +504,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
                     ),
 
                     new SequentialAction(
-                            new startVelPIDPlain(initialShootingSpeedPID)
+                            new startVelPIDPlain(shootingSpeedPID)
                     ),
 
                     new SequentialAction(
@@ -666,17 +678,6 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
         }
     }
 
-    public class setPIDSpeedNormal implements Action {
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            initialShootingSpeedPID = normalShootingSpeedPID;
-
-            return false;
-
-        }
-    }
 
     public class getObeliskID implements Action {
 
@@ -805,34 +806,43 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
 
         // Phase durations (ms)
         private final double tongueDownMs;
-        private final double intakeRunMs;
+        private final double intakeMaxMs;
 
         private final ElapsedTime recyclerTimer = new ElapsedTime();
-        private boolean started = false;
+        private final ElapsedTime thirdBallConfirmTimer = new ElapsedTime();
 
-        // Default timings constructor: 400 ms tongue down, 400 ms intake
+        private boolean started = false;
+        private boolean intakeStarted = false;
+        private boolean thirdBallConfirmTimerStarted = false;
+
+        // Laser must become clear at least once after intake starts
+        private boolean thirdBallSensorCleared = false;
+
         public recycleArtifact(DcMotorEx frontIntakeMotor) {
-            this(frontIntakeMotor, 600, 1500);
+            this.frontIntakeMotor = frontIntakeMotor;
+            this.tongueDownMs = 600;
+            this.intakeMaxMs = RECYCLE_INTAKE_MAX_MS;
         }
 
-        // Optional: custom timings constructor
         public recycleArtifact(DcMotorEx frontIntakeMotor,
                                double tongueDownMs,
-                               double intakeRunMs) {
+                               double intakeMaxMs) {
             this.frontIntakeMotor = frontIntakeMotor;
             this.tongueDownMs = tongueDownMs;
-            this.intakeRunMs = intakeRunMs;
+            this.intakeMaxMs = intakeMaxMs;
         }
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            telemetry.addData("Version",1);
-            telemetry.addData("Tongue Pos",leftTongueServo.getPosition());
-            telemetry.addData("intake ms",intakeRunMs);
-            telemetry.update();
+
             if (!started) {
                 started = true;
+                intakeStarted = false;
+                thirdBallConfirmTimerStarted = false;
+                thirdBallSensorCleared = false;
+
                 recyclerTimer.reset();
+                thirdBallConfirmTimer.reset();
             }
 
             double t = recyclerTimer.milliseconds();
@@ -841,41 +851,107 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
             if (t < tongueDownMs) {
                 leftTongueServo.setPosition(Globals.tongueRecycle);
                 rightTongueServo.setPosition(Globals.tongueRecycle);
-                telemetry.addData("Tongue Pos",leftTongueServo.getPosition());
-                telemetry.addData("intake ms",intakeRunMs);
-                telemetry.update();
+
                 leftKickerServo.setPower(Globals.rollerKickerRecycle);
                 rightKickerServo.setPower(Globals.rollerKickerRecycle);
 
                 frontIntakeMotor.setPower(0.0);
+                backIntakeMotor.setPower(0.0);
 
-                return true;  // still running
+                telemetryPacket.put("recyclePhase", "tongueDown");
+                telemetryPacket.put("recycleTimeMs", t);
+
+                return true;
             }
 
-            // -------- PHASE 2: tongue UP + rollers OFF, intake ON --------
-            if (t < tongueDownMs + intakeRunMs) {
-                leftTongueServo.setPosition(Globals.tongueIntake);
-                rightTongueServo.setPosition(Globals.tongueIntake);
-                telemetry.addData("intake ms",intakeRunMs);
-                telemetry.addData("intake ms",intakeRunMs);
-                leftKickerServo.setPower(0.0);
-                rightKickerServo.setPower(0.0);
-
-                frontIntakeMotor.setPower(-1.0);
-
-                return true;  // still running
-            }
-
-            // -------- PHASE 3: stop intake, finish --------
+            // -------- PHASE 2: tongue UP + rollers OFF + intake ON --------
             leftTongueServo.setPosition(Globals.tongueIntake);
             rightTongueServo.setPosition(Globals.tongueIntake);
 
             leftKickerServo.setPower(0.0);
             rightKickerServo.setPower(0.0);
 
-            frontIntakeMotor.setPower(0.0);
+            frontIntakeMotor.setPower(-1.0);
+            backIntakeMotor.setPower(-1.0);
 
-            return false; // action complete
+            if (!intakeStarted) {
+                intakeStarted = true;
+                thirdBallConfirmTimerStarted = false;
+                thirdBallSensorCleared = false;
+                thirdBallConfirmTimer.reset();
+            }
+
+            double intakeRunTime = t - tongueDownMs;
+
+            // Track sensor clearing IMMEDIATELY after intake starts,
+            // including during the first 300ms delay.
+            if (!thirdBallPresent()) {
+                thirdBallSensorCleared = true;
+            }
+
+            telemetryPacket.put("recyclePhase", "intaking");
+            telemetryPacket.put("intakeRunTimeMs", intakeRunTime);
+            telemetryPacket.put("thirdBallPresent", thirdBallPresent());
+            telemetryPacket.put("thirdBallSensorCleared", thirdBallSensorCleared);
+
+            // Upper bound: after 2 seconds of intake, stop no matter what
+            if (intakeRunTime >= intakeMaxMs) {
+                leftTongueServo.setPosition(Globals.tongueIntake);
+                rightTongueServo.setPosition(Globals.tongueIntake);
+
+                leftKickerServo.setPower(0.0);
+                rightKickerServo.setPower(0.0);
+
+                frontIntakeMotor.setPower(0.0);
+                backIntakeMotor.setPower(0.0);
+
+                telemetryPacket.put("recycleDoneReason", "timeout");
+
+                return false;
+            }
+
+            // Do NOT accept third ball unless BOTH are true:
+            // 1. intake has been running for at least 300ms
+            // 2. laser has cleared at least once since intake started
+            if (intakeRunTime < THIRD_BALL_CHECK_DELAY_MS || !thirdBallSensorCleared) {
+                thirdBallConfirmTimerStarted = false;
+                thirdBallConfirmTimer.reset();
+
+                telemetryPacket.put("thirdBallCheckActive", false);
+
+                return true;
+            }
+
+            telemetryPacket.put("thirdBallCheckActive", true);
+
+            // Now accept thirdBallPresent only if true continuously for 200ms
+            if (thirdBallPresent()) {
+                if (!thirdBallConfirmTimerStarted) {
+                    thirdBallConfirmTimerStarted = true;
+                    thirdBallConfirmTimer.reset();
+                }
+
+                if (thirdBallConfirmTimer.milliseconds() >= THIRD_BALL_CONFIRM_MS) {
+                    leftTongueServo.setPosition(Globals.tongueIntake);
+                    rightTongueServo.setPosition(Globals.tongueIntake);
+
+                    leftKickerServo.setPower(0.0);
+                    rightKickerServo.setPower(0.0);
+
+                    frontIntakeMotor.setPower(0.0);
+                    backIntakeMotor.setPower(0.0);
+
+                    telemetryPacket.put("recycleDoneReason", "thirdBallConfirmed");
+
+                    return false;
+                }
+
+            } else {
+                thirdBallConfirmTimerStarted = false;
+                thirdBallConfirmTimer.reset();
+            }
+
+            return true;
         }
     }
 
@@ -1107,6 +1183,10 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
             }
             return false;
         }
+    }
+
+    private boolean thirdBallPresent() {
+        return bottomLeftLaser.getState() || bottomRightLaser.getState();
     }
 
 }

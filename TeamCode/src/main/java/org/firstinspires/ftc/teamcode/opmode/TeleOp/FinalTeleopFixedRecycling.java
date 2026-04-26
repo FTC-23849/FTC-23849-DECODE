@@ -160,9 +160,6 @@ public class FinalTeleopFixedRecycling extends OpMode {
     private NormalizedColorSensor colorLeft2;
     private NormalizedColorSensor colorRight2;
 
-    private NormalizedColorSensor colorLeft3;
-    private NormalizedColorSensor colorRight3;
-
     CustomGoBildaPrismRgbLedDriver prism;
     double totalCurrent;
     double groundDistance = 0;
@@ -241,7 +238,7 @@ public class FinalTeleopFixedRecycling extends OpMode {
     public static double LED_GREEN_POS = 0.50;
     public static double LED_PURPLE_POS = 0.70;
 
-    private enum ArtifactColor { GREEN, PURPLE, UNKNOWN }
+    private enum ArtifactColor { GREEN, PURPLE, RED, UNKNOWN }
 
     private static class Reading {
         ArtifactColor color;
@@ -259,6 +256,7 @@ public class FinalTeleopFixedRecycling extends OpMode {
 
     private static final int[] RGB_GREEN = {0, 255, 0};
     private static final int[] RGB_PURPLE = {180, 0, 255};
+    private static final int[] RGB_RED = {255, 0, 0};
     private static final int[] RGB_OFF = {0, 0, 0};
 
     private static final int BRIGHT_ON = 100;
@@ -319,17 +317,11 @@ public class FinalTeleopFixedRecycling extends OpMode {
         colorLeft2 = hardwareMap.get(NormalizedColorSensor.class, "colorLeft2");
         colorRight2 = hardwareMap.get(NormalizedColorSensor.class, "colorRight2");
 
-        colorLeft3 = hardwareMap.get(NormalizedColorSensor.class, "colorLeft3");
-        colorRight3 = hardwareMap.get(NormalizedColorSensor.class, "colorRight3");
-
         initSensor(colorLeft1);
         initSensor(colorRight1);
 
         initSensor(colorLeft2);
         initSensor(colorRight2);
-
-        initSensor(colorLeft3);
-        initSensor(colorRight3);
 
         last1 = last2 = last3 = null;
 
@@ -435,7 +427,7 @@ public class FinalTeleopFixedRecycling extends OpMode {
         predictedPos = vision.predictPos(allianceColor, robotPos, velX, velY, velH, secFar, rotationalSec, moveAwayFar);
         hoodHeight = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
         turretPos = vision.CalculateTurretAngle360NEW(xcoeff, ycoeff, predictedPos, gear, leftTurretServo.getPosition(), turretZeroCorrection, turretZeroCorrection2, allianceColor) + turretCorrection;
-        groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER),robotPos.getY(DistanceUnit.METER),allianceColor);
+        groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER), robotPos.getY(DistanceUnit.METER), allianceColor);
         flywheelSpeed = Math.min(0, vision.CalculatedFlywheelSpeed(predictedPos, allianceColor));
 
         prism.configureSolidLayer(0, 0, 1, BRIGHT_ON, 0, 0, 0);
@@ -927,6 +919,9 @@ public class FinalTeleopFixedRecycling extends OpMode {
         telemetry.addData("distance", groundDistance);
         telemetry.addData("low voltage?", lowVoltage);
         telemetry.addData("thirdBallPresent", thirdBallPresent);
+        telemetry.addData("Prism Ball 1", last1);
+        telemetry.addData("Prism Ball 2", last2);
+        telemetry.addData("Prism Predicted Ball 3", last3);
         telemetry.addData("thirdBallConfirmStarted", thirdBallConfirmTimerStarted);
         telemetry.addData("thirdBallConfirmMs", thirdBallConfirmTimer.milliseconds());
         telemetry.addData("recycleIntakeMaxMs", RECYCLE_INTAKE_MAX_MS);
@@ -974,27 +969,36 @@ public class FinalTeleopFixedRecycling extends OpMode {
                     Reading R1 = readAndClassify(colorRight1);
                     ArtifactColor overall1 = combineByConfidence(L1, R1);
 
-                    if (last1 == null || overall1 != last1) applyToLayer(prism, 2, overall1);
+                    if (last1 == null || overall1 != last1) {
+                        applyToLayer(prism, 0, overall1);
+                    }
                     last1 = overall1;
 
                     showOnRgbLight(overall1);
                     break;
                 }
+
                 case 1: {
                     Reading L2 = readAndClassify(colorLeft2);
                     Reading R2 = readAndClassify(colorRight2);
                     ArtifactColor overall2 = combineByConfidence(L2, R2);
 
-                    if (last2 == null || overall2 != last2) applyToLayer(prism, 1, overall2);
+                    if (last2 == null || overall2 != last2) {
+                        applyToLayer(prism, 1, overall2);
+                    }
                     last2 = overall2;
                     break;
                 }
-                case 2: {
-                    Reading L3 = readAndClassify(colorLeft3);
-                    Reading R3 = readAndClassify(colorRight3);
-                    ArtifactColor overall3 = combineByConfidence(L3, R3);
 
-                    if (last3 == null || overall3 != last3) applyToLayer(prism, 0, overall3);
+                case 2: {
+                    // No 3rd color-sensor pair anymore.
+                    // Use the goBILDA laser-based thirdBallPresent boolean,
+                    // then infer the 3rd color from the first two detected colors.
+                    ArtifactColor overall3 = predictThirdBallColor(last1, last2, thirdBallPresent);
+
+                    if (last3 == null || overall3 != last3) {
+                        applyToLayer(prism, 2, overall3);
+                    }
                     last3 = overall3;
                     break;
                 }
@@ -1013,24 +1017,76 @@ public class FinalTeleopFixedRecycling extends OpMode {
 
     private void applyToLayer(CustomGoBildaPrismRgbLedDriver prism, int layer, ArtifactColor c) {
         int[] rgb;
-        int bright;
 
         switch (c) {
             case GREEN:
                 rgb = RGB_GREEN;
-                bright = BRIGHT_ON;
                 break;
+
             case PURPLE:
                 rgb = RGB_PURPLE;
-                bright = BRIGHT_ON;
                 break;
+
+            case RED:
+                rgb = RGB_RED;
+                break;
+
+            case UNKNOWN:
             default:
                 rgb = RGB_OFF;
-                bright = BRIGHT_OFF;
                 break;
         }
 
         prism.setLayerColor(layer, rgb[0], rgb[1], rgb[2]);
+    }
+
+    private ArtifactColor predictThirdBallColor(ArtifactColor first, ArtifactColor second, boolean thirdPresent) {
+        // If the laser sensors do not see the third ball, turn the 3rd LED off.
+        if (!thirdPresent) {
+            return ArtifactColor.UNKNOWN;
+        }
+
+        // Cannot predict if either of the first two colors is not known yet.
+        if (first == null || second == null ||
+                first == ArtifactColor.UNKNOWN || second == ArtifactColor.UNKNOWN ||
+                first == ArtifactColor.RED || second == ArtifactColor.RED) {
+            return ArtifactColor.UNKNOWN;
+        }
+
+        int greenCount = 0;
+        int purpleCount = 0;
+
+        if (first == ArtifactColor.GREEN) {
+            greenCount++;
+        }
+        if (second == ArtifactColor.GREEN) {
+            greenCount++;
+        }
+
+        if (first == ArtifactColor.PURPLE) {
+            purpleCount++;
+        }
+        if (second == ArtifactColor.PURPLE) {
+            purpleCount++;
+        }
+
+        // Allowed set is exactly: 2 PURPLE + 1 GREEN.
+        // PP -> third must be GREEN.
+        if (purpleCount == 2) {
+            return ArtifactColor.GREEN;
+        }
+
+        // PG / GP -> third must be PURPLE.
+        if (purpleCount == 1 && greenCount == 1) {
+            return ArtifactColor.PURPLE;
+        }
+
+        // GG is impossible with the assumed 2-purple/1-green set, so show red error.
+        if (greenCount == 2) {
+            return ArtifactColor.RED;
+        }
+
+        return ArtifactColor.UNKNOWN;
     }
 
     private void updateRecycleTeleOp() {
@@ -1166,15 +1222,33 @@ public class FinalTeleopFixedRecycling extends OpMode {
         boolean leftColor = left.color != ArtifactColor.UNKNOWN;
         boolean rightColor = right.color != ArtifactColor.UNKNOWN;
 
-        if (!leftColor && !rightColor) return ArtifactColor.UNKNOWN;
-        if (leftColor && !rightColor) return left.color;
-        if (!leftColor && rightColor) return right.color;
+        if (!leftColor && !rightColor) {
+            return ArtifactColor.UNKNOWN;
+        }
 
-        if (left.conf > right.conf) return left.color;
-        if (right.conf > left.conf) return right.color;
+        if (leftColor && !rightColor) {
+            return left.color;
+        }
 
-        if (left.val > right.val) return left.color;
-        if (right.val > left.val) return right.color;
+        if (!leftColor && rightColor) {
+            return right.color;
+        }
+
+        if (left.conf > right.conf) {
+            return left.color;
+        }
+
+        if (right.conf > left.conf) {
+            return right.color;
+        }
+
+        if (left.val > right.val) {
+            return left.color;
+        }
+
+        if (right.val > left.val) {
+            return right.color;
+        }
 
         return (left.color == ArtifactColor.PURPLE || right.color == ArtifactColor.PURPLE)
                 ? ArtifactColor.PURPLE : ArtifactColor.GREEN;
@@ -1185,9 +1259,13 @@ public class FinalTeleopFixedRecycling extends OpMode {
             case GREEN:
                 rgbLight.setPosition(LED_GREEN_POS);
                 break;
+
             case PURPLE:
                 rgbLight.setPosition(LED_PURPLE_POS);
                 break;
+
+            case RED:
+            case UNKNOWN:
             default:
                 rgbLight.setPosition(LED_OFF_POS);
                 break;

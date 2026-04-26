@@ -28,22 +28,19 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.teamcode.DroidLib.CRAxonPDController;
-import org.firstinspires.ftc.teamcode.DroidLib.DroidForceMethods;
 import org.firstinspires.ftc.teamcode.RoadrunnerFiles.MecanumDrive;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
+import org.firstinspires.ftc.teamcode.opmode.Auto.Blue.BlueCloseAuto12SortedNewPID;
 import org.firstinspires.ftc.teamcode.opmode.Auto.PoseStorage;
-import org.firstinspires.ftc.teamcode.opmode.misc.BlobDetector;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController3;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
 
 import java.util.function.Function;
 
-//@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class BlueFarAutoCycling21 extends LinearOpMode {
+public class BlueCloseAuto21 extends LinearOpMode {
 
     // Initialize all hardware
     Limelight3A limelight;
@@ -79,21 +76,18 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
 //    public static double minAccelIntaking = -40;
 //    public static double maxAccelIntaking = 40;
 
-    public static double minVelDrive = 130;
-    public static double minAccelDrive = -120;
-    public static double maxAccelDrive = 110;
+    public static double gateIntakeTime = 1.2;
 
-    public static double IntakeRamMinVelDrive = 150;
-    public static double IntakeRamMinAccelDrive = -130;
-    public static double IntakeRamMaxAccelDrive = 140;
-
+    public static double minVelDrive = 75;
+    public static double minAccelDrive = -65;
+    public static double maxAccelDrive = 65;
 
     public static double shooterStartDelay = 0.0;
     public static double shootingDelay = 0.8;
 
     public static double intakeStopDelay = 0.4;
 
-    public static double turretStartPos = 0.675; /*0.39*/
+    public static double turretStartPos = 0.5;
     //public static double turretShootPos = 0.422;
 
     public static double plainKickerPower = 0.0;
@@ -115,49 +109,17 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
 
     public static double stallGraceMs    = 400;  // ms
 
-    public static double intakeShootingSpeed = -0.9;
+    public static boolean kickersStarted = false;
 
-    public static double kickerSpeed = 1.0;
+    public static double shootingSpeed = -0.58;
 
-    public static double shootingSpeed = -1.0;
-
-    public static boolean kickersStarted;
-
-
-    public static boolean intakeLastSpike = true;
-    public static boolean intakeSecondSpike = false;
-
-    public static double preloadShootingSpeed = -1185;
-    public static double cyclingShootingSpeed = -1150;
-    public static double shootingSpeedPID = preloadShootingSpeed;
-    public static double turretOffset = 0.00;
+    public static double shootingSpeedPID = -860;
+    public static double turretOffset = -0.009;
 
     public static String allianceColor = "Blue";
 
     public static boolean enableTurretTracking = true;
     public static boolean enableVelPID = true;
-
-    public static double secondCycleOffset = 0.0;
-    public static double thirdCycleOffset = 0.0;
-    public static double fourthCycleOffset = 0.0;
-
-    public static double widenCycleOffset = 0.0;
-
-    public static double normalWallPos = -62;
-    public static double extendedWallPos = -66;
-    public static double wallPos = normalWallPos;
-
-    public static boolean secondCycleOffsetEnabled = false;
-    public static boolean thirdCycleOffsetEnabled = false;
-    public static boolean fourthCycleOffsetEnabled = false;
-    public static boolean widenCycleOffsetEnabled = false;
-
-    public static double cyclingShootingY = -25;
-
-    public static double intakeRetreatPos = -64;
-
-    public static boolean blobDetectionEnabled = false;
-    public static boolean runNextPath = true;
 
     // vPID
     double flywheelCurrentVelocity;
@@ -192,28 +154,21 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
     public static double maintainThreshold = Globals.maintainThreshold;
     public static double defaultVoltage = Globals.defaultVoltage;
 
-    int obeliskID = -1;
 
-    double blobOffset = 0;
+    int obeliskID = -1;
 
     // Initialize any instances of classes
     ElapsedTime recyclerTimer = new ElapsedTime();
 
     ElapsedTime shooterTimer = new ElapsedTime();
 
-    private BlobDetector detector;
-
     visionTools vision = new visionTools();
-
-    CRAxonPDController kickerPID = new CRAxonPDController();
-    DroidForceMethods DFM = new DroidForceMethods();
-
 
     @Override
     public void runOpMode() {
 
         // Instantiate MecanumDrive
-        Pose2d startPose = new Pose2d(61.5, -14.5, Math.toRadians(270));
+        Pose2d startPose = new Pose2d(-55, -44.5, Math.toRadians(225));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
 
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
@@ -237,7 +192,7 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
 
         leftKickerServo = hardwareMap.get(CRServoImplEx.class, "leftKickerServo");
         rightKickerServo = hardwareMap.get(CRServoImplEx.class, "rightKickerServo");
-        leftKickerServo.setDirection(CRServoImplEx.Direction.REVERSE);
+        rightKickerServo.setDirection(CRServoImplEx.Direction.REVERSE);
 
         leftTurretServo = hardwareMap.get(ServoImplEx.class, "leftTurretServo");
         rightTurretServo = hardwareMap.get(ServoImplEx.class, "rightTurretServo");
@@ -274,7 +229,7 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         pinpoint.recalibrateIMU();
-        sleep(2000);
+        sleep(1000);
 
         // Pre-Auto robot initlization. MUST BE LAST
         leftHood.setPosition(0.28);
@@ -288,32 +243,44 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
 
         plainKickerPower = 0.0;
 
-
         velocityPID = new PIDVelocityController3(
                 targetVelocity,
                 KpMaintain,KiMaintain,
                 KpRecovery,KiRecovery,KsRecovery
                 , KsFF, KvFF
         );
-//        sleep(3000);
-//
-//        pinpoint.recalibrateIMU();
+        sleep(500);
 
-        sleep(1000);
+        sleep(500);
         telemetry.addData("FINISHED",true);
         telemetry.update();
 
-        detector = new BlobDetector(
-                hardwareMap,
-                "Webcam 1",
-                640,
-                480,
-                135.0 / 346.0,
-                26,
-                "Blue"
-        );
+        sleep(1000);
 
-        detector.start();
+        enableTurretTracking = true;
+        enableVelPID = true;
+
+        while(!opModeIsActive() && !isStopRequested()) {
+
+            if (gamepad1.a) {
+                enableTurretTracking = true;
+            } else if (gamepad1.b) {
+                enableTurretTracking = false;
+            }
+
+            if (gamepad1.x) {
+                enableVelPID = true;
+            } else if (gamepad1.y) {
+                enableVelPID = false;
+            }
+
+            telemetry.addData("Enable Turret Tracking (a/b): ", enableTurretTracking);
+            //telemetry.addData("Picking up last spike mark? (a/b): ", pickupLastSpike);
+            telemetry.addData("Enable VelPID (x/y): ", enableVelPID);
+
+            telemetry.update();
+
+        }
 
         waitForStart();
 
@@ -328,59 +295,22 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                     // Thread 1: Pathing + General Robot
                     new SequentialAction(
 
-                            new runNextPath(true),
-
-                            new SleepAction(2),
-                            new kickerShoot(),
-
-                            new SleepAction(shootingDelay),
-
-                            new ParallelAction(
-                                    // Intake Last Spike (from *current* pose)
-                                    new PathFromCurrentPose(drive, pose ->
-                                            drive.actionBuilder(pose)
-                                                    .splineToLinearHeading(
-                                                            new Pose2d(36, -28, Math.toRadians(270)), Math.toRadians((-Math.PI)/2),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                    )
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(36, -60), Math.toRadians(270),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                    )
-
-                                                    .build()
-                                    ),
-                                    new kickerIdle(false),
-                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0),
-                                    new setPIDToCycling()
+                            // Preload Path from known start pose
+                            new PathFromCurrentPose(drive, pose ->
+                                    drive.actionBuilder(pose)
+                                            .strafeToSplineHeading(
+                                                    new Vector2d(-12, -15), Math.toRadians(330),
+                                                    new TranslationalVelConstraint(minVelDrive),
+                                                    new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                            )
+                                            .build()
                             ),
 
-
-                            // Go to Shooting Position
-
-                            new ParallelAction(
-                                    new PathFromCurrentPose(drive, pose ->
-                                            drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                    )
-                                                    .build()
-                                    ),
-                                    new SequentialAction(
-                                            new SleepAction(1),
-                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
-                                    )
-                            ),
-
-                            // repeat for correction
+                            //Repeat for correction
                             new PathFromCurrentPose(drive, pose ->
                                     drive.actionBuilder(pose)
                                             .strafeToLinearHeading(
-                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                    new Vector2d(-12, -15), Math.toRadians(330),
                                                     new TranslationalVelConstraint(minVelDrive),
                                                     new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                             )
@@ -388,31 +318,20 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                             ),
 
                             new SleepAction(shooterStartDelay),
-
                             new kickerShoot(),
-
                             new SleepAction(shootingDelay),
 
-
-                            // Intake Cycle 1
+                            // Spike 2
                             new ParallelAction(
+                                    // Intake Spike 2 Path (from *current* pose)
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(60.5, wallPos), Math.toRadians(270),
-                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
-                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
+                                                    .setTangent(330)
+                                                    .splineTo(
+                                                            new Vector2d(17, -64), (-Math.PI/2),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
-//                                                    .strafeToLinearHeading(
-//                                                            new Vector2d(60.5, intakeRetreatPos), Math.toRadians(270),
-//                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
-//                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
-//                                                    )
-//                                                    .strafeToLinearHeading(
-//                                                            new Vector2d(60.5, -66), Math.toRadians(270),
-//                                                            new TranslationalVelConstraint(minVelDrive),
-//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-//                                                    )
                                                     .build()
                                     ),
                                     new kickerIdle(false),
@@ -420,10 +339,12 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                             ),
 
                             new ParallelAction(
+                                    // Score Spike 2 Path (from *current* pose)
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                    .setTangent(Math.PI/2)
+                                                    .splineTo(
+                                                            new Vector2d(-12, -15), (Math.toRadians(140)),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -435,11 +356,11 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                                     )
                             ),
 
-                            // repeat for correction
+                            // Repeat for correction
                             new PathFromCurrentPose(drive, pose ->
                                     drive.actionBuilder(pose)
                                             .strafeToLinearHeading(
-                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                    new Vector2d(-12, -15), Math.toRadians(140),
                                                     new TranslationalVelConstraint(minVelDrive),
                                                     new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                             )
@@ -447,36 +368,77 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                             ),
 
                             new SleepAction(shooterStartDelay),
-
                             new kickerShoot(),
-
                             new SleepAction(shootingDelay),
 
-                            new getBlobOffset(),
-
-                            new SleepAction(0.1),
-
-
-                            //Intake Cycle 2
+                            // Open Gate 1
 
                             new ParallelAction(
+                                    // Open Gate Path (from *current* pose)
+                                    new PathFromCurrentPose(drive, pose ->
+                                            drive.actionBuilder(pose)
+                                                    .setTangent(Math.toRadians(315))
+                                                    .splineToSplineHeading(
+                                                            new Pose2d(15, -63, Math.toRadians(225)), (-Math.PI/2),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                    )
+                                                    .build()
+                                    ),
+                                    new kickerIdle(false),
+                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
+                            ),
+
+                            // Allow balls to get intaked
+                            new SleepAction(gateIntakeTime),
+
+                            new ParallelAction(
+                                    // Score Gate Path (from *current* pose)
+                                    new PathFromCurrentPose(drive, pose ->
+                                            drive.actionBuilder(pose)
+                                                    .strafeToSplineHeading(
+                                                            new Vector2d(15, -50), Math.toRadians(270),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                    )
+                                                    .splineTo(
+                                                            new Vector2d(-12, -15), Math.toRadians(140),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                    )
+                                                    .build()
+                                    ),
+                                    new SequentialAction(
+                                            new SleepAction(1),
+                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
+                                    )
+                            ),
+
+                            // Repeat for correction
+                            new PathFromCurrentPose(drive, pose ->
+                                    drive.actionBuilder(pose)
+                                            .strafeToLinearHeading(
+                                                    new Vector2d(-12, -15), Math.toRadians(140),
+                                                    new TranslationalVelConstraint(minVelDrive),
+                                                    new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                            )
+                                            .build()
+                            ),
+
+                            new SleepAction(shooterStartDelay),
+                            new kickerShoot(),
+                            new SleepAction(shootingDelay),
+
+                            // Spike 1
+                            new ParallelAction(
+                                    // Intake Spike 1 Path (from *current* pose)
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(60.5 - blobOffset, wallPos), Math.toRadians(270),
-                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
-                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
+                                                            new Vector2d(-12, -53), Math.toRadians(270),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
-//                                                    .strafeToLinearHeading(
-//                                                            new Vector2d(60.5 - blobOffset, intakeRetreatPos), Math.toRadians(270),
-//                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
-//                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
-//                                                    )
-//                                                    .strafeToLinearHeading(
-//                                                            new Vector2d(60.5 - blobOffset, -66), Math.toRadians(270),
-//                                                            new TranslationalVelConstraint(minVelDrive),
-//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-//                                                    )
                                                     .build()
                                     ),
                                     new kickerIdle(false),
@@ -484,10 +446,11 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                             ),
 
                             new ParallelAction(
+                                    // Score Spike 1 Path (from *current* pose)
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                    .strafeToSplineHeading(
+                                                            new Vector2d(-12, -15), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -499,11 +462,11 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                                     )
                             ),
 
-                            // repeat for correction
+                            // Repeat for correction
                             new PathFromCurrentPose(drive, pose ->
                                     drive.actionBuilder(pose)
                                             .strafeToLinearHeading(
-                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                    new Vector2d(-12, -15), Math.toRadians(270),
                                                     new TranslationalVelConstraint(minVelDrive),
                                                     new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                             )
@@ -511,35 +474,27 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                             ),
 
                             new SleepAction(shooterStartDelay),
-
                             new kickerShoot(),
-
                             new SleepAction(shootingDelay),
 
-                            new getBlobOffset(),
 
-                            new SleepAction(0.1),
-
-                            //Intake Cycle 3
+                            // Spike 3
 
                             new ParallelAction(
+                                    // Intake Spike 3 Path (from *current* pose)
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(60.5 - blobOffset, wallPos), Math.toRadians(270),
-                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
-                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
+                                                    .setTangent(0)
+                                                    .splineToSplineHeading(
+                                                            new Pose2d(37, -35, Math.toRadians(270)), (-Math.PI/2),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
-//                                                    .strafeToLinearHeading(
-//                                                            new Vector2d(60.5 - blobOffset, intakeRetreatPos), Math.toRadians(270),
-//                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
-//                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
-//                                                    )
-//                                                    .strafeToLinearHeading(
-//                                                            new Vector2d(60.5 - blobOffset, -66), Math.toRadians(270),
-//                                                            new TranslationalVelConstraint(minVelDrive),
-//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-//                                                    )
+                                                    .strafeToLinearHeading(
+                                                            new Vector2d(37, -62), Math.toRadians(270),
+                                                            new TranslationalVelConstraint(minVelDrive),
+                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                    )
                                                     .build()
                                     ),
                                     new kickerIdle(false),
@@ -547,10 +502,11 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                             ),
 
                             new ParallelAction(
+                                    // Score Spike 3 Path (from *current* pose)
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                    .strafeToSplineHeading(
+                                                            new Vector2d(-12, -15), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -562,11 +518,11 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                                     )
                             ),
 
-                            // repeat for correction
+                            // Repeat for correction
                             new PathFromCurrentPose(drive, pose ->
                                     drive.actionBuilder(pose)
                                             .strafeToLinearHeading(
-                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                    new Vector2d(-12, -15), Math.toRadians(270),
                                                     new TranslationalVelConstraint(minVelDrive),
                                                     new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                             )
@@ -574,151 +530,23 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                             ),
 
                             new SleepAction(shooterStartDelay),
-
                             new kickerShoot(),
-
                             new SleepAction(shootingDelay),
 
-                            new getBlobOffset(),
-
-                            new SleepAction(0.1),
-
-                            //Intake Cycle 4
-
+                            // Park
                             new ParallelAction(
+                                    // Park Path (from *current* pose)
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(60.5 - blobOffset, wallPos), Math.toRadians(270),
-                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
-                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
-                                                    )
-//                                                    .strafeToLinearHeading(
-//                                                            new Vector2d(60.5 - blobOffset, intakeRetreatPos), Math.toRadians(270),
-//                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
-//                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
-//                                                    )
-//                                                    .strafeToLinearHeading(
-//                                                            new Vector2d(60.5 - blobOffset, -66), Math.toRadians(270),
-//                                                            new TranslationalVelConstraint(minVelDrive),
-//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-//                                                    )
-                                                    .build()
-                                    ),
-                                    new kickerIdle(false),
-                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
-                            ),
-
-                            new ParallelAction(
-                                    new PathFromCurrentPose(drive, pose ->
-                                            drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
+                                                            new Vector2d(-22, -50), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .build()
                                     ),
-                                    new SequentialAction(
-                                            new SleepAction(1),
-                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
-                                    )
-                            ),
-
-                            // repeat for correction
-                            new PathFromCurrentPose(drive, pose ->
-                                    drive.actionBuilder(pose)
-                                            .strafeToLinearHeading(
-                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
-                                                    new TranslationalVelConstraint(minVelDrive),
-                                                    new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                            )
-                                            .build()
-                            ),
-
-                            new SleepAction(shooterStartDelay),
-
-                            new kickerShoot(),
-
-                            new SleepAction(shootingDelay),
-
-                            new getBlobOffset(),
-
-                            new SleepAction(0.1),
-
-                            //Intake Cycle 5
-
-                            new ParallelAction(
-                                    new PathFromCurrentPose(drive, pose ->
-                                            drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(60.5 - blobOffset, wallPos), Math.toRadians(270),
-                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
-                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
-                                                    )
-//                                                    .strafeToLinearHeading(
-//                                                            new Vector2d(60.5 - blobOffset, intakeRetreatPos), Math.toRadians(270),
-//                                                            new TranslationalVelConstraint(IntakeRamMinVelDrive),
-//                                                            new ProfileAccelConstraint(IntakeRamMinAccelDrive, IntakeRamMaxAccelDrive)
-//                                                    )
-//                                                    .strafeToLinearHeading(
-//                                                            new Vector2d(60.5 - blobOffset, -66), Math.toRadians(270),
-//                                                            new TranslationalVelConstraint(minVelDrive),
-//                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-//                                                    )
-                                                    .build()
-                                    ),
-                                    new kickerIdle(false),
-                                    new setIntake(frontIntakeMotor, backIntakeMotor, -1.0)
-                            ),
-
-                            new ParallelAction(
-                                    new PathFromCurrentPose(drive, pose ->
-                                            drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                    )
-                                                    .build()
-                                    ),
-                                    new SequentialAction(
-                                            new SleepAction(1),
-                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0)
-                                    )
-                            ),
-
-                            // repeat for correction
-                            new PathFromCurrentPose(drive, pose ->
-                                    drive.actionBuilder(pose)
-                                            .strafeToLinearHeading(
-                                                    new Vector2d(60.5, cyclingShootingY), Math.toRadians(270),
-                                                    new TranslationalVelConstraint(minVelDrive),
-                                                    new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                            )
-                                            .build()
-                            ),
-
-                            new SleepAction(shooterStartDelay),
-
-                            new kickerShoot(),
-
-                            new SleepAction(shootingDelay),
-
-                            //Park
-                            new ParallelAction(
-                                    new PathFromCurrentPose(drive, pose ->
-                                            drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(60.5, -40), Math.toRadians(270),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
-                                                    )
-                                                    .build()
-                                    ),
-                                    new kickerIdle(true),
-                                    new setIntake(frontIntakeMotor, backIntakeMotor, 0.0),
-                                    new setShooter(leftShooterMotor, rightShooterMotor, 0.0)
+                                    new setShooter(leftShooterMotor, rightShooterMotor, 0.0),
+                                    new kickerIdle(true)
                             )
 
                     ),
@@ -742,13 +570,9 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
 
             PoseStorage.currentPose = vision.RRtoPinpoint(drive);
 
-            detector.stop();
-
             sleep(1000);
 
         }
-
-        //sleep(1000);
 
     }
 
@@ -790,18 +614,6 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
         }
     }
 
-    public class setPIDToCycling implements Action {
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            shootingSpeedPID = cyclingShootingSpeed;
-
-            return false;
-
-        }
-    }
-
 
     public class startVelPIDPlain implements Action {
 
@@ -817,7 +629,7 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
             if (enableVelPID) {
                 flywheelCurrentVelocity = /*(*/leftShooterMotor.getVelocity() /*+ rightShooterMotor.getVelocity()) / 2*/;
 
-                targetVelocity = shootingSpeedPID;
+                targetVelocity = speed;
 
                 velocityPID.setTargetVelocity(targetVelocity);
                 velocityPID.setMaintainGains(KpMaintain,KiMaintain,KpDriveRecovery);
@@ -837,12 +649,6 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
         }
     }
 
-    /**
-     * Lazy action that, on first run, builds a real RR Action
-     * from the *current* pose using the provided factory.
-     *
-     * This avoids any type issues with specific builder classes.
-     */
     public class PathFromCurrentPose implements Action {
         private final MecanumDrive drive;
         private final Function<Pose2d, Action> actionFactory;
@@ -884,75 +690,12 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
         }
     }
 
-    public class runNextPath implements Action {
-
-        private final boolean value;
-
-        public runNextPath(boolean value) {
-            this.value = value;
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            runNextPath = value;
-            return false;
-        }
-    }
-
-
-    public class updatePose implements Action {
-
-        private MecanumDrive drive = null;
-
-        public updatePose(MecanumDrive drive){
-
-            this.drive = drive;
-
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            drive.updatePoseEstimate();
-            drive.localizer.update();
-
-            return false;
-
-        }
-    }
-
     public class getObeliskID implements Action {
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
             obeliskID = vision.ObeliskID(limelight);
-
-            return false;
-
-        }
-    }
-
-    public class getBlobOffset implements Action {
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-
-            if (blobDetectionEnabled) {
-                blobOffset = detector.getOffsetCm() / 2.54;
-
-                if (blobOffset < 5) {
-                    blobOffset = 0;
-                } else {
-                    blobOffset -= 5;
-                }
-
-                if (blobOffset != 0) {
-                    wallPos = extendedWallPos;
-                } else {
-                    wallPos = normalWallPos;
-                }
-            }
 
             return false;
 
@@ -1199,6 +942,31 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
+            if (!enableVelPID) {
+                topShooterMotor.setPower(power);
+                bottomShooterMotor.setPower(power);
+            }
+
+            return false;
+        }
+    }
+
+    public class setShooterPID implements Action {
+
+        private final DcMotorEx topShooterMotor;
+        private final DcMotorEx bottomShooterMotor;
+
+        double power;
+
+        public setShooterPID(DcMotorEx topShooterMotor, DcMotorEx bottomShooterMotor, double power){
+            this.topShooterMotor = topShooterMotor;
+            this.bottomShooterMotor = bottomShooterMotor;
+            this.power = power;
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+
             topShooterMotor.setPower(power);
             bottomShooterMotor.setPower(power);
 
@@ -1226,10 +994,10 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
 
             // after 200ms, run the kickers
             if (!kickersStarted && shooterTimer.milliseconds() >= 200) {
-                leftKickerServo.setPower(kickerSpeed);
-                rightKickerServo.setPower(kickerSpeed);
-                frontIntakeMotor.setPower(intakeShootingSpeed);
-                backIntakeMotor.setPower(intakeShootingSpeed);
+                leftKickerServo.setPower(Globals.rollerKickerShoot);
+                rightKickerServo.setPower(Globals.rollerKickerShoot);
+                frontIntakeMotor.setPower(-1.0);
+                backIntakeMotor.setPower(-1.0);
 
                 kickersStarted = true;
             }
