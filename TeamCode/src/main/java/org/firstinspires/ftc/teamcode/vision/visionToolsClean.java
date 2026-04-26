@@ -24,8 +24,9 @@ public class visionToolsClean {
     private double smoothTx = 0;
     //Actual middle is 1.8288, 1.8288
     public static double GoalY = 1.8288;
-    public static double GoalXRed = 1.6788;
+    public static double GoalXRed = 1.7288;
     public static double GoalXBlue = -1.7288;
+    public static boolean TestingGoal = false;
     public double groundDistancePinpoint(double x, double y, String allianceColor) {
         double groundDistance = 0;
         if (allianceColor.equals("Red")) {
@@ -215,16 +216,16 @@ public class visionToolsClean {
 
         double curX = robotX + turretOffsetMeters * (xcoeff * cosH - ycoeff * sinH);
         double curY = robotY + turretOffsetMeters * (xcoeff * sinH + ycoeff * cosH);
+        if(!TestingGoal) {
+            if (yPos > 0) {
+                GoalY = 1.7488;
+                GoalXRed = 1.7288;
+                GoalXBlue = -1.7288;
 
-        if(yPos > 0){
-            GoalY = 1.6788;
-            GoalXRed = 1.7288;
-            GoalXBlue = -1.7288;
-
-        }else{
-            GoalY = 1.8288;
+            } else {
+                GoalY = 1.8288;
+            }
         }
-
         double goalY = GoalY;
         double goalXRed = GoalXRed;
         double goalXBlue = GoalXBlue;
@@ -422,12 +423,12 @@ public class visionToolsClean {
         if(currentDist < 1.9) {
             speed = 31.7460 * x2
                     - 428.254 * x
-                    - 189.4921;
+                    - 209.4921;
 
         }else if(currentDist< 2.75){
             speed = 58.0514 * x2
                     - 491.1754 * x
-                    - 57.2411;
+                    - 97.2411;
         }else{
             //−19.9936x3+191.7677x2−853.9049x−213.5501
 
@@ -435,7 +436,7 @@ public class visionToolsClean {
                     + 528.9893 * x3
                     - 3290.8152 * x2
                     + 8681.1264 * x
-                    - 9184.4227;
+                    - 9224.4227;
 
         }
         return speed;
