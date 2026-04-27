@@ -555,16 +555,16 @@ public class FinalTeleopFixedRecycling extends OpMode {
             turretSecClose = 0.8;
         } else {
             moveAwayFar = 0;
-            moveAwayTurretFar = 0;
+            moveAwayTurretFar = -0.1;
             secFar = 0;
-            turretSecFar = 0;
+            turretSecFar = -0.1;
 
             rotationalSec = 0;
 
             moveAwayClose = 0;
-            moveAwayTurretClose = 0;
+            moveAwayTurretClose = -0.1;
             secClose = 0;
-            turretSecClose = 0;
+            turretSecClose = -0.1;
         }
 
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {

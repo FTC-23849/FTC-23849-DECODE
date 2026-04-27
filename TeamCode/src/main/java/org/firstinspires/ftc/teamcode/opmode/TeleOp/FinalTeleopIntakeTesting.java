@@ -571,29 +571,29 @@ public class FinalTeleopIntakeTesting extends OpMode {
         currentVoltage = myControlHubVoltageSensor.getVoltage();
         double now = runTime.milliseconds();
         if(gamepad1.left_bumper){
-//            moveAwayFar = 1.2;
-//            moveAwayTurretFar = 1.4;
-//            secFar = 0.8;
-//            turretSecFar = 1.1;
-//
-//            rotationalSec = 0.1;
-//
-//            moveAwayClose = 2;
-//             moveAwayTurretClose = 0.6;
-//            secClose = 0.6;
-//            turretSecClose = 0.8;
+            moveAwayFar = 1.2;
+            moveAwayTurretFar = 1.4;
+            secFar = 0.8;
+            turretSecFar = 1.1;
+
+            rotationalSec = 0.1;
+
+            moveAwayClose = 2;
+             moveAwayTurretClose = 0.6;
+            secClose = 0.6;
+            turretSecClose = 0.8;
         }else{
-//            moveAwayFar = 0;
-//            moveAwayTurretFar = 0;
-//            secFar = 0;
-//            turretSecFar = 0;
-//
-//            rotationalSec = 0;
-//
-//            moveAwayClose = 0;
-//            moveAwayTurretClose = 0;
-//            secClose = 0;
-//            turretSecClose = 0;
+            moveAwayFar = 0;
+            moveAwayTurretFar = 0.1;
+            secFar = 0;
+            turretSecFar = 0.1;
+
+            rotationalSec = 0;
+
+            moveAwayClose = 0;
+            moveAwayTurretClose = 0.1;
+            secClose = 0;
+            turretSecClose = 0.1;
         }
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
             robotPos = pinpoint.getPosition();
