@@ -217,7 +217,7 @@ public class visionToolsClean {
         double curX = robotX + turretOffsetMeters * (xcoeff * cosH - ycoeff * sinH);
         double curY = robotY + turretOffsetMeters * (xcoeff * sinH + ycoeff * cosH);
         if(!TestingGoal) {
-            if (yPos > 0) {
+            if (yPos > 1.3) {
                 GoalY = 1.7488;
                 GoalXRed = 1.7288;
                 GoalXBlue = -1.7288;
@@ -423,7 +423,7 @@ public class visionToolsClean {
         if(currentDist < 1.9) {
             speed = 31.7460 * x2
                     - 428.254 * x
-                    - 209.4921;
+                    - 149.4921;
 
         }else if(currentDist< 2.75){
             speed = 58.0514 * x2
