@@ -105,8 +105,8 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
 
     public static double shootingSpeed = -0.58;
 
-    public static double shootingSpeedPID = -860;
-    public static double turretOffset = -0.009;
+    public static double shootingSpeedPID = -850;
+    public static double turretOffset = -0.006;
 
     public static double feedingSpeed = 0.4;
 
@@ -140,7 +140,7 @@ public class BlueCloseAuto12SortedNewPID extends LinearOpMode {
 
     public static double KpRecovery = Globals.KpRecovery;
     public static double KiRecovery = Globals.KiRecovery;
-    public static double KsRecovery = Globals.KsRecovery;
+    public static double KsRecovery = Globals.KsRecoveryClose;
     public static double KvFF = Globals.KvFF;
     public static double KsFF = Globals.KsFF;
 
