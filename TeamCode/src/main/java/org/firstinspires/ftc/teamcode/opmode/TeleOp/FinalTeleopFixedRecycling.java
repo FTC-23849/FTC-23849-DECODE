@@ -96,8 +96,8 @@ public class FinalTeleopFixedRecycling extends OpMode {
     public static double red = 0;
     public static double blue = 0;
 
-    public static double turretZeroCorrection = -0.006;
-    public static double turretZeroCorrection2 = -0.01;
+    public static double turretZeroCorrection = -0.003;
+    public static double turretZeroCorrection2 = -0.004;
 
     public static double shotSpeed = 0.9;
     public static double defaultShotSpeed = 0.9;
@@ -114,7 +114,7 @@ public class FinalTeleopFixedRecycling extends OpMode {
     public static double KiRecovery = 0.001;
     public static double KsRecovery = 1;
     public static double KvFF = 0.00042;
-    public static double KsFF = 0.055;
+    public static double KsFF = 0.055 ;
 
     public static double recoveryThreshold = 60;
     public static double maintainThreshold = 40;
@@ -125,7 +125,7 @@ public class FinalTeleopFixedRecycling extends OpMode {
     boolean firstLoop = true;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
-    public static double turretCorrection = 0.004;
+    public static double turretCorrection = 0.003;
     boolean shooting;
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
