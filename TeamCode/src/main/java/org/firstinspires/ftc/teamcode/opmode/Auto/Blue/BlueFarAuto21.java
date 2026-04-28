@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.Auto.InDevelopment;
+package org.firstinspires.ftc.teamcode.opmode.Auto.Blue;
 
 import androidx.annotation.NonNull;
 
@@ -43,7 +43,7 @@ import java.util.function.Function;
 //@Disabled
 @Config
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous
-public class BlueFarAutoCycling21 extends LinearOpMode {
+public class BlueFarAuto21 extends LinearOpMode {
 
     // Initialize all hardware
     Limelight3A limelight;
@@ -340,7 +340,7 @@ public class BlueFarAutoCycling21 extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .splineToLinearHeading(
-                                                            new Pose2d(36, -28, Math.toRadians(270)), Math.toRadians((-Math.PI)/2),
+                                                            new Pose2d(36, -28, Math.toRadians(270)), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )

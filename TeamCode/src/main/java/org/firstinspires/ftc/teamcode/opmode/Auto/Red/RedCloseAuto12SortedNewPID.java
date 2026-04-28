@@ -34,6 +34,7 @@ import org.firstinspires.ftc.teamcode.hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.opmode.Auto.PoseStorage;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController3;
 import org.firstinspires.ftc.teamcode.vision.visionTools;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 import java.util.function.Function;
 
@@ -69,22 +70,27 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
     ServoImplEx rightTongueServo;
     GoBildaPinpointDriver pinpoint;
 
+    DigitalChannel bottomLeftLaser;
+    DigitalChannel bottomRightLaser;
+
     // Initialize all parameters
 //    public static double minVelIntaking = 40;
 //    public static double minAccelIntaking = -40;
 //    public static double maxAccelIntaking = 40;
 
-    public static double minVelDrive = 65;
-    public static double minAccelDrive = -55;
-    public static double maxAccelDrive = 55;
+    public static double minVelDrive = 90;
+    public static double minAccelDrive = -70;
+    public static double maxAccelDrive = 70;
 
     public static double shooterStartDelay = 0.1;
-    public static double shootingDelay = 1;
+    public static double shootingDelay = 1.5;
 
     public static double recycleDelay = 0.4;
 
-    public static double turretStartPos = 0.655;
-    public static double turretShootPos = 0.580;
+    public static double turretStartPos = 0.5;
+    public static double turretShootPos = 0.80;
+
+    public static double hoodHeight = 0.15;
 
     public static double plainKickerPower = 0.0;
 
@@ -99,10 +105,16 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
 
     public static double shootingSpeed = -0.58;
 
-    public static double shootingSpeedPID = -1370;
-    public static double turretOffset = -0.015;
+    public static double shootingSpeedPID = -820;
+    public static double turretOffset = 0.013;
+
+    public static double feedingSpeed = 0.4;
 
     public static String allianceColor = "Red";
+
+    public static double THIRD_BALL_CONFIRM_MS = 200;
+    public static double RECYCLE_INTAKE_MAX_MS = 2000;
+    public static double THIRD_BALL_CHECK_DELAY_MS = 300;
 
     // vPID
     double flywheelCurrentVelocity;
@@ -128,7 +140,7 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
 
     public static double KpRecovery = Globals.KpRecovery;
     public static double KiRecovery = Globals.KiRecovery;
-    public static double KsRecovery = Globals.KsRecovery;
+    public static double KsRecovery = Globals.KsRecoveryClose;
     public static double KvFF = Globals.KvFF;
     public static double KsFF = Globals.KsFF;
 
@@ -138,7 +150,7 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
     public static double defaultVoltage = Globals.defaultVoltage;
 
 
-    int obeliskID = -1;
+    public static int obeliskID = -1;
 
     // Initialize any instances of classes
     ElapsedTime recyclerTimer = new ElapsedTime();
@@ -151,7 +163,7 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
     public void runOpMode() {
 
         // Instantiate MecanumDrive
-        Pose2d startPose = new Pose2d(-54.5, 45, Math.toRadians(135));
+        Pose2d startPose = new Pose2d(-55, 44.5, Math.toRadians(135));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         // Map motors and servos
@@ -198,11 +210,13 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
 
         leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
         rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
-        rightHood.setDirection(ServoImplEx.Direction.REVERSE);
+        leftHood.setDirection(ServoImplEx.Direction.REVERSE);
 
-        leftHood = hardwareMap.get(ServoImplEx.class, "leftHood");
-        rightHood = hardwareMap.get(ServoImplEx.class, "rightHood");
-        rightHood.setDirection(ServoImplEx.Direction.REVERSE);
+        bottomLeftLaser = hardwareMap.get(DigitalChannel.class, "bottomLeftLaser");
+        bottomRightLaser = hardwareMap.get(DigitalChannel.class, "bottomRightLaser");
+
+        bottomLeftLaser.setMode(DigitalChannel.Mode.INPUT);
+        bottomRightLaser.setMode(DigitalChannel.Mode.INPUT);
 
         //Limelight
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
@@ -213,9 +227,12 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
+        pinpoint.recalibrateIMU();
+        sleep(1000);
+
         // Pre-Auto robot initlization. MUST BE LAST
-        leftHood.setPosition(0.4);
-        rightHood.setPosition(0.4);
+        leftHood.setPosition(hoodHeight);
+        rightHood.setPosition(hoodHeight);
 
         leftTurretServo.setPosition(turretStartPos);
         rightTurretServo.setPosition(turretStartPos);
@@ -235,8 +252,6 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
         sleep(500);
 
         obeliskRead = false;
-
-        pinpoint.recalibrateIMU();
 
         sleep(500);
         telemetry.addData("FINISHED",true);
@@ -259,8 +274,8 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
                                     // Preload Path from known start pose
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
-                                                    .strafeToLinearHeading(
-                                                            new Vector2d(-12, 15), Math.toRadians(90),
+                                                    .strafeToSplineHeading(
+                                                            new Vector2d(-12, 15), Math.toRadians(20),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -271,14 +286,14 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(-12, 15), Math.toRadians(90),
+                                                            new Vector2d(-12, 15), Math.toRadians(15),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .build()
-                                    ),
+                                    )//,
 
-                                    new setShooter(leftShooterMotor, rightShooterMotor, shootingSpeed)
+                                    //new setShooter(leftShooterMotor, rightShooterMotor, shootingSpeed)
                             ),
                             new getObeliskID(),
                             new SleepAction(0.3),
@@ -296,8 +311,8 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .setTangent(0)
-                                                    .splineToLinearHeading(
-                                                            new Pose2d(13, 60, Math.toRadians(90)), (Math.PI/2),
+                                                    .splineToSplineHeading(
+                                                            new Pose2d(17, 64, Math.toRadians(90)), (Math.PI/2),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -313,18 +328,18 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
                                             drive.actionBuilder(pose)
                                                     // Gate Open
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(13, 50), Math.toRadians(90),
+                                                            new Vector2d(13, 48), Math.toRadians(90),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     //.setTangent(Math.PI/2)
-                                                    .splineToLinearHeading(new Pose2d(2, 47, Math.toRadians(90)),
-                                                            (Math.PI/2),
+                                                    .splineToLinearHeading(new Pose2d(2, 50, Math.toRadians(90)),
+                                                            (-Math.PI/2),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(2, 62), Math.toRadians(90),
+                                                            new Vector2d(2, 50), Math.toRadians(90),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -336,7 +351,7 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
                                                     )
                                                     .setTangent(-Math.PI/2)
                                                     .splineToLinearHeading(
-                                                            new Pose2d(-12, 15, Math.toRadians(90)), (Math.PI),
+                                                            new Pose2d(-12, 15, Math.toRadians(90)), (-Math.PI),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -345,6 +360,7 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
 
                                     new SequentialAction(
                                             new SleepAction(recycleDelay + 3.5),
+                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0),
                                             new recycle("PGP", frontIntakeMotor)
                                     )
                             ),
@@ -392,6 +408,7 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
                                     ),
                                     new SequentialAction(
                                             new SleepAction(recycleDelay),
+                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0),
                                             new recycle("PPG", frontIntakeMotor)
                                     )
                             ),
@@ -420,12 +437,12 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
                                             drive.actionBuilder(pose)
                                                     .setTangent(0)
                                                     .splineToLinearHeading(
-                                                            new Pose2d(33, 25, Math.toRadians(90)), (Math.PI/2),
+                                                            new Pose2d(36, 25, Math.toRadians(90)), (Math.PI/2),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(33, 62), Math.toRadians(90),
+                                                            new Vector2d(36, 64), Math.toRadians(90),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -448,6 +465,7 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
                                     ),
                                     new SequentialAction(
                                             new SleepAction(recycleDelay),
+                                            new setIntake(frontIntakeMotor, backIntakeMotor, 0.0),
                                             new recycle("GPP", frontIntakeMotor)
                                     )
                             ),
@@ -660,12 +678,15 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
         }
     }
 
+
     public class getObeliskID implements Action {
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
             obeliskID = vision.ObeliskID(limelight);
+            telemetry.addData("obelisk ID: ", obeliskID);
+            telemetry.update();
 
             return false;
 
@@ -785,34 +806,43 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
 
         // Phase durations (ms)
         private final double tongueDownMs;
-        private final double intakeRunMs;
+        private final double intakeMaxMs;
 
         private final ElapsedTime recyclerTimer = new ElapsedTime();
-        private boolean started = false;
+        private final ElapsedTime thirdBallConfirmTimer = new ElapsedTime();
 
-        // Default timings constructor: 400 ms tongue down, 400 ms intake
+        private boolean started = false;
+        private boolean intakeStarted = false;
+        private boolean thirdBallConfirmTimerStarted = false;
+
+        // Laser must become clear at least once after intake starts
+        private boolean thirdBallSensorCleared = false;
+
         public recycleArtifact(DcMotorEx frontIntakeMotor) {
-            this(frontIntakeMotor, 600, 1000);
+            this.frontIntakeMotor = frontIntakeMotor;
+            this.tongueDownMs = 600;
+            this.intakeMaxMs = RECYCLE_INTAKE_MAX_MS;
         }
 
-        // Optional: custom timings constructor
         public recycleArtifact(DcMotorEx frontIntakeMotor,
                                double tongueDownMs,
-                               double intakeRunMs) {
+                               double intakeMaxMs) {
             this.frontIntakeMotor = frontIntakeMotor;
             this.tongueDownMs = tongueDownMs;
-            this.intakeRunMs = intakeRunMs;
+            this.intakeMaxMs = intakeMaxMs;
         }
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            telemetry.addData("Version",1);
-            telemetry.addData("Tongue Pos",leftTongueServo.getPosition());
-            telemetry.addData("intake ms",intakeRunMs);
-            telemetry.update();
+
             if (!started) {
                 started = true;
+                intakeStarted = false;
+                thirdBallConfirmTimerStarted = false;
+                thirdBallSensorCleared = false;
+
                 recyclerTimer.reset();
+                thirdBallConfirmTimer.reset();
             }
 
             double t = recyclerTimer.milliseconds();
@@ -821,41 +851,107 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
             if (t < tongueDownMs) {
                 leftTongueServo.setPosition(Globals.tongueRecycle);
                 rightTongueServo.setPosition(Globals.tongueRecycle);
-                telemetry.addData("Tongue Pos",leftTongueServo.getPosition());
-                telemetry.addData("intake ms",intakeRunMs);
-                telemetry.update();
+
                 leftKickerServo.setPower(Globals.rollerKickerRecycle);
                 rightKickerServo.setPower(Globals.rollerKickerRecycle);
 
                 frontIntakeMotor.setPower(0.0);
+                backIntakeMotor.setPower(0.0);
 
-                return true;  // still running
+                telemetryPacket.put("recyclePhase", "tongueDown");
+                telemetryPacket.put("recycleTimeMs", t);
+
+                return true;
             }
 
-            // -------- PHASE 2: tongue UP + rollers OFF, intake ON --------
-            if (t < tongueDownMs + intakeRunMs) {
-                leftTongueServo.setPosition(Globals.tongueIntake);
-                rightTongueServo.setPosition(Globals.tongueIntake);
-                telemetry.addData("intake ms",intakeRunMs);
-                telemetry.addData("intake ms",intakeRunMs);
-                leftKickerServo.setPower(0.0);
-                rightKickerServo.setPower(0.0);
-
-                frontIntakeMotor.setPower(-1.0);
-
-                return true;  // still running
-            }
-
-            // -------- PHASE 3: stop intake, finish --------
+            // -------- PHASE 2: tongue UP + rollers OFF + intake ON --------
             leftTongueServo.setPosition(Globals.tongueIntake);
             rightTongueServo.setPosition(Globals.tongueIntake);
 
             leftKickerServo.setPower(0.0);
             rightKickerServo.setPower(0.0);
 
-            frontIntakeMotor.setPower(0.0);
+            frontIntakeMotor.setPower(-1.0);
+            backIntakeMotor.setPower(-1.0);
 
-            return false; // action complete
+            if (!intakeStarted) {
+                intakeStarted = true;
+                thirdBallConfirmTimerStarted = false;
+                thirdBallSensorCleared = false;
+                thirdBallConfirmTimer.reset();
+            }
+
+            double intakeRunTime = t - tongueDownMs;
+
+            // Track sensor clearing IMMEDIATELY after intake starts,
+            // including during the first 300ms delay.
+            if (!thirdBallPresent()) {
+                thirdBallSensorCleared = true;
+            }
+
+            telemetryPacket.put("recyclePhase", "intaking");
+            telemetryPacket.put("intakeRunTimeMs", intakeRunTime);
+            telemetryPacket.put("thirdBallPresent", thirdBallPresent());
+            telemetryPacket.put("thirdBallSensorCleared", thirdBallSensorCleared);
+
+            // Upper bound: after 2 seconds of intake, stop no matter what
+            if (intakeRunTime >= intakeMaxMs) {
+                leftTongueServo.setPosition(Globals.tongueIntake);
+                rightTongueServo.setPosition(Globals.tongueIntake);
+
+                leftKickerServo.setPower(0.0);
+                rightKickerServo.setPower(0.0);
+
+                frontIntakeMotor.setPower(0.0);
+                backIntakeMotor.setPower(0.0);
+
+                telemetryPacket.put("recycleDoneReason", "timeout");
+
+                return false;
+            }
+
+            // Do NOT accept third ball unless BOTH are true:
+            // 1. intake has been running for at least 300ms
+            // 2. laser has cleared at least once since intake started
+            if (intakeRunTime < THIRD_BALL_CHECK_DELAY_MS || !thirdBallSensorCleared) {
+                thirdBallConfirmTimerStarted = false;
+                thirdBallConfirmTimer.reset();
+
+                telemetryPacket.put("thirdBallCheckActive", false);
+
+                return true;
+            }
+
+            telemetryPacket.put("thirdBallCheckActive", true);
+
+            // Now accept thirdBallPresent only if true continuously for 200ms
+            if (thirdBallPresent()) {
+                if (!thirdBallConfirmTimerStarted) {
+                    thirdBallConfirmTimerStarted = true;
+                    thirdBallConfirmTimer.reset();
+                }
+
+                if (thirdBallConfirmTimer.milliseconds() >= THIRD_BALL_CONFIRM_MS) {
+                    leftTongueServo.setPosition(Globals.tongueIntake);
+                    rightTongueServo.setPosition(Globals.tongueIntake);
+
+                    leftKickerServo.setPower(0.0);
+                    rightKickerServo.setPower(0.0);
+
+                    frontIntakeMotor.setPower(0.0);
+                    backIntakeMotor.setPower(0.0);
+
+                    telemetryPacket.put("recycleDoneReason", "thirdBallConfirmed");
+
+                    return false;
+                }
+
+            } else {
+                thirdBallConfirmTimerStarted = false;
+                thirdBallConfirmTimer.reset();
+            }
+
+            return true;
         }
     }
 
@@ -1025,8 +1121,8 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
             if (!kickersStarted && shooterTimer.milliseconds() >= 200) {
                 leftKickerServo.setPower(Globals.rollerKickerShoot);
                 rightKickerServo.setPower(Globals.rollerKickerShoot);
-                frontIntakeMotor.setPower(-1.0);
-                backIntakeMotor.setPower(-1.0);
+                frontIntakeMotor.setPower(-1.0 * feedingSpeed);
+                backIntakeMotor.setPower(-1.0 * feedingSpeed);
 
                 kickersStarted = true;
             }
@@ -1080,13 +1176,17 @@ public class RedCloseAuto12SortedNewPID extends LinearOpMode {
 
             if (power != 0.0) {
                 frontIntakeMotor.setPower(power);
-                backIntakeMotor.setPower(1);
+                backIntakeMotor.setPower(-1);
             } else {
                 frontIntakeMotor.setPower(0.0);
                 backIntakeMotor.setPower(0.0);
             }
             return false;
         }
+    }
+
+    private boolean thirdBallPresent() {
+        return bottomLeftLaser.getState() || bottomRightLaser.getState();
     }
 
 }
