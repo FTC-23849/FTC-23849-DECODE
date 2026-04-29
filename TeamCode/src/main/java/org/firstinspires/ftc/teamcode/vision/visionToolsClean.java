@@ -428,7 +428,7 @@ public class visionToolsClean {
         }else if(currentDist< 2.75){
             speed = 58.0514 * x2
                     - 491.1754 * x
-                    - 97.2411;
+                    - 77.2411;
         }else{
             //−19.9936x3+191.7677x2−853.9049x−213.5501
 
@@ -436,7 +436,7 @@ public class visionToolsClean {
                     + 528.9893 * x3
                     - 3290.8152 * x2
                     + 8681.1264 * x
-                    - 9224.4227;
+                    - 9194.4227;
 
         }
         return speed;
