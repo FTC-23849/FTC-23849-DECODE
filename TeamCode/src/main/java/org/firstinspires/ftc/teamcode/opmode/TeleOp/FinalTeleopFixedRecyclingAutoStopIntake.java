@@ -97,7 +97,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     public static double blue = 0;
 
     public static double turretZeroCorrection = -0.005;
-    public static double turretZeroCorrection2 = -0.004;
+    public static double turretZeroCorrection2 = -0.01;
 
     public static double shotSpeed = 0.9;
     public static double defaultShotSpeed = 0.9;
@@ -112,7 +112,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
     public static double KpRecovery = 0;
     public static double KiRecovery = 0.001;
-    public static double KsRecovery = 1;
+    public static double KsRecovery = 0.8;
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055 ;
 
@@ -125,7 +125,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     boolean firstLoop = true;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
-    public static double turretCorrection = 0.003;
+    public static double turretCorrection = 0.012;
     boolean shooting;
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
@@ -143,6 +143,8 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     double lastXErrorLocked = 0;
     double lastYErrorLocked = 0;
 
+    public static double stallDelayStart = 0;
+    public static boolean stallDelayEnabled = false;
     public static double kP_Lock = 0.16;
     public static double kP_Lock_Small = 0.07;
     public static double kD_Lock = 0.0007;
@@ -197,6 +199,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     double flywheelCurrentVelocity = 0;
     double targetVelocity = 0;
     double power = 0;
+    double targetIntakePower = 0;
 
     double totalMs = recyclingDelay;
     double intakeDelayMs = recyclingIntakeDelay;
@@ -251,6 +254,8 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     public static double LED_GREEN_POS = 0.50;
     public static double LED_PURPLE_POS = 0.70;
 
+    public static boolean SOTM = false;
+    public static boolean SOTMTesting = false;
     private enum ArtifactColor { GREEN, PURPLE, RED, UNKNOWN }
 
     private static class Reading {
@@ -552,7 +557,32 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
         currentVoltage = myControlHubVoltageSensor.getVoltage();
         double now = runTime.milliseconds();
+        if(gamepad1.left_bumper){
+            SOTM = true;
+        }else{
+            if(!SOTMTesting){
+                SOTM = false;
+            }
+        }
+        double frontIntakePower = frontIntakeMotor.getVelocity()*0.58;
+        double intakeMotorDifference = frontIntakePower-targetIntakePower*1620;
 
+        if(intakeMotorDifference > 500 && !stallDelayEnabled){
+            stallDelayEnabled = true;
+            stallDelayStart = currentTime;
+        }
+        if(!stallDelayEnabled){
+            stallDelayStart = -1;
+        }
+
+        if(((intakeMotorDifference > 500)||(frontIntakePower<100))&&(currentTime>stallDelayStart+1)&&stallDelayEnabled){
+            frontIntakeMotor.setPower(0);
+            backIntakeMotor.setPower(0);
+        }
+
+        if(((intakeMotorDifference < 500 && frontIntakePower>100))){
+            stallDelayEnabled = false;
+        }
         if (gamepad1.left_bumper) {
             moveAwayFar = 1.2;
             moveAwayTurretFar = 1.4;
@@ -567,16 +597,16 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             turretSecClose = 0.8;
         } else {
             moveAwayFar = 0;
-            moveAwayTurretFar = -0.1;
+            moveAwayTurretFar = -0.2;
             secFar = 0;
-            turretSecFar = -0.1;
+            turretSecFar = -0.2;
 
             rotationalSec = 0;
 
             moveAwayClose = 0;
-            moveAwayTurretClose = -0.1;
+            moveAwayTurretClose = -0.2;
             secClose = 0;
-            turretSecClose = -0.1;
+            turretSecClose = -0.2;
         }
 
         if (now - lastPinpointUpdate >= pinpointThrottleMS) {
@@ -638,6 +668,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
         telemetry.addData("Front Intake Velocity", (frontIntakeMotor.getVelocity() * 60) / 103.8);
         telemetry.addData("Back Intake Velocity", (backIntakeMotor.getVelocity() * 60) / 103.8);
+
 
         // -------------------- DRIVE --------------------
         double y = -gamepad1.left_stick_y;
@@ -708,9 +739,11 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
                     backIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     frontIntakeMotor.setPower(-Globals.frontIntakeIntakeSpeed);
                     backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
+                    targetIntakePower = Globals.frontIntakeIntakeSpeed;
                 } else {
                     frontIntakeMotor.setPower(0.0);
                     backIntakeMotor.setPower(0.0);
+                    targetIntakePower = 0;
                 }
 
             } else if (gamepad1.b) {
@@ -720,6 +753,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             } else if (gamepad1.a) {
                 frontIntakeMotor.setPower(-Globals.frontIntakeReverseSpeed);
                 backIntakeMotor.setPower(Globals.backIntakeReverseSpeed);
+                targetIntakePower = -Globals.frontIntakeReverseSpeed;
 
             } else if (gamepad1.left_trigger > 0.1) {
 
@@ -731,10 +765,12 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
                     rightKickerServo.setPower(Globals.rollerKickerShoot);
                     frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed * shotSpeed);
                     backIntakeMotor.setPower(-Globals.backIntakeShootSpeed * shotSpeed);
+                    targetIntakePower = -Globals.frontIntakeShootSpeed * shotSpeed;
                 } else {
                     frontIntakeMotor.setPower(0.7);
                     leftKickerServo.setPower(Globals.rollerKickerShoot);
                     rightKickerServo.setPower(Globals.rollerKickerShoot);
+                    targetIntakePower = 0.7;
                 }
 
                 shooting = true;
@@ -753,6 +789,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
                 leftKickerServo.setPower(0.0);
                 rightKickerServo.setPower(0.0);
                 frontIntakeMotor.setPower(0.0);
+                targetIntakePower = 0;
                 backIntakeMotor.setPower(0.0);
             }
         }
@@ -989,6 +1026,9 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             telemetry.addData("flywheelr", rightShooterMotor.getVelocity());
             telemetry.addData("left motor draw", leftShooterMotor.getCurrent(CurrentUnit.AMPS));
             telemetry.addData("right motor draw", rightShooterMotor.getCurrent(CurrentUnit.AMPS));
+            telemetry.addData("front Intake draw", frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
+            telemetry.addData("back intake motor draw", backIntakeMotor.getCurrent(CurrentUnit.AMPS));
+            telemetry.addData("dt motor draw", leftFrontMotor.getCurrent(CurrentUnit.AMPS)+rightFrontMotor.getCurrent(CurrentUnit.AMPS)+leftBackMotor.getCurrent(CurrentUnit.AMPS)+rightBackMotor.getCurrent(CurrentUnit.AMPS));
             telemetry.addData("targetVelocity", targetVelocity);
             telemetry.addData("PIDF Power", power);
             telemetry.addData("looptime", timer.milliseconds());
@@ -1229,6 +1269,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             rightKickerServo.setPower(Globals.rollerKickerRecycle);
 
             frontIntakeMotor.setPower(0.0);
+            targetIntakePower = 0;
             backIntakeMotor.setPower(0.0);
             return;
         }
@@ -1241,6 +1282,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         rightKickerServo.setPower(0.0);
 
         frontIntakeMotor.setPower(-1.0);
+        targetIntakePower = -1;
         backIntakeMotor.setPower(-1.0);
 
         if (!intakeStarted) {
@@ -1281,6 +1323,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         rightKickerServo.setPower(0.0);
 
         frontIntakeMotor.setPower(0.0);
+        targetIntakePower = 0;
         backIntakeMotor.setPower(0.0);
 
         recyclerIsRunning = false;
@@ -1304,6 +1347,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         rightKickerServo.setPower(0.0);
 
         frontIntakeMotor.setPower(0.0);
+        targetIntakePower = 0;
         backIntakeMotor.setPower(0.0);
     }
 
