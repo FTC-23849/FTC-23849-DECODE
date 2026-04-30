@@ -94,10 +94,10 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     public static double lockedHoodHeight = 0.15;
     public static double TargetVelocity = -1200;
     public static double red = 0;
-    public static double blue = 0;
+    public static double blue = -3;
 
     public static double turretZeroCorrection = -0.005;
-    public static double turretZeroCorrection2 = -0.01;
+    public static double turretZeroCorrection2 = -0.022;
 
     public static double shotSpeed = 0.9;
     public static double defaultShotSpeed = 0.9;
@@ -112,20 +112,20 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
     public static double KpRecovery = 0;
     public static double KiRecovery = 0.001;
-    public static double KsRecovery = 0.8;
+    public static double KsRecovery = 1;
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055 ;
 
     public static double recoveryThreshold = 60;
     public static double maintainThreshold = 40;
     public static double defaultVoltage = 13.15;
-    public static double gear = 12.5;
+    public static double gear = 13;
     double currentVoltage;
     double closezone = 1;
     boolean firstLoop = true;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
-    public static double turretCorrection = 0.012;
+    public static double turretCorrection = 0.01;
     boolean shooting;
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
@@ -143,8 +143,6 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     double lastXErrorLocked = 0;
     double lastYErrorLocked = 0;
 
-    public static double stallDelayStart = 0;
-    public static boolean stallDelayEnabled = false;
     public static double kP_Lock = 0.16;
     public static double kP_Lock_Small = 0.07;
     public static double kD_Lock = 0.0007;
@@ -543,6 +541,13 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             zoneLight.setPosition(0.0);
         }
 
+        if (robotPos.getX(DistanceUnit.METER) > 0.6) {
+            vision.GoalY = 1.6488;
+            vision.GoalXRed = 1.8288;
+            vision.GoalXBlue = -1.8288;
+
+        }
+
         if (firstLoop) {
             leftTurretServo.setPosition(0.5 + turretZeroCorrection);
             rightTurretServo.setPosition(0.5 + turretZeroCorrection);
@@ -567,22 +572,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         double frontIntakePower = frontIntakeMotor.getVelocity()*0.58;
         double intakeMotorDifference = frontIntakePower-targetIntakePower*1620;
 
-        if(intakeMotorDifference > 500 && !stallDelayEnabled){
-            stallDelayEnabled = true;
-            stallDelayStart = currentTime;
-        }
-        if(!stallDelayEnabled){
-            stallDelayStart = -1;
-        }
-
-        if(((intakeMotorDifference > 500)||(frontIntakePower<100))&&(currentTime>stallDelayStart+1)&&stallDelayEnabled){
-            frontIntakeMotor.setPower(0);
-            backIntakeMotor.setPower(0);
-        }
-
-        if(((intakeMotorDifference < 500 && frontIntakePower>100))){
-            stallDelayEnabled = false;
-        }
+        if(((intakeMotorDifference < 500 && frontIntakePower>100)))
         if (gamepad1.left_bumper) {
             moveAwayFar = 1.2;
             moveAwayTurretFar = 1.4;
