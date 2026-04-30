@@ -144,7 +144,7 @@ public class RedFarAuto21 extends LinearOpMode {
     public static double widenCycleOffset = 0.0;
 
     public static double normalWallPos = 62;
-    public static double extendedWallPos = 80;
+    public static double extendedWallPos = 90;
     public static double wallPos = normalWallPos;
 
     public static boolean secondCycleOffsetEnabled = false;

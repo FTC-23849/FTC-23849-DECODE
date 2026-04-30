@@ -144,7 +144,7 @@ public class BlueFarAuto21 extends LinearOpMode {
     public static double widenCycleOffset = 0.0;
 
     public static double normalWallPos = -62;
-    public static double extendedWallPos = -66;
+    public static double extendedWallPos = -90;
     public static double wallPos = normalWallPos;
 
     public static boolean secondCycleOffsetEnabled = false;
@@ -156,7 +156,7 @@ public class BlueFarAuto21 extends LinearOpMode {
 
     public static double intakeRetreatPos = -64;
 
-    public static boolean blobDetectionEnabled = false;
+    public static boolean blobDetectionEnabled = true;
     public static boolean runNextPath = true;
 
     // vPID
