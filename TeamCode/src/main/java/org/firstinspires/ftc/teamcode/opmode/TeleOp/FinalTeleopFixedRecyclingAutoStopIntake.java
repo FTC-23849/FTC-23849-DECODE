@@ -94,9 +94,9 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     public static double lockedHoodHeight = 0.15;
     public static double TargetVelocity = -1200;
     public static double red = 0;
-    public static double blue = 6;
+    public static double blue = 11;
 
-    public static double turretZeroCorrection = -0.007;
+    public static double turretZeroCorrection = -0.006;
     public static double turretZeroCorrection2 = -0.012;
 
     public static double shotSpeed = 0.9;
@@ -112,7 +112,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
     public static double KpRecovery = 0;
     public static double KiRecovery = 0.001;
-    public static double KsRecovery = 0.8;
+    public static double KsRecovery = 0.85;
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055 ;
 
@@ -125,7 +125,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     boolean firstLoop = true;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
-    public static double turretCorrection = 0.008;
+    public static double turretCorrection = 0.015;
     boolean shooting;
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
@@ -524,9 +524,18 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
     @Override
     public void loop() {
-        if(gamepad1.right_stick_button){
-            THIRD_BALL_CONFIRM_MS = 2000000000;
+        double yPos = robotPos.getX(DistanceUnit.METER);
+        if (yPos > 1.3) {
+            visionToolsClean.GoalY = 1.5488;
+            visionToolsClean.GoalXRed = 1.7288;
+            visionToolsClean.GoalXBlue = -1.7288;
+
+        }else if (yPos > 0) {
+            visionToolsClean.GoalY = 1.6288;
+            visionToolsClean.GoalXRed = 1.7288;
+            visionToolsClean.GoalXBlue = -1.7288;
         }
+
         double dtMotorDraw = leftFrontMotor.getCurrent(CurrentUnit.AMPS)+rightFrontMotor.getCurrent(CurrentUnit.AMPS)+leftBackMotor.getCurrent(CurrentUnit.AMPS)+rightBackMotor.getCurrent(CurrentUnit.AMPS);
         double currentTime = lockedPostimer.seconds();
         double dt = currentTime - lastTime;
@@ -575,13 +584,6 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             zoneLight.setPosition(1.0);
         } else {
             zoneLight.setPosition(0.0);
-        }
-
-        if (robotPos.getX(DistanceUnit.METER) > 0.6) {
-            vision.GoalY = 1.6488;
-            vision.GoalXRed = 1.8288;
-            vision.GoalXBlue = -1.8288;
-
         }
 
         if (firstLoop) {

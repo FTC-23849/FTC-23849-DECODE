@@ -394,7 +394,7 @@ public class BlueCloseAuto18 extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(10.5, -62), Math.toRadians(235),
+                                                            new Vector2d(20, -62), Math.toRadians(235),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -465,7 +465,7 @@ public class BlueCloseAuto18 extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(10.5, -62), Math.toRadians(235),
+                                                            new Vector2d(20, -62), Math.toRadians(235),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )

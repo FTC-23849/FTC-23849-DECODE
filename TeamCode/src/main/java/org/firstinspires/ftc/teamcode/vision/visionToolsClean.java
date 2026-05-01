@@ -217,20 +217,9 @@ public class visionToolsClean {
         double curX = robotX + turretOffsetMeters * (xcoeff * cosH - ycoeff * sinH);
         double curY = robotY + turretOffsetMeters * (xcoeff * sinH + ycoeff * cosH);
         if(!TestingGoal) {
-            if (yPos > 1.3) {
-                GoalY = 1.5488;
-                GoalXRed = 1.7288;
-                GoalXBlue = -1.7288;
-
-            }else if (yPos > 0){
-                GoalY = 1.6288;
-                GoalXRed = 1.7288;
-                GoalXBlue = -1.7288;
-            } else {
-                GoalY = 1.8288;
-                GoalXRed = 1.7288;
-                GoalXBlue = -1.6788;
-            }
+            GoalY = 1.8288;
+            GoalXRed = 1.8288;
+            GoalXBlue = -1.8288;
         }
         double goalY = GoalY;
         double goalXRed = GoalXRed;

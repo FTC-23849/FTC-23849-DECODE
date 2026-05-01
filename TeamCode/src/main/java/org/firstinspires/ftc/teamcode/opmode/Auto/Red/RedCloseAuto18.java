@@ -395,7 +395,7 @@ public class RedCloseAuto18 extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(10.5, 62), Math.toRadians(125),
+                                                            new Vector2d(20, 62), Math.toRadians(125),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -466,7 +466,7 @@ public class RedCloseAuto18 extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToLinearHeading(
-                                                            new Vector2d(10.5, 62), Math.toRadians(125),
+                                                            new Vector2d(20, 62), Math.toRadians(125),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
