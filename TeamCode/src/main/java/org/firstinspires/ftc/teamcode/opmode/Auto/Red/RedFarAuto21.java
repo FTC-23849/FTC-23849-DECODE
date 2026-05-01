@@ -939,7 +939,7 @@ public class RedFarAuto21 extends LinearOpMode {
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
 
             if (blobDetectionEnabled) {
-                blobOffset = detector.getOffsetCm() / 2.54;
+                blobOffset = detector.getOffsetCm() / 2.38;
 
                 if (blobOffset < 5) {
                     blobOffset = 0;

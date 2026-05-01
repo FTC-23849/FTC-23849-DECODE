@@ -94,10 +94,10 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     public static double lockedHoodHeight = 0.15;
     public static double TargetVelocity = -1200;
     public static double red = 0;
-    public static double blue = -5;
+    public static double blue = 6;
 
-    public static double turretZeroCorrection = -0.005;
-    public static double turretZeroCorrection2 = -0.022;
+    public static double turretZeroCorrection = -0.007;
+    public static double turretZeroCorrection2 = -0.012;
 
     public static double shotSpeed = 0.9;
     public static double defaultShotSpeed = 0.9;
@@ -112,20 +112,20 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
     public static double KpRecovery = 0;
     public static double KiRecovery = 0.001;
-    public static double KsRecovery = 1;
+    public static double KsRecovery = 0.8;
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055 ;
 
     public static double recoveryThreshold = 60;
     public static double maintainThreshold = 40;
     public static double defaultVoltage = 13.15;
-    public static double gear = 13;
+    public static double gear = 12.5;
     double currentVoltage;
     double closezone = 1;
     boolean firstLoop = true;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
-    public static double turretCorrection = 0.01;
+    public static double turretCorrection = 0.008;
     boolean shooting;
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
@@ -204,7 +204,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     double kickerUpDelayMs = recyclingKickerUpDelay;
 
     public static double RECYCLE_TONGUE_DOWN_MS = 400;
-    public static double THIRD_BALL_CONFIRM_MS = 200;
+    public static double THIRD_BALL_CONFIRM_MS = 400;
 
     // NEW: upper bound for how long intake can run during recycle
     public static double RECYCLE_INTAKE_MAX_MS = 2000;
@@ -293,8 +293,8 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     private boolean lastDisableCombo = false;
     public static double kalmanQ = 0.1;
     public static double kalmanR = 0.01;
-    public static double frontIntakeAmpLimit = 7;
-    public static double backIntakeAmpLimit = 7;
+    public static double frontIntakeAmpLimit = 8.5;
+    public static double backIntakeAmpLimit = 8.5;
     private enum InitStage {
         RESET,
         WAIT_AFTER_RESET,
@@ -524,6 +524,10 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
     @Override
     public void loop() {
+        if(gamepad1.right_stick_button){
+            THIRD_BALL_CONFIRM_MS = 2000000000;
+        }
+        double dtMotorDraw = leftFrontMotor.getCurrent(CurrentUnit.AMPS)+rightFrontMotor.getCurrent(CurrentUnit.AMPS)+leftBackMotor.getCurrent(CurrentUnit.AMPS)+rightBackMotor.getCurrent(CurrentUnit.AMPS);
         double currentTime = lockedPostimer.seconds();
         double dt = currentTime - lastTime;
         lastTime = currentTime;
@@ -533,7 +537,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         boolean intakeStallFront = frontIntakeMotor.isOverCurrent();
         boolean intakeStallBack = backIntakeMotor.isOverCurrent();
 
-        if (intakeStallFront || intakeStallBack) {
+        if (intakeStallFront || intakeStallBack||dtMotorDraw>30) {
             if (!firstStallLoop) {
                 stallStartTime = currentTime;
                 firstStallLoop = true;
@@ -553,7 +557,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
         telemetry.addData("intake stall front motor",intakeStallFront);
         telemetry.addData("intake stall back motor",intakeStallBack);
-
+        telemetry.addData("Third ball present",thirdBallPresent);
         boolean isFarZone = robotPos.getX(DistanceUnit.MM) <= 0;
         double moveAway = isFarZone ? moveAwayFar : moveAwayClose;
         double moveAwayTurret = isFarZone ? moveAwayTurretFar : moveAwayTurretClose;
@@ -564,7 +568,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             hub.clearBulkCache();
         }
 
-        thirdBallPresent = bottomLeftLaser.getState() || bottomRightLaser.getState();
+        thirdBallPresent = bottomLeftLaser.getState() && bottomRightLaser.getState();
         if(intakeIsStalled){
             zoneLight.setPosition(0.277);
         }else if (thirdBallPresent) {
@@ -1010,6 +1014,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             rightTipper.setPosition(Globals.tipperExtended);
         }
 
+
         telemetry.addData("Error", flywheelCurrentVelocity - targetVelocity);
         telemetry.addData("flywheel Correction", flywheelCorrection);
         telemetry.addData("turret Correction", turretCorrection);
@@ -1029,6 +1034,9 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         telemetry.addData("recycleIntakeMaxMs", RECYCLE_INTAKE_MAX_MS);
 
         if (now - lastTelemetryUpdate >= telemeteryThrottleMS) {
+            telemetry.addData("current goal x red",visionToolsClean.GoalXRed);
+            telemetry.addData("current goal x blue",visionToolsClean.GoalXRed);
+            telemetry.addData("current goal y",visionToolsClean.GoalY);
             telemetry.addData("Predicted Pos", predictedPos);
             telemetry.addData("Robot Pos", robotPos);
             telemetry.addData("VelX", velX);
