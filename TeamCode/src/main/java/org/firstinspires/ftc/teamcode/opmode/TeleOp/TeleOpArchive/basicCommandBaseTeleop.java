@@ -1,5 +1,6 @@
-package org.firstinspires.ftc.teamcode.opmode.TeleOp;
+package org.firstinspires.ftc.teamcode.opmode.TeleOp.TeleOpArchive;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
@@ -9,6 +10,7 @@ import org.firstinspires.ftc.teamcode.commandbase.Shooter;
 import org.firstinspires.ftc.teamcode.commandbase.commands.setOuttakePivot;
 import org.firstinspires.ftc.teamcode.hardware.Robot;
 
+@Disabled
 @TeleOp
 public class basicCommandBaseTeleop extends CommandOpMode {
 

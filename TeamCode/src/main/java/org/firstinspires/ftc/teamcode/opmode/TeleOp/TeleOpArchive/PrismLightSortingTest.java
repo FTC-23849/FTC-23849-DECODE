@@ -1,18 +1,18 @@
-package org.firstinspires.ftc.teamcode.opmode.TeleOp;
+package org.firstinspires.ftc.teamcode.opmode.TeleOp.TeleOpArchive;
 
 import android.graphics.Color;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
 
 import org.firstinspires.ftc.teamcode.hardware.CustomGoBildaPrismRgbLedDriver;
 
+@Disabled
 @TeleOp
 @Config
 public class PrismLightSortingTest extends OpMode {

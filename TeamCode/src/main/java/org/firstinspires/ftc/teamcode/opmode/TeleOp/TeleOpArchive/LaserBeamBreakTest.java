@@ -1,10 +1,12 @@
-package org.firstinspires.ftc.teamcode.opmode.TeleOp;
+package org.firstinspires.ftc.teamcode.opmode.TeleOp.TeleOpArchive;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 
+@Disabled
 @TeleOp(name = "Five Laser Counter", group = "Sensor")
 public class LaserBeamBreakTest extends LinearOpMode {
 

@@ -1,10 +1,12 @@
-package org.firstinspires.ftc.teamcode.opmode.TeleOp;
+package org.firstinspires.ftc.teamcode.opmode.TeleOp.TeleOpArchive;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 
+@Disabled
 @TeleOp
 public class laserTest extends OpMode {
 

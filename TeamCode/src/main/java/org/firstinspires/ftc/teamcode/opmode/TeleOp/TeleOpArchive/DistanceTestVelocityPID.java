@@ -1,9 +1,10 @@
-package org.firstinspires.ftc.teamcode.opmode.TeleOp;
+package org.firstinspires.ftc.teamcode.opmode.TeleOp.TeleOpArchive;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
@@ -23,6 +24,7 @@ import org.firstinspires.ftc.teamcode.vision.visionTools;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+@Disabled
 @Config
 @TeleOp(name = "Velocity PID + Distance")
 public class DistanceTestVelocityPID extends LinearOpMode {
