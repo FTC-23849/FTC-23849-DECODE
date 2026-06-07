@@ -94,10 +94,10 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     public static double lockedHoodHeight = 0.15;
     public static double TargetVelocity = -1200;
     public static double red = 0;
-    public static double blue = 11;
+    public static double blue = 0;
 
-    public static double turretZeroCorrection = -0.006;
-    public static double turretZeroCorrection2 = -0.012;
+    public static double turretZeroCorrection = -0.007;
+    public static double turretZeroCorrection2 = -0.006;
 
     public static double shotSpeed = 0.9;
     public static double defaultShotSpeed = 0.9;
@@ -109,23 +109,22 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     public static double KiMaintain = 0.002;
 
     public static double KpDriveRecovery = 0.03;
-
     public static double KpRecovery = 0;
     public static double KiRecovery = 0.001;
-    public static double KsRecovery = 0.85;
+    public static double KsRecovery = 0.8 ;
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055 ;
 
     public static double recoveryThreshold = 60;
     public static double maintainThreshold = 40;
     public static double defaultVoltage = 13.15;
-    public static double gear = 12.5;
+    public static double gear = 13;
     double currentVoltage;
     double closezone = 1;
     boolean firstLoop = true;
     String allianceColor = "Red";
     boolean recycleIntakeTimerStarted = false;
-    public static double turretCorrection = 0.015;
+    public static double turretCorrection = -0.001;
     boolean shooting;
     boolean yPressed = false;
     boolean purpleSortingEnabled = false;
@@ -284,6 +283,13 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
     boolean intakeStallFront = false;
     boolean intakeStallBack = false;
+    boolean dtMotorStalled         = false;
+    double  dtHighCurrentStartTime = -1;
+    double  dtStallTriggerTime     = -1;
+    public static double dtStallThreshold = 20.0;
+    public static double dtStallConfirmMs = 250;
+    public static double dtStallIntakeDisableSec = 3.0;
+    public static double dtStallPowerCutSec = 1.0;
 
     public static double colorTickMs = 80;
     private double lastColorTick = 0;
@@ -524,17 +530,8 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
     @Override
     public void loop() {
-        double yPos = robotPos.getX(DistanceUnit.METER);
-        if (yPos > 1.3) {
-            visionToolsClean.GoalY = 1.5488;
-            visionToolsClean.GoalXRed = 1.7288;
-            visionToolsClean.GoalXBlue = -1.7288;
 
-        }else if (yPos > 0) {
-            visionToolsClean.GoalY = 1.6288;
-            visionToolsClean.GoalXRed = 1.7288;
-            visionToolsClean.GoalXBlue = -1.7288;
-        }
+        double yPos = robotPos.getX(DistanceUnit.METER);
 
         double dtMotorDraw = leftFrontMotor.getCurrent(CurrentUnit.AMPS)+rightFrontMotor.getCurrent(CurrentUnit.AMPS)+leftBackMotor.getCurrent(CurrentUnit.AMPS)+rightBackMotor.getCurrent(CurrentUnit.AMPS);
         double currentTime = lockedPostimer.seconds();
@@ -546,7 +543,29 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         boolean intakeStallFront = frontIntakeMotor.isOverCurrent();
         boolean intakeStallBack = backIntakeMotor.isOverCurrent();
 
-        if (intakeStallFront || intakeStallBack||dtMotorDraw>30) {
+
+        if (dtMotorDraw > dtStallThreshold) {
+            if (dtHighCurrentStartTime < 0) {
+                dtHighCurrentStartTime = currentTime;
+            } else if (!dtMotorStalled
+                    && (currentTime - dtHighCurrentStartTime) * 1000.0 >= dtStallConfirmMs) {
+                dtMotorStalled     = true;
+                dtStallTriggerTime = currentTime;
+            }
+        } else {
+            dtHighCurrentStartTime = -1;
+        }
+        if (dtMotorStalled
+                && (currentTime - dtStallTriggerTime) >= dtStallIntakeDisableSec) {
+            dtMotorStalled         = false;
+            dtHighCurrentStartTime = -1;
+            dtStallTriggerTime     = -1;
+        }
+        double dtPowerMultiplier = (dtMotorStalled
+                && (currentTime - dtStallTriggerTime) < dtStallPowerCutSec) ? 0.5 : 1.0;
+        boolean intakeDisabledByDtStall = dtMotorStalled;
+
+        if (intakeStallFront || intakeStallBack) {
             if (!firstStallLoop) {
                 stallStartTime = currentTime;
                 firstStallLoop = true;
@@ -578,7 +597,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         }
 
         thirdBallPresent = bottomLeftLaser.getState() && bottomRightLaser.getState();
-        if(intakeIsStalled){
+        if(intakeIsStalled && !intakeDisabledByDtStall){
             zoneLight.setPosition(0.277);
         }else if (thirdBallPresent) {
             zoneLight.setPosition(1.0);
@@ -710,10 +729,10 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         double backRightPower = (y + x - rx) / denominator;
 
         if (!LockedModeEnabled && !ParkModeEnabled) {
-            leftFrontMotor.setPower(frontLeftPower);
-            leftBackMotor.setPower(backLeftPower);
-            rightFrontMotor.setPower(frontRightPower);
-            rightBackMotor.setPower(backRightPower);
+            leftFrontMotor.setPower(frontLeftPower   * dtPowerMultiplier);
+            leftBackMotor.setPower(backLeftPower     * dtPowerMultiplier);
+            rightFrontMotor.setPower(frontRightPower * dtPowerMultiplier);
+            rightBackMotor.setPower(backRightPower   * dtPowerMultiplier);
         }
 
         // ----------------- RECYCLE TRIGGER + SAFE LOCKOUT -----------------
@@ -762,7 +781,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
                 leftKickerServo.setPower(0.0);
                 rightKickerServo.setPower(0.0);
 
-                if (runManualIntake && !intakeIsStalled) {
+                if (runManualIntake && !intakeIsStalled && !intakeDisabledByDtStall) {
                     frontIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     backIntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     frontIntakeMotor.setPower(-Globals.frontIntakeIntakeSpeed);
@@ -778,7 +797,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
                 leftKickerServo.setPower(1.0);
                 rightKickerServo.setPower(1.0);
 
-            } else if (gamepad1.a && !intakeIsStalled) {
+            } else if (gamepad1.a && !intakeIsStalled && !intakeDisabledByDtStall) {
                 frontIntakeMotor.setPower(-Globals.frontIntakeReverseSpeed);
                 backIntakeMotor.setPower(Globals.backIntakeReverseSpeed);
                 targetIntakePower = -Globals.frontIntakeReverseSpeed;
@@ -788,14 +807,14 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
                 leftTongueServo.setPosition(Globals.tongueShoot);
                 rightTongueServo.setPosition(Globals.tongueShoot);
 
-                if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay && !intakeIsStalled) {
+                if (kickerStartDelayTimer.milliseconds() > Globals.kickerStartDelay && !intakeIsStalled && !intakeDisabledByDtStall) {
                     leftKickerServo.setPower(Globals.rollerKickerShoot);
                     rightKickerServo.setPower(Globals.rollerKickerShoot);
                     frontIntakeMotor.setPower(-Globals.frontIntakeShootSpeed * shotSpeed);
                     backIntakeMotor.setPower(-Globals.backIntakeShootSpeed * shotSpeed);
                     targetIntakePower = -Globals.frontIntakeShootSpeed * shotSpeed;
                 } else {
-                    if(!intakeIsStalled){
+                    if(!intakeIsStalled && !intakeDisabledByDtStall){
                         frontIntakeMotor.setPower(0.7);
                     }
                     leftKickerServo.setPower(Globals.rollerKickerShoot);
@@ -1063,6 +1082,10 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             telemetry.addData("front Intake draw", frontIntakeMotor.getCurrent(CurrentUnit.AMPS));
             telemetry.addData("back intake motor draw", backIntakeMotor.getCurrent(CurrentUnit.AMPS));
             telemetry.addData("dt motor draw", leftFrontMotor.getCurrent(CurrentUnit.AMPS)+rightFrontMotor.getCurrent(CurrentUnit.AMPS)+leftBackMotor.getCurrent(CurrentUnit.AMPS)+rightBackMotor.getCurrent(CurrentUnit.AMPS));
+            telemetry.addData("LF dt motor draw", leftFrontMotor.getCurrent(CurrentUnit.AMPS));
+            telemetry.addData("RF dt motor draw", rightFrontMotor.getCurrent(CurrentUnit.AMPS));
+            telemetry.addData("LB dt motor draw", leftBackMotor.getCurrent(CurrentUnit.AMPS));
+            telemetry.addData("RB dt motor draw", rightBackMotor.getCurrent(CurrentUnit.AMPS));
             telemetry.addData("targetVelocity", targetVelocity);
             telemetry.addData("PIDF Power", power);
             telemetry.addData("looptime", timer.milliseconds());
