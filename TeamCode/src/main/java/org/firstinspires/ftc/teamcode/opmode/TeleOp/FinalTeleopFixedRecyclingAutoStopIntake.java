@@ -98,7 +98,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
     public static double turretZeroCorrection = -0.007;
     public static double turretZeroCorrection2 = -0.01;
-    public static double offsetMultiplier = 0.65;
+    public static double offsetMultiplier = 0.8;
 
     public static double shotSpeed = 0.9;
     public static double defaultShotSpeed = 0.9;
