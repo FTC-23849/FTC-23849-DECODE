@@ -98,6 +98,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
     public static double turretZeroCorrection = -0.007;
     public static double turretZeroCorrection2 = -0.01;
+    public static double offsetMultiplier = 0.65;
 
     public static double shotSpeed = 0.9;
     public static double defaultShotSpeed = 0.9;
@@ -290,7 +291,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     public static double dtStallConfirmMs = 250;
     public static double dtStallIntakeDisableSec = 3.0;
     public static double dtStallPowerCutSec = 1.0;
-    public static double trueZero = 250;
+    public static double trueZero = 318;
     public static double colorTickMs = 80;
     private double lastColorTick = 0;
     private int colorPhase = 0;
@@ -971,10 +972,11 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
         if (gamepad1.xWasReleased()) {
             double currentAngle = (turretEncoder.getVoltage() / 3.2 * 360) % 360;
-            double EncoderToTurretRatio = 22.0/99.0;
+            double EncoderToTurretRatio = 19.0/99.0;
             double encoderOffsetFromZero = trueZero-currentAngle;
             double turretOffsetFromZero = (encoderOffsetFromZero * EncoderToTurretRatio);
             double servoOffsetFromZero = 0.508 * (turretOffsetFromZero/360);
+            servoOffsetFromZero *= offsetMultiplier;
             turretZeroCorrection+=servoOffsetFromZero;
             turretZeroCorrection2+=servoOffsetFromZero;
             leftTurretServo.setPosition(0.5 + turretZeroCorrection);
