@@ -5,6 +5,7 @@ import android.graphics.Color;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -36,7 +37,15 @@ import org.firstinspires.ftc.teamcode.opmode.Auto.PoseStorage;
 import org.firstinspires.ftc.teamcode.opmode.misc.PIDVelocityController3;
 import org.firstinspires.ftc.teamcode.vision.visionToolsClean;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 @TeleOp
 @Config
@@ -65,6 +74,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     ServoImplEx rightTongueServo;
     GoBildaPinpointDriver pinpoint;
     AnalogInput kickerEncoder;
+    AnalogInput switchCurrent;
     private NormalizedColorSensor colorLeft;
     private NormalizedColorSensor colorRight;
     private Servo rgbLight;
@@ -291,6 +301,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     public static double dtStallConfirmMs = 250;
     public static double dtStallIntakeDisableSec = 3.0;
     public static double dtStallPowerCutSec = 1.0;
+    public static double quadratureZero = 0;
     public static double trueZero = 318;
     public static double colorTickMs = 80;
     private double lastColorTick = 0;
@@ -321,6 +332,16 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
     boolean firstStallLoop=false;
     double stallStartTime = -1;
     boolean intakeIsStalled = false;
+
+    private FtcDashboard dashboard;
+
+    public static double currentLogIntervalMs = 20;
+    private static final int MAX_TOTAL_LOG_FILES = 5;
+    private BufferedWriter currentLogger;
+    private double lastCurrentLogTime = 0;
+    private String currentLogPath;
+    private long lastLoggedTimeMs;
+
     @Override
     public void init() {
         lockedPostimer.reset();
@@ -400,6 +421,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         rightTipper = hardwareMap.get(ServoImplEx.class, "rightTipper");
 
         kickerEncoder = hardwareMap.get(AnalogInput.class, "leftKickerEncoder");
+        switchCurrent = hardwareMap.get(AnalogInput.class, "switchCurrent");
 
         leftTurretServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
         rightTurretServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
@@ -444,7 +466,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         limelight.setPollRateHz(15);
         limelight.start();
 
-        FtcDashboard dashboard = FtcDashboard.getInstance();
+        dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
         telemetry.setMsTransmissionInterval(120);
 
@@ -468,6 +490,28 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         lastColorTick = runTime.milliseconds();
         colorPhase = 0;
         prismSenseEnabled = false;
+
+        long nowMs = System.currentTimeMillis();
+        String opmodeName = getClass().getSimpleName();
+        String startStr = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date(nowMs));
+        currentLogPath = "/sdcard/FIRST/" + opmodeName + "_" + startStr + ".csv";
+        lastLoggedTimeMs = nowMs;
+        try {
+            currentLogger = new BufferedWriter(new FileWriter(currentLogPath, false));
+            currentLogger.write("wall_clock_ms,lf_A,rf_A,lb_A,rb_A,frontIntake_A,backIntake_A,lShooter_A,rShooter_A,motor_total_A,floodgate_A");
+            currentLogger.newLine();
+            currentLogger.flush();
+        } catch (IOException e) {
+            telemetry.addData("Logger Error", e.getMessage());
+        }
+        File logDir = new File("/sdcard/FIRST/");
+        File[] logFiles = logDir.listFiles((dir, name) -> name.endsWith(".csv"));
+        if (logFiles != null && logFiles.length > MAX_TOTAL_LOG_FILES) {
+            Arrays.sort(logFiles, (a, b) -> a.getName().compareTo(b.getName()));
+            for (int i = 0; i < logFiles.length - MAX_TOTAL_LOG_FILES; i++) {
+                logFiles[i].delete();
+            }
+        }
 
     }
 
@@ -621,6 +665,12 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
 
         currentVoltage = myControlHubVoltageSensor.getVoltage();
         double now = runTime.milliseconds();
+
+        if (now - lastCurrentLogTime >= currentLogIntervalMs) {
+            logMotorCurrents();
+            lastCurrentLogTime = now;
+        }
+
         if(gamepad1.left_bumper){
             SOTM = true;
         }else{
@@ -985,6 +1035,36 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             vision.mt1pinpoint(red, blue, pinpoint, allianceColor, limelight);
         }
 
+
+        if (gamepad1.y) {
+            quadratureZero = rightFrontMotor.getCurrentPosition();
+            double currentAngle = (turretEncoder.getVoltage() / 3.2 * 360) % 360;
+            double EncoderToTurretRatio = 19.0/99.0;
+            double encoderOffsetFromZero = trueZero-currentAngle;
+            double turretOffsetFromZero = (encoderOffsetFromZero * EncoderToTurretRatio);
+            double servoOffsetFromZero = 0.508 * (turretOffsetFromZero/360);
+            servoOffsetFromZero *= offsetMultiplier;
+            turretZeroCorrection+=servoOffsetFromZero;
+            turretZeroCorrection2+=servoOffsetFromZero;
+            leftTurretServo.setPosition(0.5 + turretZeroCorrection);
+            rightTurretServo.setPosition(0.5 + turretZeroCorrection);
+            frontTurretServo.setPosition(0.5 + turretZeroCorrection);
+        }
+
+        if (gamepad2.right_trigger > 0.7f) {
+            double currentQuadratureAngle = rightFrontMotor.getCurrentPosition();
+            double targetServoPosition = rightTurretServo.getPosition();
+            double ticksPerTurretDegree = 4096.0 / 360.0;
+            double EncoderToTurretRatio = 19.0/99.0;
+            double quadratureAngleDeg = ((currentQuadratureAngle - quadratureZero) / ticksPerTurretDegree) * EncoderToTurretRatio;
+            double predictedServoPosition = 0.5 + (quadratureAngleDeg / 360.0) * 0.508 + turretZeroCorrection;
+            double servoCorrection = targetServoPosition - predictedServoPosition;
+            servoCorrection *= offsetMultiplier;
+
+            turretZeroCorrection += servoCorrection;
+            turretZeroCorrection2 += servoCorrection;
+        }
+
         if (gamepad2.a) {
             if (allianceColor.equals("Blue")) {
                 pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, -63, -65, AngleUnit.DEGREES, 0));
@@ -1044,12 +1124,6 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             }
         }
 
-        if (gamepad1.y) {
-            leftTipper.setPosition(Globals.tipperExtended);
-            rightTipper.setPosition(Globals.tipperExtended);
-        }
-
-
         telemetry.addData("Error", flywheelCurrentVelocity - targetVelocity);
         telemetry.addData("flywheel Correction", flywheelCorrection);
         telemetry.addData("turret Correction", turretCorrection);
@@ -1107,7 +1181,7 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
             telemetry.addData("looptime", timer.milliseconds());
             telemetry.addData("left kicker speed", leftKickerServo.getPower());
             telemetry.addData("right kicker speed", rightKickerServo.getPower());
-            telemetry.addData("encoderposTurret", rightFrontMotor.getCurrentPosition());
+            telemetry.addData("encoderposTurretQuadrature", rightFrontMotor.getCurrentPosition());
             telemetry.addData("encoderposTurretAnalog", (turretEncoder.getVoltage() / 3.2 * 360) % 360);
             telemetry.addData("rightBumperHeld", rightBumperHeld);
             telemetry.addData("rightBumperFirstTime", rightBumperFirstTime);
@@ -1169,6 +1243,51 @@ public class FinalTeleopFixedRecyclingAutoStopIntake extends OpMode {
         applyToLayer(prism, 0, ArtifactColor.UNKNOWN);
         applyToLayer(prism, 1, ArtifactColor.UNKNOWN);
         applyToLayer(prism, 2, ArtifactColor.UNKNOWN);
+        try {
+            if (currentLogger != null) {
+                currentLogger.flush();
+                currentLogger.close();
+                String endStr = new SimpleDateFormat("HHmmss", Locale.US).format(new Date(lastLoggedTimeMs));
+                String finalPath = currentLogPath.replace(".csv", "_to_" + endStr + ".csv");
+                new File(currentLogPath).renameTo(new File(finalPath));
+            }
+        } catch (IOException ignored) { }
+    }
+
+    private void logMotorCurrents() {
+        if (currentLogger == null) return;
+        try {
+            double lf = leftFrontMotor.getCurrent(CurrentUnit.AMPS);
+            double rf = rightFrontMotor.getCurrent(CurrentUnit.AMPS);
+            double lb = leftBackMotor.getCurrent(CurrentUnit.AMPS);
+            double rb = rightBackMotor.getCurrent(CurrentUnit.AMPS);
+            double fi = frontIntakeMotor.getCurrent(CurrentUnit.AMPS);
+            double bi = backIntakeMotor.getCurrent(CurrentUnit.AMPS);
+            double ls = leftShooterMotor.getCurrent(CurrentUnit.AMPS);
+            double rs = rightShooterMotor.getCurrent(CurrentUnit.AMPS);
+            double motorTotal = lf + rf + lb + rb + fi + bi + ls + rs;
+
+            double floodgate = (switchCurrent.getVoltage() / 3.3) * 80.0;
+
+            lastLoggedTimeMs = System.currentTimeMillis();
+            currentLogger.write(String.format(Locale.US,
+                    "%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
+                    lastLoggedTimeMs, lf, rf, lb, rb, fi, bi, ls, rs, motorTotal, floodgate));
+            currentLogger.newLine();
+
+            TelemetryPacket packet = new TelemetryPacket();
+            packet.put("current/01_lf_A",          lf);
+            packet.put("current/02_rf_A",          rf);
+            packet.put("current/03_lb_A",          lb);
+            packet.put("current/04_rb_A",          rb);
+            packet.put("current/05_frontIntake_A", fi);
+            packet.put("current/06_backIntake_A",  bi);
+            packet.put("current/07_lShooter_A",    ls);
+            packet.put("current/08_rShooter_A",    rs);
+            packet.put("current/09_motor_total_A", motorTotal);
+            packet.put("current/10_floodgate_A",   floodgate);
+            dashboard.sendTelemetryPacket(packet);
+        } catch (IOException ignored) { }
     }
 
     private void applyToLayer(CustomGoBildaPrismRgbLedDriver prism, int layer, ArtifactColor c) {
