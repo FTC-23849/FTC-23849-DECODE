@@ -391,7 +391,7 @@ public class visionToolsClean {
         return Range.clip(turretPos, 0.23, 0.65);
     }
 
-    public double CalculatedFlywheelSpeed(Pose2D robotPos, String allianceColor) {
+    public double getTurretDistance(Pose2D robotPos, String allianceColor) {
         double py = robotPos.getX(DistanceUnit.METER);
         double px = -1 * robotPos.getY(DistanceUnit.METER);
 
@@ -406,33 +406,31 @@ public class visionToolsClean {
         double curX = px + turretOffsetMeters * (cosH - sinH);
         double curY = py + turretOffsetMeters * (sinH + cosH);
 
-        double currentDist = groundDistancePinpoint(curX, curY, allianceColor);
+        return groundDistancePinpoint(curX, curY, allianceColor);
+    }
+
+    public double CalculatedFlywheelSpeed(Pose2D robotPos, String allianceColor) {
+        double currentDist = getTurretDistance(robotPos, allianceColor);
 
         double x = currentDist;
         double x2 = x * x;
         double x3 = x2 * x;
         double x4 = x2 * x2;
-        double x5 = x2 * x3;
-        double x6 = x3 * x3;
-        double speed = 0;
-        if(currentDist < 1.9) {
+        double speed;
+        if (currentDist < 1.9) {
             speed = 31.7460 * x2
                     - 428.254 * x
                     - 199.4921;
-
-        }else if(currentDist< 2.75){
+        } else if (currentDist < 2.75) {
             speed = 58.0514 * x2
                     - 491.1754 * x
                     - 79.2411;
-        }else{
-            //−19.9936x3+191.7677x2−853.9049x−213.5501
-
+        } else {
             speed = -31.2108 * x4
                     + 528.9893 * x3
                     - 3290.8152 * x2
                     + 8681.1264 * x
                     - 9204.4227;
-
         }
         return speed;
     }
