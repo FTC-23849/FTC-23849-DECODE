@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.hardware.subsystems;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -10,6 +11,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.hardware.Globals;
 import org.firstinspires.ftc.teamcode.hardware.RobotClass;
 
+@Config
 public class IntakeSubsystem {
     private final RobotClass robot;
     public DcMotorEx frontIntakeMotor, backIntakeMotor;
@@ -45,6 +47,8 @@ public class IntakeSubsystem {
     public static double MANUAL_INTAKE_TRIGGER_THRESHOLD = 0.1;
     public static double MANUAL_INTAKE_THIRD_BALL_CONFIRM_MS = 200;
     public static double MANUAL_INTAKE_ALREADY_FULL_RUN_MS = 800;
+    public static double frontIntakeAmpLimit = 8.5;
+    public static double backIntakeAmpLimit = 8.5;
 
     public IntakeSubsystem(RobotClass robot) {
         this.robot = robot;
@@ -77,8 +81,8 @@ public class IntakeSubsystem {
         thirdBallPresent = bottomLeftLaser.getState() && bottomRightLaser.getState();
         
         // Stall detection logic
-        frontIntakeMotor.setCurrentAlert(8.5, CurrentUnit.AMPS);
-        backIntakeMotor.setCurrentAlert(8.5, CurrentUnit.AMPS);
+        frontIntakeMotor.setCurrentAlert(frontIntakeAmpLimit, CurrentUnit.AMPS);
+        backIntakeMotor.setCurrentAlert(backIntakeAmpLimit, CurrentUnit.AMPS);
         boolean intakeStallFront = frontIntakeMotor.isOverCurrent();
         boolean intakeStallBack = backIntakeMotor.isOverCurrent();
 

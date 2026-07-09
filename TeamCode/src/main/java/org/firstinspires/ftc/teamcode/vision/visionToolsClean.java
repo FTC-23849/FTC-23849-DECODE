@@ -23,10 +23,9 @@ public class visionToolsClean {
     public double TurretPowerTxDebug;
     private double smoothTx = 0;
     //Actual middle is 1.8288, 1.8288
-    public static double GoalY = 1.7288;
-    public static double GoalXRed = 1.7288;
-    public static double GoalXBlue = -1.7288;
-    public static boolean TestingGoal = true;
+    public static double GoalY = 1.8288;
+    public static double GoalXRed = 1.8288;
+    public static double GoalXBlue = -1.8288;
     public double groundDistancePinpoint(double x, double y, String allianceColor) {
         double groundDistance = 0;
         if (allianceColor.equals("Red")) {
@@ -195,7 +194,6 @@ public class visionToolsClean {
             double gear,
             double currentPos,
             double turretZero,
-            double turretZero2,
             String alliance
     ) {
         double yPos = robotPos.getX(DistanceUnit.METER);
@@ -216,16 +214,8 @@ public class visionToolsClean {
 
         double curX = robotX + turretOffsetMeters * (xcoeff * cosH - ycoeff * sinH);
         double curY = robotY + turretOffsetMeters * (xcoeff * sinH + ycoeff * cosH);
-        if(!TestingGoal) {
-            GoalY = 1.8288;
-            GoalXRed = 1.7288;
-            GoalXBlue = -1.7288;
-        }
         double goalY = GoalY;
-        double goalXRed = GoalXRed;
-        double goalXBlue = GoalXBlue;
-
-        double goalX = alliance.equals("Red") ? goalXRed : goalXBlue;
+        double goalX = alliance.equals("Red") ? GoalXRed : GoalXBlue;
         double startingAngle = (180+adjustedHeading)%360;
         double turretAngle = startingAngle - Math.toDegrees(Math.atan2(goalY - curY,goalX - curX));
         turretAngle = ((turretAngle + 180) % 360) - 180;
@@ -233,10 +223,6 @@ public class visionToolsClean {
         double turretCenter = 0.5+turretZero;
         double ticksPerDegree = (33.0 / gear) / 1800.0;
         double turretPos = turretCenter - turretAngle * ticksPerDegree;
-        if(turretPos<0.5){
-            turretPos-=turretZero;
-            turretPos+=turretZero2;
-        }
         return Range.clip(turretPos, 0.246, 0.764 );//Range.clip(turretPos, 0.23, 0.65);
     }
     public double CalculateTurretAngle360(

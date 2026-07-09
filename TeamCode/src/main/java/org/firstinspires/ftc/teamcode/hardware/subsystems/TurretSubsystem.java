@@ -1,23 +1,24 @@
 package org.firstinspires.ftc.teamcode.hardware.subsystems;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.hardware.RobotClass;
 
+@Config
 public class TurretSubsystem {
     private final RobotClass robot;
     public ServoImplEx leftTurretServo, rightTurretServo, frontTurretServo;
     public AnalogInput turretEncoder;
 
-    public double turretZeroCorrection = -0.007;
-    public double turretZeroCorrection2 = -0.01;
-    public double turretCorrection = 0.004;
-    public double gear = 13;
-    public double offsetMultiplier = 0.8;
-    public double trueZero = 318;
-    public double quadratureZero = 0;
+    public static double turretZeroCorrection = -0.007;
+    public static double turretCorrection = 0.007;
+    public static double gear = 13;
+    public static double offsetMultiplier = 0.8;
+    public static double trueZero = 318;
+    public static double quadratureZero = 0;
 
     public TurretSubsystem(RobotClass robot) {
         this.robot = robot;
@@ -59,7 +60,6 @@ public class TurretSubsystem {
         double servoCorrection = (targetServoPosition - predictedServoPosition) * offsetMultiplier;
 
         turretZeroCorrection += servoCorrection;
-        turretZeroCorrection2 += servoCorrection;
     }
 
     public void calibrateTurretAndRelocalize() {
@@ -98,7 +98,6 @@ public class TurretSubsystem {
         double servoOffsetFromZero = 0.508 * (turretOffsetFromZero/360);
         servoOffsetFromZero *= offsetMultiplier;
         turretZeroCorrection += servoOffsetFromZero;
-        turretZeroCorrection2 += servoOffsetFromZero;
         setTurretPosition(0.5 + turretZeroCorrection);
     }
 

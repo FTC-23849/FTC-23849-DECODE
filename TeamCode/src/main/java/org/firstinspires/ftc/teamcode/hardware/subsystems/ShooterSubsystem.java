@@ -26,7 +26,7 @@ public class ShooterSubsystem {
     public PIDVelocityController3 velocityPID;
 
     public double targetVelocity = 0;
-    public double flywheelCorrection = 0;
+    public static double flywheelCorrection = 0;
     public boolean backButtonTrue = false;
     public boolean usePower = true;
     public boolean useTurret = true;
@@ -38,14 +38,20 @@ public class ShooterSubsystem {
     public static double moveTowardsGoalshotSpeed = 0.85;
     public static double moveAwayFromGoalshotSpeed = 0.75;
 
-    public static double KpMaintain = 0.003;
+    public static double lockedFlywheelVelocity = -920;
+    public static double lockedHoodHeight = 0.15;
+    public static double defaultVoltage = 13.15;
+
+    public static double KpMaintain = 0.001;
     public static double KiMaintain = 0.002;
-    public static double KpDriveRecovery = 0.03;
+    public static double KpDriveRecovery = 0.004;
     public static double KpRecovery = 0;
     public static double KiRecovery = 0.001;
     public static double KsRecovery = 0.8;
     public static double KvFF = 0.00042;
     public static double KsFF = 0.055;
+    public static double recoveryThreshold = 60;
+    public static double maintainThreshold = 40;
 
     public static class Point {
         public double x;
@@ -61,28 +67,29 @@ public class ShooterSubsystem {
     }
 
     public static double flywheelZoneThreshold1 = 1.9;
-    public static double flywheelZoneThreshold2 = 2.75;
+    public static double flywheelZoneThreshold2 = 2.3;
     public static int flywheelNearDegree = 2;
     public static int flywheelMidDegree = 2;
     public static int flywheelFarDegree = 4;
 
     //tunable points for regression
-    public static Point flywheelPoint1 = new Point(0.9, -559);
-    public static Point flywheelPoint2 = new Point(1.15, -650);
-    public static Point flywheelPoint3 = new Point(1.4, -737);
-    public static Point flywheelPoint4 = new Point(1.65, -820);
-    public static Point flywheelPoint5 = new Point(1.9, -899);
-    public static Point flywheelPoint6 = new Point(2.05, -842);
-    public static Point flywheelPoint7 = new Point(2.2, -879);
-    public static Point flywheelPoint8 = new Point(2.4, -924);
-    public static Point flywheelPoint9 = new Point(2.6, -964);
-    public static Point flywheelPoint10 = new Point(2.75, -991);
-    public static Point flywheelPoint11 = new Point(2.8, -1003);
-    public static Point flywheelPoint12 = new Point(3.0, -1024);
-    public static Point flywheelPoint13 = new Point(3.25, -1073);
-    public static Point flywheelPoint14 = new Point(3.5, -1136);
-    public static Point flywheelPoint15 = new Point(3.75, -1203);
-    public static Point flywheelPoint16 = new Point(4.0, -1268);
+    //tunable points for regression
+    public static Point flywheelPoint01 = new Point(0.9, -559);
+    public static Point flywheelPoint02 = new Point(1.15, -700);
+    public static Point flywheelPoint03 = new Point(1.4, -737);
+    public static Point flywheelPoint04 = new Point(1.65, -770);
+    public static Point flywheelPoint05 = new Point(1.89, -820);
+    public static Point flywheelPoint06 = new Point(1.91, -800);
+    public static Point flywheelPoint07 = new Point(2.2, -875);
+    public static Point flywheelPoint08 = new Point(2.31, -904);
+    public static Point flywheelPoint09 = new Point(2.6, -974);
+    public static Point flywheelPoint10 = new Point(2.8, -971);
+    public static Point flywheelPoint11 = new Point(3.0, -1003);
+    public static Point flywheelPoint12 = new Point(3.2, -1084);
+    public static Point flywheelPoint13 = new Point(3.4, -1114);
+    public static Point flywheelPoint14 = new Point(3.6, -1154);
+    public static Point flywheelPoint15 = new Point(3.8, -1183);
+    public static Point flywheelPoint16 = new Point(4.0, -1208);
 
     private double[] lastFlywheelRegressionSignature = null;
     private PolynomialFunction nearFlywheelPoly, midFlywheelPoly, farFlywheelPoly;
@@ -144,9 +151,9 @@ public class ShooterSubsystem {
 
     private Point[] flywheelPoints() {
         return new Point[]{
-                flywheelPoint1, flywheelPoint2, flywheelPoint3, flywheelPoint4,
-                flywheelPoint5, flywheelPoint6, flywheelPoint7, flywheelPoint8,
-                flywheelPoint9, flywheelPoint10, flywheelPoint11, flywheelPoint12,
+                flywheelPoint01, flywheelPoint02, flywheelPoint03, flywheelPoint04,
+                flywheelPoint05, flywheelPoint06, flywheelPoint07, flywheelPoint08,
+                flywheelPoint09, flywheelPoint10, flywheelPoint11, flywheelPoint12,
                 flywheelPoint13, flywheelPoint14, flywheelPoint15, flywheelPoint16
         };
     }
@@ -253,9 +260,9 @@ public class ShooterSubsystem {
             double flywheelCurrentVelocity = (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2.0;
             
             if (!usePower) {
-                targetVelocity = -920 + flywheelCorrection;
-                leftHood.setPosition(0.15);
-                rightHood.setPosition(0.15);
+                targetVelocity = lockedFlywheelVelocity + flywheelCorrection;
+                leftHood.setPosition(lockedHoodHeight);
+                rightHood.setPosition(lockedHoodHeight);
             } else {
                 double distance = robot.vision.getTurretDistance(predictedPos, robot.miscSubsystems.allianceColor);
                 targetVelocity = calculateFlywheelSpeed(distance) + flywheelCorrection;
@@ -268,9 +275,11 @@ public class ShooterSubsystem {
             velocityPID.setMaintainGains(KpMaintain, KiMaintain, KpDriveRecovery);
             velocityPID.setRecoveryGains(KpRecovery, KiRecovery, KsRecovery);
             velocityPID.setFeedforward(KsFF, KvFF);
+            velocityPID.setRecoveryThreshold(recoveryThreshold);
+            velocityPID.setMaintainThreshold(maintainThreshold);
             velocityPID.setVoltageStatus(robot.miscSubsystems.lowVoltage);
             
-            double power = velocityPID.update(flywheelCurrentVelocity, voltage, 13.15);
+            double power = velocityPID.update(flywheelCurrentVelocity, voltage, defaultVoltage);
             leftShooterMotor.setPower(power);
             rightShooterMotor.setPower(power);
         } else {
@@ -285,8 +294,10 @@ public class ShooterSubsystem {
     }
 
     public void telemetry() {
+        robot.telemetry.addData("Goal Distance (m)", robot.vision.getTurretDistance(robot.drive.getPredictedPos(), robot.miscSubsystems.allianceColor));
         robot.telemetry.addData("Shooter Target", targetVelocity);
         robot.telemetry.addData("Shooter Actual", (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2.0);
+        robot.telemetry.addData("Shooter inaccuracy", targetVelocity - (leftShooterMotor.getVelocity() + rightShooterMotor.getVelocity()) / 2.0);
         robot.telemetry.addData("Flywheel Near R^2", nearFlywheelR2);
         robot.telemetry.addData("Flywheel Mid R^2", midFlywheelR2);
         robot.telemetry.addData("Flywheel Far R^2", farFlywheelR2);

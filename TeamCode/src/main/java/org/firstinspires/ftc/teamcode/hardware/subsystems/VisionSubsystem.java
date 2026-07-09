@@ -1,11 +1,13 @@
 package org.firstinspires.ftc.teamcode.hardware.subsystems;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.hardware.RobotClass;
 import org.firstinspires.ftc.teamcode.vision.visionToolsClean;
 
+@Config
 public class VisionSubsystem {
     private final RobotClass robot;
     public Limelight3A limelight;
@@ -25,6 +27,9 @@ public class VisionSubsystem {
 
     public static double red = 0;
     public static double blue = 0;
+
+    public static double xcoeff = 1;
+    public static double ycoeff = 1;
 
     public boolean SOTM = false;
     public static boolean SOTMTesting = false;
@@ -100,13 +105,8 @@ public class VisionSubsystem {
     }
 
     public double getTurretAngle(Pose2D predictedPos, String alliance, double currentPos, double gear) {
-        // Constants for turret offset correction
         //TODO: clean ts up and js make it one offset
-        double turretZeroCorrection = -0.007;
-        double turretZeroCorrection2 = -0.011;
-        double turretCorrection = 0.004;
-
-        return visionTools.CalculateTurretAngle360NEW(1.0, 1.0, predictedPos, gear, currentPos, 
-                turretZeroCorrection, turretZeroCorrection2, alliance) + turretCorrection;
+        return visionTools.CalculateTurretAngle360NEW(xcoeff, ycoeff, predictedPos, gear, currentPos,
+                TurretSubsystem.turretZeroCorrection, alliance) + TurretSubsystem.turretCorrection;
     }
 }

@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.hardware.subsystems;
 
 import android.graphics.Color;
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
+@Config
 public class MiscSubsystems {
     private final RobotClass robot;
     public VoltageSensor voltageSensor;
@@ -36,6 +38,17 @@ public class MiscSubsystems {
     public boolean lowVoltage = false;
 
     // Color Sensor stuff
+    public static float MIN_SATURATION = 0.02f;
+    public static float MIN_VALUE = 0.005f;
+    public static float GREEN_HUE_CENTER = 150f;
+    public static float PURPLE_HUE_CENTER = 225f;
+    public static float COLOR_SENSOR_GAIN = 1f;
+    public static double LED_OFF_POS = 0.00;
+    public static double LED_GREEN_POS = 0.50;
+    public static double LED_PURPLE_POS = 0.70;
+    public static double colorTickMs = 80;
+    public static double currentLogIntervalMs = 20;
+
     public enum ArtifactColor { GREEN, PURPLE, RED, UNKNOWN }
     private ArtifactColor last1 = null, last2 = null, last3 = null;
     private int colorPhase = 0;
@@ -78,17 +91,17 @@ public class MiscSubsystems {
 
     private void initSensor(NormalizedColorSensor sensor) {
         if (sensor instanceof SwitchableLight) ((SwitchableLight) sensor).enableLight(true);
-        sensor.setGain(1.0f);
+        sensor.setGain(COLOR_SENSOR_GAIN);
     }
 
     public void update() {
         double now = System.currentTimeMillis();
-        if (prismSenseEnabled && (now - lastColorTick >= 80)) {
+        if (prismSenseEnabled && (now - lastColorTick >= colorTickMs)) {
             lastColorTick = now;
             handleColorSensing();
         }
 
-        if (now - lastCurrentLogTime >= 20) {
+        if (now - lastCurrentLogTime >= currentLogIntervalMs) {
             logMotorCurrents();
             lastCurrentLogTime = now;
         }
@@ -132,9 +145,9 @@ public class MiscSubsystems {
     private ArtifactColor read(NormalizedColorSensor sensor) {
         NormalizedRGBA rgba = sensor.getNormalizedColors();
         Color.colorToHSV(rgba.toColor(), hsvBuf);
-        if (hsvBuf[2] < 0.005f && hsvBuf[1] < 0.02f) return ArtifactColor.UNKNOWN;
-        float dG = Math.abs(hsvBuf[0] - 150f); dG = Math.min(dG, 360 - dG);
-        float dP = Math.abs(hsvBuf[0] - 225f); dP = Math.min(dP, 360 - dP);
+        if (hsvBuf[2] < MIN_VALUE && hsvBuf[1] < MIN_SATURATION) return ArtifactColor.UNKNOWN;
+        float dG = Math.abs(hsvBuf[0] - GREEN_HUE_CENTER); dG = Math.min(dG, 360 - dG);
+        float dP = Math.abs(hsvBuf[0] - PURPLE_HUE_CENTER); dP = Math.min(dP, 360 - dP);
         return (dG <= dP) ? ArtifactColor.GREEN : ArtifactColor.PURPLE;
     }
 
@@ -161,9 +174,9 @@ public class MiscSubsystems {
     }
 
     private void showOnRgbLight(ArtifactColor c) {
-        if (c == ArtifactColor.GREEN) rgbLight.setPosition(0.5);
-        else if (c == ArtifactColor.PURPLE) rgbLight.setPosition(0.7);
-        else rgbLight.setPosition(0.0);
+        if (c == ArtifactColor.GREEN) rgbLight.setPosition(LED_GREEN_POS);
+        else if (c == ArtifactColor.PURPLE) rgbLight.setPosition(LED_PURPLE_POS);
+        else rgbLight.setPosition(LED_OFF_POS);
     }
 
     public void setAllianceBlue() { allianceColor = "Blue"; }

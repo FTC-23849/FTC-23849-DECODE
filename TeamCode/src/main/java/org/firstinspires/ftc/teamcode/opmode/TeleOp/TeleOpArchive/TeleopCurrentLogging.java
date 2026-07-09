@@ -450,7 +450,7 @@ public class TeleopCurrentLogging extends OpMode {
         velH = pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
         predictedPos = vision.predictPos(allianceColor, robotPos, velX, velY, velH, secFar, rotationalSec, moveAwayFar);
         hoodHeight   = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
-        turretPos    = vision.CalculateTurretAngle360NEW(xcoeff, ycoeff, predictedPos, gear, leftTurretServo.getPosition(), turretZeroCorrection, turretZeroCorrection2, allianceColor) + turretCorrection;
+        turretPos    = vision.CalculateTurretAngle360NEW(xcoeff, ycoeff, predictedPos, gear, leftTurretServo.getPosition(), turretZeroCorrection, allianceColor) + turretCorrection;
         groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER), robotPos.getY(DistanceUnit.METER), allianceColor);
         flywheelSpeed  = Math.min(0, vision.CalculatedFlywheelSpeed(predictedPos, allianceColor));
 
@@ -661,7 +661,7 @@ public class TeleopCurrentLogging extends OpMode {
 
             if (backButtonTrue) {
                 hoodHeight     = vision.hoodHeightRegressor(predictedPos, leftHood.getPosition(), allianceColor);
-                turretPos      = vision.CalculateTurretAngle360NEW(xcoeff, ycoeff, vision.predictPos(allianceColor, robotPos, velX, velY, velH, turretSec, rotationalSec, moveAwayTurret), gear, leftTurretServo.getPosition(), turretZeroCorrection, turretZeroCorrection2, allianceColor) + turretCorrection;
+                turretPos      = vision.CalculateTurretAngle360NEW(xcoeff, ycoeff, vision.predictPos(allianceColor, robotPos, velX, velY, velH, turretSec, rotationalSec, moveAwayTurret), gear, leftTurretServo.getPosition(), turretZeroCorrection, allianceColor) + turretCorrection;
                 groundDistance = vision.groundDistancePinpoint(robotPos.getX(DistanceUnit.METER), robotPos.getY(DistanceUnit.METER), allianceColor);
                 flywheelSpeed  = Math.min(0, vision.CalculatedFlywheelSpeed(predictedPos, allianceColor));
             }
