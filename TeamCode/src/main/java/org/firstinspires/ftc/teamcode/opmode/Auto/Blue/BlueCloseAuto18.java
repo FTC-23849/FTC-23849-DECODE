@@ -113,8 +113,8 @@ public class BlueCloseAuto18 extends LinearOpMode {
 
     public static double shootingSpeed = -0.58;
 
-    public static double shootingSpeedPID = -820;
-    public static double turretOffset = -0.009;
+    public static double shootingSpeedPID = -770;
+    public static double turretOffset = -0.002;
 
     public static String allianceColor = "Blue";
 
@@ -574,12 +574,12 @@ public class BlueCloseAuto18 extends LinearOpMode {
                                             drive.actionBuilder(pose)
                                                     .setTangent(Math.toRadians(355))
                                                     .splineTo(
-                                                            new Vector2d(37, -35), (-Math.PI/2),
+                                                            new Vector2d(33, -35), (-Math.PI/2),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
                                                     .strafeToSplineHeading(
-                                                            new Vector2d(37, -62), Math.toRadians(270),
+                                                            new Vector2d(33, -62), Math.toRadians(270),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )

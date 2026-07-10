@@ -114,8 +114,8 @@ public class RedCloseAuto18 extends LinearOpMode {
 
     public static double shootingSpeed = -0.58;
 
-    public static double shootingSpeedPID = -820;
-    public static double turretOffset = 0.013;
+    public static double shootingSpeedPID = -790;
+    public static double turretOffset = 0.02;
 
     public static String allianceColor = "Red";
 
@@ -539,7 +539,7 @@ public class RedCloseAuto18 extends LinearOpMode {
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
                                                     .strafeToSplineHeading(
-                                                            new Vector2d(-12, 15), Math.toRadians(0),
+                                                            new Vector2d(-12, 15), Math.toRadians(10),
                                                             new TranslationalVelConstraint(minVelDrive),
                                                             new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
                                                     )
@@ -573,16 +573,16 @@ public class RedCloseAuto18 extends LinearOpMode {
                                     // Intake Spike 3 Path (from *current* pose)
                                     new PathFromCurrentPose(drive, pose ->
                                             drive.actionBuilder(pose)
-                                                    .setTangent(Math.toRadians(0))
+                                                    .setTangent(Math.toRadians(5))
                                                     .splineTo(
-                                                            new Vector2d(34, 35), (Math.PI/2),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                            new Vector2d(31, 35), (Math.PI/2),
+                                                            new TranslationalVelConstraint(50),
+                                                            new ProfileAccelConstraint(-40, 40)
                                                     )
                                                     .strafeToSplineHeading(
-                                                            new Vector2d(34, 62), Math.toRadians(90),
-                                                            new TranslationalVelConstraint(minVelDrive),
-                                                            new ProfileAccelConstraint(minAccelDrive, maxAccelDrive)
+                                                            new Vector2d(31, 62), Math.toRadians(80),
+                                                            new TranslationalVelConstraint(50),
+                                                            new ProfileAccelConstraint(-40, 40)
                                                     )
                                                     .build()
                                     ),

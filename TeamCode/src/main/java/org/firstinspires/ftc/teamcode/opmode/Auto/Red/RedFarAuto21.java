@@ -127,8 +127,8 @@ public class RedFarAuto21 extends LinearOpMode {
     public static boolean intakeLastSpike = true;
     public static boolean intakeSecondSpike = false;
 
-    public static double preloadShootingSpeed = -1215;
-    public static double cyclingShootingSpeed = -1180;
+    public static double preloadShootingSpeed = -1165;
+    public static double cyclingShootingSpeed = -1130;
     public static double shootingSpeedPID = preloadShootingSpeed;
     public static double turretOffset = 0.009;
 
