@@ -77,8 +77,9 @@ public class VisionSubsystem {
 
             moveAwayClose = 0.8;
             moveAwayTurretClose = 0.8;
-            secClose = 0.2;
-            turretSecClose = 0.8;
+            secClose = 0.6;
+            turretSecClose = 1
+            ;
         } else {
             moveAwayFar = 0;
             moveAwayTurretFar = -0.4;
