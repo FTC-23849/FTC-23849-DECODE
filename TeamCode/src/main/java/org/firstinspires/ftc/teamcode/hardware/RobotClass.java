@@ -49,6 +49,11 @@ public class RobotClass {
         drive.initLoop();
     }
 
+    public void start() {
+        intake.start();
+        turret.start();
+    }
+
     public void update() {
         for (LynxModule hub : hubs) {
             hub.clearBulkCache();

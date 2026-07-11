@@ -31,7 +31,7 @@ public class ShooterSubsystem {
     public boolean usePower = true;
     public boolean useTurret = true;
 
-    public double shotSpeed = 0.9;
+    public static double shotSpeed = 0.9;
     public static double defaultShotSpeed = 0.9;
     public static double lowBatteryShotSpeed = 0.7;
     public static double lockedPosShotSpeed = 0.7;
@@ -42,7 +42,7 @@ public class ShooterSubsystem {
     public static double lockedHoodHeight = 0.15;
     public static double defaultVoltage = 13.15;
 
-    public static double KpMaintain = 0.001;
+    public static double KpMaintain = 0.002;
     public static double KiMaintain = 0.002;
     public static double KpDriveRecovery = 0.004;
     public static double KpRecovery = 0;
@@ -86,10 +86,10 @@ public class ShooterSubsystem {
     public static Point flywheelPoint10 = new Point(2.8, -971);
     public static Point flywheelPoint11 = new Point(3.0, -1003);
     public static Point flywheelPoint12 = new Point(3.2, -1084);
-    public static Point flywheelPoint13 = new Point(3.4, -1114);
-    public static Point flywheelPoint14 = new Point(3.6, -1154);
-    public static Point flywheelPoint15 = new Point(3.8, -1183);
-    public static Point flywheelPoint16 = new Point(4.0, -1208);
+    public static Point flywheelPoint13 = new Point(3.4, -1104);
+    public static Point flywheelPoint14 = new Point(3.6, -1124);
+    public static Point flywheelPoint15 = new Point(3.8, -1153);
+    public static Point flywheelPoint16 = new Point(4.0, -1178);
 
     private double[] lastFlywheelRegressionSignature = null;
     private PolynomialFunction nearFlywheelPoly, midFlywheelPoly, farFlywheelPoly;

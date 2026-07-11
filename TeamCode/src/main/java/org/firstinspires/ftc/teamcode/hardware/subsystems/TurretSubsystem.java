@@ -13,8 +13,8 @@ public class TurretSubsystem {
     public ServoImplEx leftTurretServo, rightTurretServo, frontTurretServo;
     public AnalogInput turretEncoder;
 
-    public static double turretZeroCorrection = -0.007;
-    public static double turretCorrection = 0.007;
+    public static double turretZeroCorrection = -0.009;
+    public static double turretCorrection = 0.004;
     public static double gear = 13;
     public static double offsetMultiplier = 0.8;
     public static double trueZero = 318;
@@ -33,7 +33,9 @@ public class TurretSubsystem {
         leftTurretServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
         rightTurretServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
         frontTurretServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
-        
+    }
+
+    public void start() {
         setTurretPosition(0.5 + turretZeroCorrection);
     }
 

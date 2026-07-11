@@ -72,7 +72,9 @@ public class IntakeSubsystem {
         bottomRightLaser = robot.hardwareMap.get(DigitalChannel.class, "bottomRightLaser");
         bottomLeftLaser.setMode(DigitalChannel.Mode.INPUT);
         bottomRightLaser.setMode(DigitalChannel.Mode.INPUT);
-        
+    }
+
+    public void start() {
         leftTongueServo.setPosition(Globals.tongueIntake);
         rightTongueServo.setPosition(Globals.tongueIntake);
     }
@@ -109,10 +111,8 @@ public class IntakeSubsystem {
             frontIntakeMotor.setPower(-Globals.frontIntakeIntakeSpeed);
             backIntakeMotor.setPower(Globals.backIntakeIntakeSpeed);
             targetIntakePower = Globals.frontIntakeIntakeSpeed;
-        } else {
-            frontIntakeMotor.setPower(0);
-            backIntakeMotor.setPower(0);
-            targetIntakePower = 0;
+            leftKickerServo.setPower(0);
+            rightKickerServo.setPower(0);
         }
         leftTongueServo.setPosition(Globals.tongueIntake);
         rightTongueServo.setPosition(Globals.tongueIntake);
@@ -255,6 +255,8 @@ public class IntakeSubsystem {
     }
 
     public void stopIntake() {
+        leftTongueServo.setPosition(Globals.tongueIntake);
+        rightTongueServo.setPosition(Globals.tongueIntake);
         leftKickerServo.setPower(0);
         rightKickerServo.setPower(0);
         frontIntakeMotor.setPower(0);

@@ -30,6 +30,11 @@ public class TeleOpClean extends OpMode {
     }
 
     @Override
+    public void start() {
+        robot.start();
+    }
+
+    @Override
     public void loop() {
         robot.update();
 
@@ -44,7 +49,7 @@ public class TeleOpClean extends OpMode {
         // SOTM (u need to hold left bumper on gp1 for it to run)
         robot.vision.updateSOTM(gamepad1.left_bumper);
 
-        // Intake TODO: maybe make enums for diff intake speeds?
+        // Intake
         if (!robot.intake.isLocked(gamepad1.right_stick_button)) {
             if (gamepad1.left_trigger < 0.1) robot.intake.resetKickerDelay();
 

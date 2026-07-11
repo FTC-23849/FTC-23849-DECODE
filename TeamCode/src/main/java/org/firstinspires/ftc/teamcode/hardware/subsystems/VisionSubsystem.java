@@ -13,14 +13,14 @@ public class VisionSubsystem {
     public Limelight3A limelight;
     public visionToolsClean visionTools;
 
-    public static double moveAwayFar = 1.2;
-    public static double moveAwayTurretFar = 1.4;
-    public static double secFar = 0.8;
+    public static double moveAwayFar = 1.5;
+    public static double moveAwayTurretFar = 1;
+    public static double secFar = 1.2;
     public static double turretSecFar = 1.1;
 
-    public static double moveAwayClose = 2;
-    public static double moveAwayTurretClose = 0.6;
-    public static double secClose = 0.6;
+    public static double moveAwayClose = 0.8;
+    public static double moveAwayTurretClose = 0.8;
+    public static double secClose = 0.2;
     public static double turretSecClose = 0.8;
 
     public static double rotationalSec = 0.1;
@@ -70,25 +70,25 @@ public class VisionSubsystem {
         SOTM = leftBumperHeld || SOTMTesting;
 
         if (leftBumperHeld) {
-            moveAwayFar = 1.2;
-            moveAwayTurretFar = 1.4;
-            secFar = 0.8;
+            moveAwayFar = 1.5;
+            moveAwayTurretFar = 1;
+            secFar = 1.2;
             turretSecFar = 1.1;
-            rotationalSec = 0.1;
-            moveAwayClose = 2;
-            moveAwayTurretClose = 0.6;
-            secClose = 0.6;
+
+            moveAwayClose = 0.8;
+            moveAwayTurretClose = 0.8;
+            secClose = 0.2;
             turretSecClose = 0.8;
         } else {
             moveAwayFar = 0;
-            moveAwayTurretFar = -0.2;
+            moveAwayTurretFar = -0.4;
             secFar = 0;
-            turretSecFar = -0.2;
+            turretSecFar = -0.4;
             rotationalSec = 0;
             moveAwayClose = 0;
-            moveAwayTurretClose = -0.2;
+            moveAwayTurretClose = -0.4;
             secClose = 0;
-            turretSecClose = -0.2;
+            turretSecClose = -0.4;
         }
     }
 
