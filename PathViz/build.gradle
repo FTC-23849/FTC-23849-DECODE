@@ -1,0 +1,16 @@
+// Desktop visualizer. Pure Java + Swing. It depends on the shared :PathCore module, so it runs the
+// EXACT same planner classes the robot uses -- no second copy, no drift.
+//   Run:  .\gradlew.bat :PathViz:run     (or the green Run arrow on PathVizApp in Android Studio)
+plugins {
+    id 'application'
+}
+java {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+}
+application {
+    mainClass = 'pathviz.PathVizApp'
+}
+dependencies {
+    implementation project(':PathCore')
+}

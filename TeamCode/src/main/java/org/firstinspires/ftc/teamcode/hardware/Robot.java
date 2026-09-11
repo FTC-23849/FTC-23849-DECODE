@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.localization.PoseUpdater;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -45,7 +44,6 @@ public class Robot {
     public Drive drive;
 
     public Follower follower;
-    public PoseUpdater poseUpdater;
 
     // Singleton Implementation
 

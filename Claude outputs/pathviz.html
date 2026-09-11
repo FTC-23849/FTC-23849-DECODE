@@ -1,0 +1,456 @@
+<title>Pathgen Field Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#131a22; --panel2:#0f151c; --line:#1d2731;
+    --ink:#dce6f0; --dim:#7d8b9a; --faint:#4a5866;
+    --accent:#22d3ee;           /* smoothed path - cyan */
+    --route:#4ade80;            /* routed polyline - green */
+    --nav:#f5a524;              /* nav points - amber */
+    --graph:#2a3947;            /* visibility graph - faint */
+    --obst:#f0506e;             /* obstacles - red */
+    --robot:#3b82f6;            /* robot body - blue */
+    --wp:#e8eef5;               /* waypoints */
+    --ok:#4ade80; --warn:#f5a524; --fail:#f0506e;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --ui:'Chakra Petch',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--ui);
+    display:flex; min-height:100%; gap:0;
+  }
+  .stage{flex:1; display:flex; align-items:center; justify-content:center; padding:22px; min-width:0}
+  .stagewrap{position:relative}
+  canvas{background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 18px 50px rgba(0,0,0,.45); cursor:crosshair; touch-action:none; display:block}
+  .readout{position:absolute; left:12px; top:12px; font-family:var(--mono); font-size:11px;
+    color:var(--dim); pointer-events:none; letter-spacing:.02em}
+  .panel{width:330px; flex:none; background:var(--panel); border-left:1px solid var(--line);
+    display:flex; flex-direction:column; overflow-y:auto}
+  .panel h1{font-size:16px; font-weight:700; letter-spacing:.04em; margin:0; padding:16px 18px 4px;
+    text-transform:uppercase}
+  .panel h1 small{display:block; font-family:var(--mono); font-size:10px; color:var(--dim);
+    font-weight:400; letter-spacing:.03em; text-transform:none; margin-top:3px}
+  .sec{padding:14px 18px; border-top:1px solid var(--line)}
+  .sec .lab{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.12em;
+    color:var(--dim); margin-bottom:9px}
+  .tools{display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px}
+  .tools.two{grid-template-columns:1fr 1fr}
+  button{font-family:var(--ui); font-size:12.5px; font-weight:600; color:var(--ink);
+    background:var(--panel2); border:1px solid var(--line); border-radius:7px; padding:8px 6px;
+    cursor:pointer; letter-spacing:.02em; transition:border-color .12s, background .12s}
+  button:hover{border-color:var(--faint)}
+  button.on{background:rgba(34,211,238,.14); border-color:var(--accent); color:#bff2fb}
+  button:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+  .row{display:flex; align-items:center; gap:10px; margin:7px 0}
+  .row label{font-size:12.5px; flex:1}
+  .row input[type=number]{width:66px; background:var(--panel2); border:1px solid var(--line);
+    color:var(--ink); border-radius:6px; padding:5px 7px; font-family:var(--mono); font-size:12px}
+  .toggles{display:flex; flex-direction:column; gap:2px}
+  .tg{display:flex; align-items:center; gap:9px; font-size:12.5px; padding:4px 2px; cursor:pointer}
+  .tg input{accent-color:var(--accent); width:15px; height:15px}
+  .tg .sw{width:22px; height:3px; border-radius:2px; flex:none}
+  .status{display:flex; align-items:center; gap:9px; margin-bottom:8px}
+  .pill{font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.06em;
+    padding:4px 10px; border-radius:999px; text-transform:uppercase}
+  .pill.ok{background:rgba(74,222,128,.16); color:var(--ok)}
+  .pill.warn{background:rgba(245,165,36,.16); color:var(--warn)}
+  .pill.fail{background:rgba(240,80,110,.16); color:var(--fail)}
+  .stat{font-family:var(--mono); font-size:11px; color:var(--dim)}
+  .stat b{color:var(--ink); font-weight:700}
+  .notes{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:5px}
+  .notes li{font-family:var(--mono); font-size:10.5px; line-height:1.45; color:var(--warn);
+    background:rgba(245,165,36,.07); border-left:2px solid var(--warn); padding:5px 8px; border-radius:0 5px 5px 0}
+  .notes li.bad{color:var(--fail); background:rgba(240,80,110,.08); border-color:var(--fail)}
+  .hint{font-size:11.5px; color:var(--dim); line-height:1.5; margin-top:8px}
+  .foot{margin-top:auto; padding:12px 18px; border-top:1px solid var(--line);
+    font-family:var(--mono); font-size:10px; color:var(--faint); line-height:1.6}
+  @media (max-width:820px){ body{flex-direction:column} .panel{width:100%; border-left:none; border-top:1px solid var(--line)} }
+</style>
+
+<div class="stage">
+  <div class="stagewrap">
+    <canvas id="cv" width="620" height="620"></canvas>
+    <div class="readout" id="readout">x —  y —</div>
+  </div>
+</div>
+
+<aside class="panel">
+  <h1>Pathgen Field Lab<small>obstacle-avoidance planner · 144″ FTC field</small></h1>
+
+  <div class="sec">
+    <div class="lab">Tool</div>
+    <div class="tools">
+      <button data-tool="move" class="on">Move</button>
+      <button data-tool="waypoint">Waypoint</button>
+      <button data-tool="delete">Delete</button>
+      <button data-tool="circle">Circle</button>
+      <button data-tool="rect">Rect</button>
+      <button data-tool="tri">Triangle</button>
+    </div>
+    <div class="hint" id="toolhint">Drag start/middle/end points to move them. Path replans instantly.</div>
+  </div>
+
+  <div class="sec">
+    <div class="lab">Robot footprint (inches)</div>
+    <div class="row"><label>Width</label><input type="number" id="rw" value="14" min="1" step="0.5"></div>
+    <div class="row"><label>Length</label><input type="number" id="rl" value="14" min="1" step="0.5"></div>
+    <div class="row"><label>Min clearance (in)</label><input type="number" id="mc" value="0" min="0" step="0.5"></div>
+    <div class="row"><label>Forward speed Vx (in/s)</label><input type="number" id="vx" value="76" min="1" step="1"></div>
+  </div>
+
+  <div class="sec">
+    <div class="lab">Show</div>
+    <div class="toggles" id="toggles"></div>
+  </div>
+
+  <div class="sec">
+    <div class="lab">Plan result</div>
+    <div class="status">
+      <span class="pill ok" id="pill">OK</span>
+      <span class="stat" id="stats"></span>
+    </div>
+    <ul class="notes" id="notes"></ul>
+  </div>
+
+  <div class="sec">
+    <div class="lab">Playback</div>
+    <div class="tools two">
+      <button id="play">▶ Play</button>
+      <button id="resetPlay">Reset</button>
+    </div>
+    <div class="hint">Watch the robot drive the planned path, front leading through each point.</div>
+  </div>
+
+  <div class="sec">
+    <div class="lab">Scene</div>
+    <div class="tools two">
+      <button id="clear">Clear obstacles</button>
+      <button id="reset">Reset example</button>
+    </div>
+  </div>
+
+  <div class="foot">
+    Mirrors PathPlanner.java: inflate → nudge → visibility graph (Dijkstra) → tangent headings → smooth.
+    A design/debug twin of the Java — keep it in sync with the code.
+  </div>
+</aside>
+
+<script>
+const FIELD = 144;                         // inches
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let SIZE = cv.width;                        // px, square
+const toPx = (x,y)=>[ x/FIELD*SIZE, SIZE - y/FIELD*SIZE ];
+const toIn = (px,py)=>[ px/SIZE*FIELD, (SIZE-py)/SIZE*FIELD ];
+
+// ---------- state ----------
+let tool='move';
+let obstacles = [];
+let waypoints = [];                         // [{x,y}] start..end
+const show = {inflate:true, nav:false, graph:false, route:true, smooth:true};
+let drag=null;                              // active drag/build state
+let playing=false, playIdx=0, trace=[];     // playback state
+
+function resetExample(){
+  obstacles = [
+    {type:'circle', cx:74, cy:98, r:11},
+    {type:'rect', lcx:40, lcy:44, ucx:62, ucy:74},
+    {type:'tri', p:[[96,30],[126,30],[111,58]]},
+  ];
+  waypoints = [ {x:20,y:18}, {x:110,y:60}, {x:126,y:128} ];
+}
+resetExample();
+
+// ---------- geometry (mirrors the Java) ----------
+// total keep-out margin = robot bounding-circle radius + your extra minimum clearance
+const clearance = ()=> 0.5*Math.hypot(+rw.value, +rl.value) + (+mc.value);
+
+function contains(o,x,y,m){
+  if(o.type==='circle') return Math.hypot(x-o.cx,y-o.cy) <= o.r+m;
+  if(o.type==='rect')   return x>=o.lcx-m && x<=o.ucx+m && y>=o.lcy-m && y<=o.ucy+m;
+  if(o.type==='tri'){
+    const gx=(o.p[0][0]+o.p[1][0]+o.p[2][0])/3, gy=(o.p[0][1]+o.p[1][1]+o.p[2][1])/3;
+    const P=o.p.map(c=>push(c[0],c[1],gx,gy,m));
+    const d1=sign(x,y,P[0][0],P[0][1],P[1][0],P[1][1]);
+    const d2=sign(x,y,P[1][0],P[1][1],P[2][0],P[2][1]);
+    const d3=sign(x,y,P[2][0],P[2][1],P[0][0],P[0][1]);
+    const neg=d1<0||d2<0||d3<0, pos=d1>0||d2>0||d3>0;
+    return !(neg&&pos);
+  }
+  return false;
+}
+function push(px,py,gx,gy,d){const dx=px-gx,dy=py-gy,l=Math.hypot(dx,dy); return l<1e-9?[px,py]:[px+dx/l*d,py+dy/l*d];}
+function sign(px,py,ax,ay,bx,by){return (px-bx)*(ay-by)-(ax-bx)*(py-by);}
+
+function blocked(x,y){const m=clearance(); return obstacles.some(o=>contains(o,x,y,m));}
+function segClear(a,b){
+  const dist=Math.hypot(b[0]-a[0],b[1]-a[1]); const n=Math.max(2,Math.round(dist));
+  for(let i=0;i<=n;i++){const t=i/n; if(blocked(a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t)) return false;}
+  return true;
+}
+function navPointsFor(o,m){
+  if(o.type==='circle'){const out=[],rr=o.r+m+2; for(let i=0;i<8;i++){const a=2*Math.PI*i/8; out.push([o.cx+rr*Math.cos(a),o.cy+rr*Math.sin(a)]);} return out;}
+  if(o.type==='rect'){const q=m+2; return [[o.lcx-q,o.lcy-q],[o.ucx+q,o.lcy-q],[o.ucx+q,o.ucy+q],[o.lcx-q,o.ucy+q]];}
+  if(o.type==='tri'){const gx=(o.p[0][0]+o.p[1][0]+o.p[2][0])/3, gy=(o.p[0][1]+o.p[1][1]+o.p[2][1])/3, q=m+2; return o.p.map(c=>push(c[0],c[1],gx,gy,q));}
+  return [];
+}
+function allNav(){const m=clearance(); const out=[]; obstacles.forEach(o=>navPointsFor(o,m).forEach(p=>{if(!blocked(p[0],p[1])) out.push(p);})); return out;}
+
+function nudgeOut(x,y){
+  for(let rad=2; rad<=48; rad+=2) for(let a=0;a<16;a++){
+    const ang=2*Math.PI*a/16, nx=x+rad*Math.cos(ang), ny=y+rad*Math.sin(ang);
+    if(!blocked(nx,ny)) return [nx,ny];
+  }
+  return null;
+}
+function routeAround(start,goal){
+  const nodes=[start,goal,...allNav()], n=nodes.length;
+  const dist=Array(n).fill(Infinity), prev=Array(n).fill(-1), done=Array(n).fill(false);
+  dist[0]=0;
+  for(let it=0;it<n;it++){
+    let u=-1,best=Infinity; for(let i=0;i<n;i++) if(!done[i]&&dist[i]<best){best=dist[i];u=i;}
+    if(u<0) break; done[u]=true; if(u===1) break;
+    for(let v=0;v<n;v++){ if(done[v]) continue;
+      if(!segClear(nodes[u],nodes[v])) continue;
+      const d=dist[u]+Math.hypot(nodes[v][0]-nodes[u][0],nodes[v][1]-nodes[u][1]);
+      if(d<dist[v]){dist[v]=d;prev[v]=u;}
+    }
+  }
+  if(prev[1]<0) return null;
+  const path=[]; for(let at=1;at!==-1;at=prev[at]) path.unshift(nodes[at]); return path;
+}
+
+// full plan -> {status, notes, route:[[x,y]], segs:[{p1,c1,c2,p2,straight}], graph:[[a,b]]}
+function plan(){
+  const notes=[]; let status='OK';
+  if(waypoints.length<2) return {status:'FAILED', notes:['need a start and an end point'], route:[], segs:[], graph:[]};
+  // 1) nudge blocked waypoints
+  const pts=[];
+  waypoints.forEach((w,i)=>{
+    if(blocked(w.x,w.y)){
+      const f=nudgeOut(w.x,w.y);
+      if(!f){status='FAILED'; notes.push('point '+i+' is stuck inside an obstacle'); pts.push([w.x,w.y]);}
+      else{status='ADJUSTED'; notes.push('point '+i+' was inside an obstacle → nudged out'); pts.push(f);}
+    } else pts.push([w.x,w.y]);
+  });
+  if(status==='FAILED') return {status,notes,route:pts,segs:[],graph:[]};
+  // 2) route each pair
+  const route=[pts[0]];
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i], b=pts[i+1];
+    if(segClear(a,b)){ route.push(b); }
+    else{
+      const leg=routeAround(a,b);
+      if(!leg){ return {status:'FAILED', notes:[...notes,'no clear route from point '+i+' to '+(i+1)], route, segs:[], graph:[]}; }
+      status = status==='OK' ? 'ADJUSTED' : status;
+      notes.push('routed around an obstacle between point '+i+' and '+(i+1));
+      for(let k=1;k<leg.length;k++) route.push(leg[k]);
+    }
+  }
+  // 3) smoothed segments: pick the smoothest curve that stays clear (tighten until it does)
+  const segs=[];
+  for(let i=0;i<route.length-1;i++){
+    const p1=route[i], p2=route[i+1], p0=route[Math.max(i-1,0)], p3=route[Math.min(i+2,route.length-1)];
+    segs.push(bestSeg(p0,p1,p2,p3));
+  }
+  return {status, notes, route, segs, graph:[]};
+}
+function curveClear(p0,p1,p2,p3){
+  for(let i=0;i<=20;i++){const t=i/20,u=1-t;
+    const x=u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0];
+    const y=u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1];
+    if(blocked(x,y)) return false;
+  } return true;
+}
+// smoothest clear curve for a segment: tighten toward straight until it stops clipping
+function bestSeg(p0,p1,p2,p3){
+  for(const k of [6,10,18,30,60]){
+    const c1=[p1[0]+(p2[0]-p0[0])/k, p1[1]+(p2[1]-p0[1])/k];
+    const c2=[p2[0]-(p3[0]-p1[0])/k, p2[1]-(p3[1]-p1[1])/k];
+    if(curveClear(p1,c1,c2,p2)) return {p1,c1,c2,p2, straight:false};
+  }
+  const c1=[p1[0]+(p2[0]-p1[0])/3, p1[1]+(p2[1]-p1[1])/3];   // couldn't fit a curve -> straight
+  const c2=[p2[0]-(p2[0]-p1[0])/3, p2[1]-(p2[1]-p1[1])/3];
+  return {p1,c1,c2,p2, straight:true};
+}
+
+// ---------- rendering ----------
+function draw(){
+  const P=plan();
+  ctx.clearRect(0,0,SIZE,SIZE);
+  // grid
+  ctx.lineWidth=1;
+  for(let g=0; g<=FIELD; g+=6){ const [px]=toPx(g,0); ctx.strokeStyle = g%24===0? '#1b2530':'#141c24';
+    ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,SIZE); ctx.stroke();
+    const [,py]=toPx(0,g); ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(SIZE,py); ctx.stroke(); }
+
+  const m=clearance();
+  // obstacles + inflation
+  obstacles.forEach(o=>{
+    if(show.inflate) drawObstacle(o,m,true);
+    drawObstacle(o,0,false);
+  });
+  // nav points
+  if(show.nav) allNav().forEach(p=>dot(p,3,'--nav'));
+  // visibility graph (edges between nodes that connect) - computed lightly for display
+  if(show.graph && waypoints.length>=2){
+    const nodes=[[waypoints[0].x,waypoints[0].y],[waypoints[waypoints.length-1].x,waypoints[waypoints.length-1].y],...allNav()];
+    ctx.strokeStyle=cssv('--graph'); ctx.lineWidth=1;
+    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++) if(segClear(nodes[i],nodes[j])){
+      const a=toPx(nodes[i][0],nodes[i][1]), b=toPx(nodes[j][0],nodes[j][1]);
+      ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    }
+  }
+  // routed polyline
+  if(show.route && P.route.length>1){
+    ctx.strokeStyle=cssv('--route'); ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+    ctx.beginPath(); P.route.forEach((p,i)=>{const q=toPx(p[0],p[1]); i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);}); ctx.stroke();
+    ctx.setLineDash([]); P.route.forEach(p=>dot(p,2.5,'--route'));
+  }
+  // smoothed path
+  if(show.smooth){
+    ctx.lineWidth=3.2; ctx.lineCap='round';
+    P.segs.forEach(s=>{
+      ctx.strokeStyle = s.straight ? cssv('--fail') : cssv('--accent');
+      const p1=toPx(s.p1[0],s.p1[1]), c1=toPx(s.c1[0],s.c1[1]), c2=toPx(s.c2[0],s.c2[1]), p2=toPx(s.p2[0],s.p2[1]);
+      ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.bezierCurveTo(c1[0],c1[1],c2[0],c2[1],p2[0],p2[1]); ctx.stroke();
+    });
+  }
+  // robot footprint at the playhead (sits at the start when not playing)
+  trace = buildTrace(P.segs);
+  if(trace.length){ drawPlayhead(); }
+  // waypoints
+  waypoints.forEach((w,i)=>{
+    const q=toPx(w.x,w.y); const isStart=i===0, isEnd=i===waypoints.length-1;
+    ctx.beginPath(); ctx.arc(q[0],q[1], 8, 0, 7);
+    ctx.fillStyle = isStart? cssv('--route') : isEnd? cssv('--obst') : cssv('--wp');
+    ctx.fill(); ctx.strokeStyle='#0b0f14'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#0b0f14'; ctx.font='700 11px '+cssv('--mono'); ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(isStart?'S':isEnd?'E':String(i), q[0], q[1]);
+  });
+  paintStatus(P);
+}
+function drawObstacle(o,m,infl){
+  ctx.lineWidth = infl?1:2; ctx.setLineDash(infl?[4,4]:[]);
+  ctx.strokeStyle = infl? 'rgba(240,80,110,.45)' : cssv('--obst');
+  ctx.fillStyle = infl? 'rgba(240,80,110,.06)' : 'rgba(240,80,110,.18)';
+  ctx.beginPath();
+  if(o.type==='circle'){ const c=toPx(o.cx,o.cy); ctx.arc(c[0],c[1], (o.r+m)/FIELD*SIZE, 0,7); }
+  else if(o.type==='rect'){ const a=toPx(o.lcx-m,o.ucy+m), b=toPx(o.ucx+m,o.lcy-m); ctx.rect(a[0],a[1], b[0]-a[0], b[1]-a[1]); }
+  else if(o.type==='tri'){ const gx=(o.p[0][0]+o.p[1][0]+o.p[2][0])/3, gy=(o.p[0][1]+o.p[1][1]+o.p[2][1])/3;
+    o.p.map(c=>push(c[0],c[1],gx,gy,m)).forEach((c,i)=>{const q=toPx(c[0],c[1]); i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);}); ctx.closePath(); }
+  ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+}
+// dense point-by-point trace of the whole path, for playback + the moving robot
+function buildTrace(segs){
+  const pts=[];
+  segs.forEach(s=>{
+    for(let i=0;i<=24;i++){const t=i/24,u=1-t;
+      pts.push([
+        u*u*u*s.p1[0]+3*u*u*t*s.c1[0]+3*u*t*t*s.c2[0]+t*t*t*s.p2[0],
+        u*u*u*s.p1[1]+3*u*u*t*s.c1[1]+3*u*t*t*s.c2[1]+t*t*t*s.p2[1]
+      ]);
+    }
+  });
+  return pts;
+}
+function drawPlayhead(){
+  const idx=Math.min(Math.round(playIdx), trace.length-1);
+  const p=trace[idx];
+  const nxt=trace[Math.min(idx+1,trace.length-1)], prv=trace[Math.max(idx-1,0)];
+  const h=Math.atan2(nxt[1]-prv[1], nxt[0]-prv[0]);   // heading = travel direction (front leads)
+  const c=toPx(p[0],p[1]), w=(+rw.value)/FIELD*SIZE, l=(+rl.value)/FIELD*SIZE;
+  ctx.save(); ctx.translate(c[0],c[1]); ctx.rotate(-h);
+  ctx.strokeStyle=cssv('--robot'); ctx.fillStyle='rgba(59,130,246,.16)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.rect(-l/2,-w/2,l,w); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(l/2+6,0); ctx.stroke();   // nose = front / intake
+  ctx.restore();
+}
+function dot(p,r,varName){const q=toPx(p[0],p[1]); ctx.fillStyle=cssv(varName); ctx.beginPath(); ctx.arc(q[0],q[1],r,0,7); ctx.fill();}
+function cssv(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+
+function paintStatus(P){
+  const pill=document.getElementById('pill'); const cls={OK:'ok',ADJUSTED:'warn',FAILED:'fail'}[P.status];
+  pill.className='pill '+cls; pill.textContent=P.status;
+  let len=0; for(let i=0;i<P.route.length-1;i++) len+=Math.hypot(P.route[i+1][0]-P.route[i][0],P.route[i+1][1]-P.route[i][1]);
+  const t=(len/(+vx.value)).toFixed(2);
+  document.getElementById('stats').innerHTML = P.status==='FAILED' ? '<b>no path</b>' :
+     `<b>${len.toFixed(1)}″</b> route · ~<b>${t}s</b> fwd`;
+  const ul=document.getElementById('notes'); ul.innerHTML='';
+  P.notes.forEach(n=>{const li=document.createElement('li'); if(P.status==='FAILED')li.className='bad'; li.textContent=n; ul.appendChild(li);});
+  if(!P.notes.length && P.status==='OK'){const li=document.createElement('li'); li.style.color='var(--dim)'; li.style.background='none'; li.style.borderColor='var(--line)'; li.textContent='clean path, no obstacles in the way'; ul.appendChild(li);}
+}
+
+// ---------- interaction ----------
+function evIn(e){const r=cv.getBoundingClientRect(); return toIn((e.clientX-r.left)*SIZE/r.width, (e.clientY-r.top)*SIZE/r.height);}
+cv.addEventListener('pointermove', e=>{ const [x,y]=evIn(e);
+  document.getElementById('readout').textContent = `x ${x.toFixed(1)}  y ${y.toFixed(1)}`;
+  if(drag){ drag.move(x,y); draw(); }
+});
+cv.addEventListener('pointerdown', e=>{ cv.setPointerCapture(e.pointerId); const [x,y]=evIn(e);
+  if(tool==='move'){ const w=nearestWaypoint(x,y); if(w!=null){ drag={move:(nx,ny)=>{waypoints[w].x=nx;waypoints[w].y=ny;}}; } }
+  else if(tool==='waypoint'){ waypoints.push({x,y}); draw(); }
+  else if(tool==='delete'){ deleteNear(x,y); draw(); }
+  else if(tool==='circle'){ const o={type:'circle',cx:x,cy:y,r:2}; obstacles.push(o); drag={move:(nx,ny)=>{o.r=Math.max(2,Math.hypot(nx-x,ny-y));}}; }
+  else if(tool==='rect'){ const o={type:'rect',lcx:x,lcy:y,ucx:x+2,ucy:y+2}; obstacles.push(o);
+    drag={move:(nx,ny)=>{o.lcx=Math.min(x,nx);o.lcy=Math.min(y,ny);o.ucx=Math.max(x,nx);o.ucy=Math.max(y,ny);}}; }
+  else if(tool==='tri'){ triClick(x,y); draw(); }
+});
+cv.addEventListener('pointerup', ()=>{ drag=null; draw(); });
+
+let triPts=[];
+function triClick(x,y){ triPts.push([x,y]); if(triPts.length===3){ obstacles.push({type:'tri',p:triPts}); triPts=[]; } }
+function nearestWaypoint(x,y){ let bi=null,bd=8; waypoints.forEach((w,i)=>{const d=Math.hypot(w.x-x,w.y-y); if(d<bd){bd=d;bi=i;}}); return bi; }
+function deleteNear(x,y){
+  const wi=nearestWaypoint(x,y); if(wi!=null && waypoints.length>2){ waypoints.splice(wi,1); return; }
+  for(let i=obstacles.length-1;i>=0;i--) if(contains(obstacles[i],x,y,0)){ obstacles.splice(i,1); return; }
+}
+
+// ---------- UI wiring ----------
+document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>{
+  tool=b.dataset.tool; triPts=[];
+  document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('on', x===b));
+  const hints={move:'Drag start / middle / end points to move them.',
+    waypoint:'Click to drop points in order (first = start, last = end).',
+    delete:'Click an obstacle or a middle point to remove it.',
+    circle:'Drag from the center outward to set the radius.',
+    rect:'Drag one corner to the opposite corner.',
+    tri:'Click three corners to make a triangle.'};
+  document.getElementById('toolhint').textContent=hints[tool];
+}));
+const toggleDefs=[['route','Routed polyline','--route'],['smooth','Smoothed path','--accent'],
+  ['inflate','Robot clearance','--obst'],['nav','Nav points','--nav'],['graph','Visibility graph','--graph']];
+const tgWrap=document.getElementById('toggles');
+toggleDefs.forEach(([key,label,col])=>{
+  const el=document.createElement('label'); el.className='tg';
+  el.innerHTML=`<input type="checkbox" ${show[key]?'checked':''}><span class="sw" style="background:var(${col})"></span>${label}`;
+  el.querySelector('input').addEventListener('change',e=>{show[key]=e.target.checked; draw();});
+  tgWrap.appendChild(el);
+});
+['rw','rl','vx','mc'].forEach(id=>document.getElementById(id).addEventListener('input',draw));
+document.getElementById('clear').addEventListener('click',()=>{obstacles=[];triPts=[];draw();});
+document.getElementById('reset').addEventListener('click',()=>{resetExample();playIdx=0;draw();});
+
+// ---------- playback ----------
+function updatePlayBtn(){ document.getElementById('play').textContent = playing?'⏸ Pause':'▶ Play'; }
+function tick(){
+  if(!playing) return;
+  playIdx += Math.max(1, trace.length/180);        // ~3s to drive the whole path
+  if(playIdx >= trace.length-1){ playIdx=trace.length-1; playing=false; updatePlayBtn(); }
+  draw();
+  if(playing) requestAnimationFrame(tick);
+}
+document.getElementById('play').addEventListener('click',()=>{
+  if(trace.length<2) return;
+  playing=!playing; updatePlayBtn();
+  if(playing){ if(playIdx>=trace.length-1) playIdx=0; requestAnimationFrame(tick); }
+});
+document.getElementById('resetPlay').addEventListener('click',()=>{ playing=false; playIdx=0; updatePlayBtn(); draw(); });
+
+draw();
+</script>

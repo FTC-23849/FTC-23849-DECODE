@@ -1,0 +1,10 @@
+// Pure planning core: Field, obstacles, PlanEngine, Seg, GeoResult. No Android, no Pedro.
+// TeamCode (robot) and PathViz (desktop visualizer) BOTH depend on this one module, so there is
+// exactly one copy of the path-planning logic and the visualizer can never drift from the robot.
+plugins {
+    id 'java-library'
+}
+java {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+}

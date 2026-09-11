@@ -1,0 +1,1192 @@
+<title>Pathgen Field Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  /* ---------- LIGHT (default) ---------- */
+  :root{
+    --bg:#f4f5f7;
+    --surface:#ffffff;
+    --surface-2:#eceff3;
+    --ink:#1a1f27;
+    --ink-soft:#454e5b;
+    --ink-faint:#6b7480;
+    --border:#d8dde4;
+    --border-soft:#e6e9ee;
+    --green:#12925a;
+    --orange:#bc650f;
+    --blue:#2566cf;
+    --red:#cf3b3b;
+    --yellow:#9c7710;
+    --code-bg:#12151b;
+    --code-ink:#d7dde6;
+    --code-cmt:#6ee0a6;
+    --code-key:#f2b366;
+    --code-str:#8fb9ff;
+    --accent:var(--green);
+    --shadow:0 1px 2px rgba(20,25,35,.06),0 6px 20px rgba(20,25,35,.06);
+    --font:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  /* ---------- DARK via system (unstamped) ---------- */
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#14171c;
+      --surface:#1b2027;
+      --surface-2:#22272f;
+      --ink:#e6ebf2;
+      --ink-soft:#b8c0cc;
+      --ink-faint:#8a93a0;
+      --border:#2b333e;
+      --border-soft:#232a32;
+      --green:#3dd68c;
+      --orange:#e88a3a;
+      --blue:#4e9bf2;
+      --red:#e05353;
+      --yellow:#f2c34e;
+      --code-bg:#0f1216;
+      --code-ink:#cfd6e0;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);
+    }
+  }
+  /* ---------- DARK via explicit toggle ---------- */
+  :root[data-theme="dark"]{
+    --bg:#14171c;
+    --surface:#1b2027;
+    --surface-2:#22272f;
+    --ink:#e6ebf2;
+    --ink-soft:#b8c0cc;
+    --ink-faint:#8a93a0;
+    --border:#2b333e;
+    --border-soft:#232a32;
+    --green:#3dd68c;
+    --orange:#e88a3a;
+    --blue:#4e9bf2;
+    --red:#e05353;
+    --yellow:#f2c34e;
+    --code-bg:#0f1216;
+    --code-ink:#cfd6e0;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);
+       line-height:1.62;font-size:16.5px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px;
+        display:grid;grid-template-columns:242px minmax(0,1fr);gap:44px}
+
+  /* ---- sidebar TOC ---- */
+  aside{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+        padding:26px 0 40px;border-right:1px solid var(--border-soft)}
+  aside .brand{font-family:var(--mono);font-weight:600;font-size:13px;
+        letter-spacing:.02em;color:var(--ink);margin-bottom:2px}
+  aside .brandsub{font-family:var(--mono);font-size:11px;color:var(--ink-faint);
+        margin-bottom:20px}
+  nav a{display:block;text-decoration:none;color:var(--ink-faint);
+        font-size:13.5px;padding:3px 12px 3px 0;border-left:2px solid transparent;
+        padding-left:12px;transition:color .12s}
+  nav a:hover{color:var(--ink)}
+  nav a.grp{color:var(--ink-soft);font-family:var(--mono);font-size:10.5px;
+        letter-spacing:.09em;text-transform:uppercase;margin-top:18px;
+        padding-left:12px;pointer-events:none}
+  nav a.f{padding-left:22px}
+
+  main{padding:40px 0 120px;min-width:0}
+
+  /* ---- hero ---- */
+  .hero{margin-bottom:12px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;
+        text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:2.5rem;line-height:1.08;margin:.35em 0 .3em;font-weight:700;
+        letter-spacing:-.02em;text-wrap:balance}
+  .lede{font-size:1.16rem;color:var(--ink-soft);max-width:65ch;margin:0 0 8px}
+
+  h2{font-size:1.7rem;font-weight:700;letter-spacing:-.015em;margin:2.6em 0 .1em;
+        padding-top:.5em;scroll-margin-top:14px;text-wrap:balance}
+  h2 .num{font-family:var(--mono);font-size:1rem;color:var(--accent);
+        font-weight:600;margin-right:.55em;vertical-align:.12em}
+  h3{font-size:1.16rem;font-weight:600;margin:2em 0 .2em;scroll-margin-top:14px}
+  h3 .file{font-family:var(--mono);font-size:.86em}
+  h4{font-size:1rem;font-weight:600;margin:1.6em 0 .1em;color:var(--ink)}
+  p{margin:.7em 0;max-width:68ch}
+  main a{color:var(--blue)}
+  strong{font-weight:600}
+  em{font-style:italic;color:var(--ink)}
+  .k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);
+        padding:.08em .38em;border-radius:5px;color:var(--ink);
+        border:1px solid var(--border-soft);white-space:nowrap}
+
+  /* ---- file header card ---- */
+  .filecard{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 16px;
+        background:var(--surface);border:1px solid var(--border);
+        border-radius:12px;padding:14px 18px;margin:1.2em 0 1em;box-shadow:var(--shadow)}
+  .filecard .fname{font-family:var(--mono);font-weight:600;font-size:1.02rem}
+  .filecard .role{color:var(--ink-soft);font-size:.92rem}
+  .filecard .path{font-family:var(--mono);font-size:.76rem;color:var(--ink-faint);
+        width:100%;border-top:1px dashed var(--border);padding-top:8px;margin-top:2px}
+  .pill{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;
+        padding:2px 8px;border-radius:20px;font-weight:600;white-space:nowrap}
+  .pill.core{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+  .pill.pedro{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+  .pill.op{background:color-mix(in srgb,var(--orange) 18%,transparent);color:var(--orange)}
+  .pill.viz{background:color-mix(in srgb,var(--yellow) 20%,transparent);color:var(--yellow)}
+
+  /* ---- code ---- */
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:11px;
+        padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:13px;
+        line-height:1.6;margin:1em 0;border:1px solid rgba(255,255,255,.06)}
+  pre code{font-family:inherit;white-space:pre}
+  .c{color:var(--code-cmt)}
+  .kw{color:var(--code-key)}
+  .st{color:var(--code-str)}
+
+  /* ---- callouts ---- */
+  .why{border-left:3px solid var(--accent);background:var(--surface);
+        border-radius:0 10px 10px 0;padding:12px 16px 12px 18px;margin:1.1em 0;
+        box-shadow:var(--shadow)}
+  .why .tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+        text-transform:uppercase;color:var(--accent);font-weight:600;display:block;
+        margin-bottom:3px}
+  .warn{border-left-color:var(--red)}
+  .warn .tag{color:var(--red)}
+  .note{border-left-color:var(--yellow)}
+  .note .tag{color:var(--yellow)}
+  .why p{margin:.35em 0}
+
+  /* ---- figures ---- */
+  figure{margin:1.6em 0;padding:0}
+  figure svg{display:block;max-width:100%;height:auto;margin:0 auto;
+        background:var(--surface);border:1px solid var(--border);border-radius:12px}
+  figcaption{font-size:.86rem;color:var(--ink-faint);margin-top:8px;text-align:center;
+        max-width:66ch;margin-left:auto;margin-right:auto}
+
+  /* ---- misc ---- */
+  ul.clean{padding-left:1.2em;max-width:68ch}
+  ul.clean li{margin:.4em 0}
+  hr{border:none;border-top:1px solid var(--border);margin:2.4em 0}
+  .lead-in{font-family:var(--mono);font-size:12px;color:var(--accent);
+        letter-spacing:.08em;text-transform:uppercase;font-weight:600;margin-top:2.2em}
+
+  table.tune{width:100%;border-collapse:collapse;margin:1.2em 0;font-size:.92rem}
+  table.tune th,table.tune td{text-align:left;padding:9px 12px;
+        border-bottom:1px solid var(--border);vertical-align:top}
+  table.tune th{font-family:var(--mono);font-size:11px;letter-spacing:.05em;
+        text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+  table.tune td:first-child{font-family:var(--mono);font-size:.86rem;
+        color:var(--accent);white-space:nowrap}
+  .tablewrap{overflow-x:auto}
+
+  .toggle{position:fixed;top:14px;right:14px;z-index:20;font-family:var(--mono);
+        font-size:11px;border:1px solid var(--border);background:var(--surface);
+        color:var(--ink-soft);border-radius:20px;padding:6px 12px;cursor:pointer;
+        box-shadow:var(--shadow)}
+
+  @media(max-width:880px){
+    .wrap{grid-template-columns:1fr;gap:0}
+    aside{position:static;height:auto;border-right:none;
+          border-bottom:1px solid var(--border);padding:18px 0}
+    aside nav{column-count:2;column-gap:20px}
+    main{padding:26px 0 90px}
+    h1{font-size:2rem}
+  }
+</style>
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light or dark theme">◐ theme</button>
+
+<div class="wrap">
+<aside>
+  <div class="brand">PATHGEN FIELD GUIDE</div>
+  <div class="brandsub">FTC 23849 · autonomous path system</div>
+  <nav>
+    <a href="#top">Overview</a>
+    <a href="#map">The architecture map</a>
+    <a href="#coords">Coordinates &amp; geometry primer</a>
+
+    <a class="grp">Layer 1 · Obstacles</a>
+    <a class="f" href="#obstacle">Obstacle.java</a>
+    <a class="f" href="#rect">RectObstacle.java</a>
+    <a class="f" href="#tri">TriObstacle.java</a>
+    <a class="f" href="#circle">CircleObstacle.java</a>
+
+    <a class="grp">Layer 2 · Collision</a>
+    <a class="f" href="#field">Field.java</a>
+
+    <a class="grp">Layer 3 · Data</a>
+    <a class="f" href="#seg">Seg.java</a>
+    <a class="f" href="#georesult">GeoResult.java</a>
+
+    <a class="grp">Layer 4 · The brain</a>
+    <a class="f" href="#planengine">PlanEngine.java</a>
+    <a class="f" href="#route">→ routeAround</a>
+    <a class="f" href="#smoothing">→ smoothing</a>
+    <a class="f" href="#speed">→ speed model</a>
+    <a class="f" href="#planreturn">→ planReturn</a>
+    <a class="f" href="#planwithreturn">→ planWithReturn</a>
+    <a class="f" href="#intake">→ wall intake</a>
+
+    <a class="grp">Layer 5 · Pedro bridge</a>
+    <a class="f" href="#pathresult">PathResult.java</a>
+    <a class="f" href="#pathplanner">PathPlanner.java</a>
+    <a class="f" href="#safedrive">SafeDrive.java</a>
+
+    <a class="grp">Layer 6 · The OpMode</a>
+    <a class="f" href="#auto">RandomPointAuto.java</a>
+
+    <a class="grp">Layer 7 · Visualizer</a>
+    <a class="f" href="#viz">PathVizApp.java</a>
+
+    <a class="grp">Putting it together</a>
+    <a class="f" href="#trace">One path, end to end</a>
+    <a class="f" href="#tuning">Tuning cheat sheet</a>
+  </nav>
+</aside>
+
+<main id="top">
+  <div class="hero">
+    <div class="eyebrow">Complete code walkthrough</div>
+    <h1>How your autonomous path system actually works</h1>
+    <p class="lede">Every file in the path generator, what each line is doing, and — more importantly — <em>why</em> it's built that way. Read it top to bottom once and the whole thing will click; keep it open as a reference after that.</p>
+  </div>
+
+  <p>Your autonomous is really two questions bolted together. First: <strong>given where the robot is and a list of places it needs to touch, what is the best path that doesn't crash into anything?</strong> Second: <strong>how do we hand that path to Pedro Pathing and drive it on a real robot with an intake and a shooter?</strong></p>
+
+  <p>The whole design is organized around keeping those two questions <em>separate</em>. All the hard thinking — routing, avoiding obstacles, smoothing corners, deciding whether to drive backwards — lives in a set of plain Java classes that know nothing about Pedro, nothing about the FTC SDK, nothing about a real robot. That's the <strong>core</strong>. On top of it sits a thin <strong>bridge</strong> that translates the core's answer into Pedro's language, and an <strong>OpMode</strong> that runs the show.</p>
+
+  <div class="why">
+    <span class="tag">The one idea to hold onto</span>
+    <p>The planner is <strong>pure</strong>: it takes numbers in and gives numbers out, with no robot attached. That single decision is why the desktop visualizer can run the <em>exact same planner code</em> the robot runs — there is no second copy of the logic to keep in sync. When you change how paths are generated, both the robot and the visualizer change together, automatically, on the next build.</p>
+  </div>
+
+  <!-- =================== ARCHITECTURE MAP =================== -->
+  <h2 id="map"><span class="num">00</span>The architecture map</h2>
+  <p>Before any single file, here's how they call each other. Read it as water flowing downhill: the OpMode at the top asks for a path, the request flows down through the bridge into the pure core, the core leans on <span class="k">Field</span> and the obstacle shapes to check for collisions, and a finished path flows back up.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 470" role="img" aria-label="Data flow: RandomPointAuto calls PathPlanner, which calls PlanEngine, which uses Field and the obstacle shapes; the pure core returns Seg and GeoResult data, which PathViz also consumes.">
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto">
+          <polygon points="0,0 9,4 0,8" fill="currentColor"/>
+        </marker>
+        <marker id="ahg" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto">
+          <polygon points="0,0 9,4 0,8" fill="#12925a"/>
+        </marker>
+      </defs>
+      <!-- lanes labels -->
+      <text x="20" y="40" font-family="'IBM Plex Mono',monospace" font-size="11" fill="currentColor" opacity=".55">ROBOT-ONLY (knows Pedro)</text>
+      <text x="20" y="250" font-family="'IBM Plex Mono',monospace" font-size="11" fill="#12925a">PURE CORE (plain Java — no Pedro, no robot)</text>
+
+      <!-- OpMode -->
+      <rect x="255" y="52" width="250" height="52" rx="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <text x="380" y="76" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="13" font-weight="600" fill="currentColor">RandomPointAuto</text>
+      <text x="380" y="93" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="10.5" fill="currentColor" opacity=".7">the OpMode — runs the loop</text>
+
+      <!-- PathPlanner -->
+      <rect x="255" y="140" width="250" height="52" rx="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <text x="380" y="164" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="13" font-weight="600" fill="currentColor">PathPlanner</text>
+      <text x="380" y="181" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="10.5" fill="currentColor" opacity=".7">bridge → builds a Pedro PathChain</text>
+
+      <line x1="380" y1="104" x2="380" y2="138" stroke="currentColor" stroke-width="1.5" marker-end="url(#ah)"/>
+      <text x="392" y="126" font-family="'IBM Plex Mono',monospace" font-size="10" fill="currentColor" opacity=".7">plan(...)</text>
+
+      <!-- divider -->
+      <line x1="20" y1="212" x2="740" y2="212" stroke="currentColor" stroke-width="1" stroke-dasharray="4 5" opacity=".35"/>
+
+      <!-- PlanEngine -->
+      <rect x="255" y="262" width="250" height="52" rx="9" fill="none" stroke="#12925a" stroke-width="1.8"/>
+      <text x="380" y="286" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="13" font-weight="600" fill="#12925a">PlanEngine</text>
+      <text x="380" y="303" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="10.5" fill="currentColor" opacity=".7">the brain — routing &amp; smoothing</text>
+
+      <line x1="380" y1="192" x2="380" y2="260" stroke="#12925a" stroke-width="1.8" marker-end="url(#ahg)"/>
+      <text x="392" y="232" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#12925a">runs the real engine</text>
+
+      <!-- Field -->
+      <rect x="70" y="360" width="200" height="48" rx="9" fill="none" stroke="#12925a" stroke-width="1.5"/>
+      <text x="170" y="382" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#12925a">Field</text>
+      <text x="170" y="398" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="10" fill="currentColor" opacity=".7">"is this point / line blocked?"</text>
+
+      <!-- Obstacles -->
+      <rect x="300" y="360" width="200" height="48" rx="9" fill="none" stroke="#12925a" stroke-width="1.5"/>
+      <text x="400" y="382" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#12925a">Rect/Tri/Circle</text>
+      <text x="400" y="398" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="10" fill="currentColor" opacity=".7">"am I inside this shape?"</text>
+
+      <line x1="340" y1="314" x2="210" y2="358" stroke="#12925a" stroke-width="1.5" marker-end="url(#ahg)"/>
+      <line x1="410" y1="314" x2="400" y2="358" stroke="#12925a" stroke-width="1.5" marker-end="url(#ahg)"/>
+      <line x1="270" y1="384" x2="298" y2="384" stroke="#12925a" stroke-width="1.3" marker-end="url(#ahg)"/>
+      <text x="272" y="378" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="#12925a">asks</text>
+
+      <!-- data out -->
+      <rect x="545" y="262" width="185" height="52" rx="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text x="637" y="284" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="currentColor">Seg · GeoResult</text>
+      <text x="637" y="300" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="10" fill="currentColor" opacity=".7">plain data (the answer)</text>
+      <line x1="505" y1="288" x2="543" y2="288" stroke="currentColor" stroke-width="1.5" marker-end="url(#ah)"/>
+      <text x="507" y="281" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="currentColor" opacity=".7">returns</text>
+
+      <!-- PathViz -->
+      <rect x="545" y="360" width="185" height="48" rx="9" fill="none" stroke="#12925a" stroke-width="1.5"/>
+      <text x="637" y="382" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#12925a">PathVizApp</text>
+      <text x="637" y="398" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="10" fill="currentColor" opacity=".7">desktop preview</text>
+      <line x1="637" y1="360" x2="637" y2="316" stroke="#12925a" stroke-width="1.5" marker-end="url(#ahg)"/>
+      <text x="649" y="340" font-family="'IBM Plex Mono',monospace" font-size="9.5" fill="#12925a">same core</text>
+    </svg>
+    <figcaption>Everything above the dashed line knows about Pedro and the robot. Everything below it is plain Java that could run on any laptop — which is exactly why the visualizer (bottom right) can reuse it without a second copy of the logic.</figcaption>
+  </figure>
+
+  <p>The files fall into seven layers. We'll go bottom-up, because each layer only depends on the ones below it — so by the time you reach the OpMode, every piece it uses will already make sense.</p>
+
+  <!-- =================== COORDS PRIMER =================== -->
+  <h2 id="coords"><span class="num">01</span>Coordinates &amp; geometry primer</h2>
+  <p>Two conventions are baked into every file. Get these straight now and nothing later will surprise you.</p>
+
+  <h4>The field</h4>
+  <p>The field is a 144&nbsp;×&nbsp;144&nbsp;inch square. The origin <span class="k">(0,0)</span> is the <strong>bottom-left corner</strong>. <span class="k">x</span> grows to the right, <span class="k">y</span> grows up. So the top-right corner is <span class="k">(144,144)</span>.</p>
+
+  <h4>Headings (which way the robot faces)</h4>
+  <p>A heading is an angle in <strong>radians</strong>, measured the standard math way: <span class="k">0</span> points along +x (to the right), and it increases counter-clockwise, so <span class="k">90° = π/2</span> points along +y (straight up). Code uses <span class="k">Math.toRadians(90)</span> to write "facing up" without doing the arithmetic by hand.</p>
+
+  <figure>
+    <svg viewBox="0 0 620 330" role="img" aria-label="A 144 by 144 field with origin at bottom-left, x to the right and y up, showing heading 0 pointing right and heading 90 degrees pointing up.">
+      <!-- field square -->
+      <rect x="120" y="40" width="230" height="230" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".55"/>
+      <!-- grid -->
+      <g stroke="currentColor" stroke-width=".6" opacity=".18">
+        <line x1="177.5" y1="40" x2="177.5" y2="270"/><line x1="235" y1="40" x2="235" y2="270"/><line x1="292.5" y1="40" x2="292.5" y2="270"/>
+        <line x1="120" y1="97.5" x2="350" y2="97.5"/><line x1="120" y1="155" x2="350" y2="155"/><line x1="120" y1="212.5" x2="350" y2="212.5"/>
+      </g>
+      <!-- origin corner labels -->
+      <circle cx="120" cy="270" r="4" fill="var(--red)"/>
+      <text x="112" y="288" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11" fill="currentColor">(0,0)</text>
+      <text x="350" y="288" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11" fill="currentColor" opacity=".7">(144,0)</text>
+      <text x="120" y="32" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11" fill="currentColor" opacity=".7">(0,144)</text>
+      <!-- axes arrows -->
+      <defs>
+        <marker id="ax" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><polygon points="0,0 9,4 0,8" fill="currentColor"/></marker>
+        <marker id="axb" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><polygon points="0,0 9,4 0,8" fill="var(--blue)"/></marker>
+      </defs>
+      <line x1="120" y1="270" x2="330" y2="270" stroke="currentColor" stroke-width="1.6" marker-end="url(#ax)"/>
+      <text x="300" y="262" font-family="'IBM Plex Sans',sans-serif" font-size="12" font-style="italic" fill="currentColor">x →</text>
+      <line x1="120" y1="270" x2="120" y2="60" stroke="currentColor" stroke-width="1.6" marker-end="url(#ax)"/>
+      <text x="128" y="72" font-family="'IBM Plex Sans',sans-serif" font-size="12" font-style="italic" fill="currentColor">y ↑</text>
+
+      <!-- heading dial -->
+      <circle cx="500" cy="160" r="4" fill="var(--blue)"/>
+      <line x1="500" y1="160" x2="576" y2="160" stroke="var(--blue)" stroke-width="2.2" marker-end="url(#axb)"/>
+      <text x="556" y="150" font-family="'IBM Plex Mono',monospace" font-size="11" fill="var(--blue)">0 rad</text>
+      <line x1="500" y1="160" x2="500" y2="84" stroke="var(--blue)" stroke-width="2.2" marker-end="url(#axb)"/>
+      <text x="452" y="92" font-family="'IBM Plex Mono',monospace" font-size="11" fill="var(--blue)">90° = π/2</text>
+      <path d="M 548 160 A 48 48 0 0 0 500 112" fill="none" stroke="var(--blue)" stroke-width="1.2" opacity=".6"/>
+      <text x="440" y="200" font-family="'IBM Plex Sans',sans-serif" font-size="12" fill="currentColor" opacity=".75">heading grows</text>
+      <text x="440" y="216" font-family="'IBM Plex Sans',sans-serif" font-size="12" fill="currentColor" opacity=".75">counter-clockwise</text>
+    </svg>
+    <figcaption>Left: the field, origin bottom-left. Right: how a heading angle maps to a facing direction. The robot in your auto starts at <span class="k">Math.toRadians(90)</span> — pointed straight up.</figcaption>
+  </figure>
+
+  <h4>The robot's "front" leads</h4>
+  <p>Your intake is on the <strong>front</strong> of the robot. So when the planner drives the robot <em>forward</em> along a path, the front — and therefore the intake — hits each ball first. That's why, all through the core, the default is to point the robot's heading <em>along the direction of travel</em>: "face where you're going" is the same as "lead with the intake." The only time that flips is when driving backwards is faster (more on that later).</p>
+
+  <hr>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 1: OBSTACLES -->
+  <!-- ============================================================ -->
+  <h2 id="obstacle"><span class="num">02</span>Layer 1 — Obstacles: the shapes to avoid</h2>
+  <p>An obstacle is anything the robot must drive around. There are three concrete kinds — rectangle, triangle, circle — and they all agree to answer the same three questions. That agreement is the <span class="k">Obstacle</span> interface.</p>
+
+  <div class="filecard">
+    <span class="fname">Obstacle.java</span>
+    <span class="pill core">PURE CORE</span>
+    <span class="role">The contract every shape promises to fulfill.</span>
+    <span class="path">PathCore/…/PathGen/core/Obstacle.java</span>
+  </div>
+
+<pre><code><span class="kw">public interface</span> Obstacle {
+    <span class="c">/* Inside the shape? */</span>
+    <span class="kw">boolean</span> contains(<span class="kw">double</span> x, <span class="kw">double</span> y);
+
+    <span class="c">/* Inside the shape expanded outward by `margin`? (pass robot radius) */</span>
+    <span class="kw">boolean</span> contains(<span class="kw">double</span> x, <span class="kw">double</span> y, <span class="kw">double</span> margin);
+
+    <span class="c">/* Route nodes sitting `margin` outside my corners. Each is {x, y}. */</span>
+    List&lt;<span class="kw">double</span>[]&gt; navPoints(<span class="kw">double</span> margin);
+}</code></pre>
+
+  <p>An <strong>interface</strong> is a promise, not code. It says "any class that calls itself an <span class="k">Obstacle</span> must have these three methods." Because they all keep that promise, the rest of the program can hold a mixed list of rectangles, triangles and circles and treat them identically — it just calls <span class="k">contains(...)</span> without caring which shape it's talking to. That's what lets you drop a new shape into the field later without touching the planner.</p>
+
+  <p>The three questions each shape answers:</p>
+  <ul class="clean">
+    <li><strong><span class="k">contains(x, y)</span></strong> — is this point inside me?</li>
+    <li><strong><span class="k">contains(x, y, margin)</span></strong> — is this point inside me <em>if I grow outward by <span class="k">margin</span> inches</em>? This is the important one: pass the robot's radius as the margin and you're really asking "would the robot's <em>body</em> touch me if its center were here?"</li>
+    <li><strong><span class="k">navPoints(margin)</span></strong> — give me a handful of points that sit just <em>outside</em> your corners. These become the "stepping stones" the router uses to walk around you.</li>
+  </ul>
+
+  <div class="why">
+    <span class="tag">Why "grow the shape" instead of "shrink the robot"?</span>
+    <p>The robot isn't a point — it has a body. There are two ways to handle that: check every point of the robot's body against the real obstacle, or treat the robot as a single point and grow every obstacle outward by the robot's size. The second is far simpler and just as safe, so that's what we do everywhere. The margin turns "does the robot fit?" into "is this one point clear?"</p>
+  </div>
+
+  <!-- RECT -->
+  <h3 id="rect"><span class="file">RectObstacle.java</span></h3>
+  <div class="filecard">
+    <span class="fname">RectObstacle.java</span>
+    <span class="pill core">PURE CORE</span>
+    <span class="role">An axis-aligned box, from lower-left to upper-right corner.</span>
+    <span class="path">PathCore/…/PathGen/core/RectObstacle.java</span>
+  </div>
+
+<pre><code><span class="kw">public boolean</span> contains(<span class="kw">double</span> x, <span class="kw">double</span> y, <span class="kw">double</span> m) {
+    <span class="kw">return</span> x &gt;= lcx - m &amp;&amp; x &lt;= ucx + m &amp;&amp; y &gt;= lcy - m &amp;&amp; y &lt;= ucy + m;
+}</code></pre>
+
+  <p>A rectangle is stored as two corners: <span class="k">(lcx, lcy)</span> lower-left and <span class="k">(ucx, ucy)</span> upper-right. A point is inside when its <span class="k">x</span> is between the left and right edges <em>and</em> its <span class="k">y</span> is between the bottom and top. Growing by <span class="k">m</span> is just subtracting <span class="k">m</span> from the low edges and adding it to the high edges — the box gets <span class="k">m</span> inches bigger in every direction. Simple and exact.</p>
+
+<pre><code><span class="kw">public</span> List&lt;<span class="kw">double</span>[]&gt; navPoints(<span class="kw">double</span> m) {
+    <span class="kw">double</span> o = m + <span class="st">2</span>;   <span class="c">// push corners out past the inflated box</span>
+    <span class="kw">return</span> Arrays.asList(
+        <span class="kw">new double</span>[]{ lcx - o, lcy - o },   <span class="c">// the four corners,</span>
+        <span class="kw">new double</span>[]{ ucx + o, lcy - o },   <span class="c">// each nudged a bit</span>
+        <span class="kw">new double</span>[]{ ucx + o, ucy + o },   <span class="c">// further out so a</span>
+        <span class="kw">new double</span>[]{ lcx - o, ucy + o });  <span class="c">// path can hug the corner</span>
+}</code></pre>
+
+  <p>The nav points are the four corners, each pushed out by the margin <em>plus 2 extra inches</em>. The extra 2 matters: if a stepping-stone sat exactly on the inflated edge, the tiniest rounding error would put it <em>inside</em> the keep-out zone and the router would throw it away. Two inches of breathing room keeps every corner reliably reachable.</p>
+
+  <!-- TRI -->
+  <h3 id="tri"><span class="file">TriObstacle.java</span></h3>
+  <div class="filecard">
+    <span class="fname">TriObstacle.java</span>
+    <span class="pill core">PURE CORE</span>
+    <span class="role">A triangle from three corners — the building block for odd field shapes.</span>
+    <span class="path">PathCore/…/PathGen/core/TriObstacle.java</span>
+  </div>
+
+  <p>Triangles are more flexible than boxes — you build the diamond in the middle of your field out of two of them. A triangle is trickier in two ways: telling whether a point is inside it, and growing it outward.</p>
+
+  <h4>Growing a triangle: push corners away from the center</h4>
+  <p>A box grows by moving its edges. A triangle grows by moving its <em>corners</em> directly away from the triangle's center point (its "centroid", the average of the three corners). The <span class="k">push</span> helper does exactly that:</p>
+
+<pre><code><span class="kw">private static double</span>[] push(<span class="kw">double</span> px, <span class="kw">double</span> py, <span class="kw">double</span> gx, <span class="kw">double</span> gy, <span class="kw">double</span> d) {
+    <span class="kw">double</span> dx = px - gx, dy = py - gy, len = Math.hypot(dx, dy);
+    <span class="kw">if</span> (len &lt; <span class="st">1e-9</span>) <span class="kw">return new double</span>[]{ px, py };   <span class="c">// corner is the center: nowhere to push</span>
+    <span class="kw">return new double</span>[]{ px + dx/len * d, py + dy/len * d };
+}</code></pre>
+
+  <p>It takes the direction from the center <span class="k">(gx,gy)</span> to the corner <span class="k">(px,py)</span>, shrinks that direction to length 1 (dividing by <span class="k">len</span>), then steps <span class="k">d</span> inches along it. Result: the corner slides straight outward by exactly <span class="k">d</span>. <span class="k">Math.hypot(dx,dy)</span> is just the distance formula, √(dx²+dy²).</p>
+
+  <h4>Point-in-triangle: the "same side" test</h4>
+<pre><code><span class="kw">double</span> d1 = sign(x, y, A, B);   <span class="c">// which side of edge A→B is the point on?</span>
+<span class="kw">double</span> d2 = sign(x, y, B, C);   <span class="c">// edge B→C</span>
+<span class="kw">double</span> d3 = sign(x, y, C, A);   <span class="c">// edge C→A</span>
+<span class="kw">boolean</span> hasNeg = (d1 &lt; <span class="st">0</span>) || (d2 &lt; <span class="st">0</span>) || (d3 &lt; <span class="st">0</span>);
+<span class="kw">boolean</span> hasPos = (d1 &gt; <span class="st">0</span>) || (d2 &gt; <span class="st">0</span>) || (d3 &gt; <span class="st">0</span>);
+<span class="kw">return</span> !(hasNeg &amp;&amp; hasPos);</code></pre>
+
+  <p>Each of the three <span class="k">sign(...)</span> calls answers "is the point to the left or the right of this edge?" (positive = one side, negative = the other — it's a cross-product, the math trick for left/right). Here's the insight: if the point is genuinely inside the triangle, it's on the <em>same side of all three edges</em> — so the three results are all positive or all negative, never mixed. The last line says exactly that: "it's inside unless we saw <em>both</em> a negative and a positive," i.e. unless it fell on different sides of different edges.</p>
+
+  <!-- CIRCLE -->
+  <h3 id="circle"><span class="file">CircleObstacle.java</span></h3>
+  <div class="filecard">
+    <span class="fname">CircleObstacle.java</span>
+    <span class="pill core">PURE CORE</span>
+    <span class="role">A round keep-out zone — center plus radius.</span>
+    <span class="path">PathCore/…/PathGen/core/CircleObstacle.java</span>
+  </div>
+
+<pre><code><span class="kw">public boolean</span> contains(<span class="kw">double</span> x, <span class="kw">double</span> y, <span class="kw">double</span> margin) {
+    <span class="c">// distance from the CIRCLE'S CENTER (was measuring from origin (0,0) — bug fix)</span>
+    <span class="kw">return</span> Math.hypot(x - cx, y - cy) &lt;= r + margin;
+}</code></pre>
+
+  <p>A circle is the easiest shape: a point is inside when its distance from the center is no more than the radius. Growing by <span class="k">margin</span> is literally adding to the radius. Note the comment — this line once measured distance from <span class="k">(0,0)</span> instead of the circle's center, so <em>every</em> circle behaved as if it were at the origin. Small typo, total nonsense results. Worth remembering when something acts bizarre: check that the math is measuring from the thing you think it is.</p>
+
+  <h4>Why a circle needs 12 nav points, not 4</h4>
+<pre><code><span class="kw">double</span> rr = r + margin + <span class="st">3</span>;   <span class="c">// ring just outside the inflated circle</span>
+<span class="kw">int</span> n = <span class="st">12</span>;                  <span class="c">// 12, not 8: fewer points and the straight line</span>
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="st">0</span>; i &lt; n; i++) {   <span class="c">// between two of them cuts back inside the</span>
+    <span class="kw">double</span> a = <span class="st">2</span>*Math.PI*i / n;  <span class="c">// keep-out zone for a big robot → routing fails</span>
+    pts.add(<span class="kw">new double</span>[]{ cx + rr*Math.cos(a), cy + rr*Math.sin(a) });
+}</code></pre>
+
+  <p>A box has natural stepping-stones — its corners. A circle has none, so we sprinkle points evenly around a ring just outside it. The router walks between these points in <em>straight lines</em>. Here's the trap: if you only place a few points around the ring, the straight line connecting two neighbors is a <em>chord</em> that dips inward, cutting across the circle. For a big robot with a big keep-out radius, that chord dips right back into the forbidden zone, so the router decides it can't get from one stepping-stone to the next and gives up. Twelve points keep the chords shallow enough to stay clear. This is a real bug that was fixed by bumping 8 → 12.</p>
+
+  <figure>
+    <svg viewBox="0 0 560 240" role="img" aria-label="Two rings of nav points around a circle. With few points the connecting chord cuts inside the keep-out zone; with many points the chords stay outside.">
+      <!-- few -->
+      <circle cx="140" cy="120" r="42" fill="color-mix(in srgb, var(--red) 14%, transparent)" stroke="var(--red)" stroke-width="1.3"/>
+      <g fill="var(--yellow)">
+        <circle cx="140" cy="70" r="4"/><circle cx="190" cy="120" r="4"/><circle cx="140" cy="170" r="4"/><circle cx="90" cy="120" r="4"/>
+      </g>
+      <line x1="140" y1="70" x2="190" y2="120" stroke="var(--red)" stroke-width="2"/>
+      <path d="M 158 88 L 150 96 M 158 88 L 166 96" stroke="var(--red)" stroke-width="1.6" fill="none"/>
+      <text x="140" y="212" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11" fill="currentColor">4 points — chord cuts in ✗</text>
+
+      <!-- many -->
+      <circle cx="410" cy="120" r="42" fill="color-mix(in srgb, var(--green) 14%, transparent)" stroke="var(--green)" stroke-width="1.3"/>
+      <g fill="var(--yellow)">
+        <!-- 12 points -->
+        <circle cx="410" cy="70" r="3.4"/><circle cx="435" cy="77" r="3.4"/><circle cx="453" cy="95" r="3.4"/><circle cx="460" cy="120" r="3.4"/>
+        <circle cx="453" cy="145" r="3.4"/><circle cx="435" cy="163" r="3.4"/><circle cx="410" cy="170" r="3.4"/><circle cx="385" cy="163" r="3.4"/>
+        <circle cx="367" cy="145" r="3.4"/><circle cx="360" cy="120" r="3.4"/><circle cx="367" cy="95" r="3.4"/><circle cx="385" cy="77" r="3.4"/>
+      </g>
+      <line x1="410" y1="70" x2="435" y2="77" stroke="var(--green)" stroke-width="2"/>
+      <line x1="435" y1="77" x2="453" y2="95" stroke="var(--green)" stroke-width="2"/>
+      <text x="410" y="212" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11" fill="currentColor">12 points — chords stay clear ✓</text>
+    </svg>
+    <figcaption>The router only ever travels in straight lines between stepping-stones. Too few stones around a circle and those straight lines slice through the very zone they're meant to avoid.</figcaption>
+  </figure>
+
+  <hr>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 2: FIELD -->
+  <!-- ============================================================ -->
+  <h2 id="field"><span class="num">03</span>Layer 2 — Field: the collision brain</h2>
+  <div class="filecard">
+    <span class="fname">Field.java</span>
+    <span class="pill core">PURE CORE</span>
+    <span class="role">Holds the obstacles and answers every "can the robot be / go here?" question.</span>
+    <span class="path">PathCore/…/PathGen/core/Field.java</span>
+  </div>
+
+  <p><span class="k">Field</span> is the one place that knows <em>everything</em> about what's solid. The planner never talks to obstacles directly — it asks the Field. That keeps all the collision logic in a single file.</p>
+
+  <h4>The robot's size becomes a single number: its radius</h4>
+<pre><code><span class="kw">public</span> Field(<span class="kw">double</span> robotWidth, <span class="kw">double</span> robotLength) {
+    <span class="c">// half the diagonal = worst-case radius no matter which way the robot faces</span>
+    <span class="kw">this</span>.robotRadius = <span class="st">0.5</span> * Math.hypot(robotWidth, robotLength);
+    <span class="kw">this</span>.robotWidth  = robotWidth;
+    <span class="kw">this</span>.robotLength = robotLength;
+}</code></pre>
+
+  <p>This is the single most important idea in the whole collision system. The robot is a rectangle, and as it turns, the rectangle sweeps out different shapes. Rather than track that, we wrap the robot in the smallest circle that always contains it — and the radius of that circle is <em>half the diagonal</em> of the rectangle. A 15.5 × 17.5 robot gives a radius of about 11.7 inches.</p>
+
+  <div class="why">
+    <span class="tag">Why the bounding circle is worth its slight waste</span>
+    <p>A circle looks the same from every angle. So if we keep the robot's <em>center</em> at least <span class="k">radius</span> inches from everything solid, the robot is guaranteed to fit <strong>no matter which way it's facing</strong>. That means the planner never has to think about heading when checking collisions — a huge simplification. The cost is that the corners of the circle stick out past the real robot, so it's slightly more cautious than strictly necessary. For a competition robot that trade is almost always worth it.</p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 560 250" role="img" aria-label="A robot rectangle inscribed in its bounding circle; the circle's radius equals half the rectangle's diagonal, and the same circle covers the robot at any rotation.">
+      <!-- upright -->
+      <circle cx="150" cy="125" r="70" fill="color-mix(in srgb, var(--blue) 10%, transparent)" stroke="var(--blue)" stroke-width="1.3" stroke-dasharray="5 4"/>
+      <rect x="108" y="78" width="84" height="94" fill="color-mix(in srgb, var(--blue) 22%, transparent)" stroke="var(--blue)" stroke-width="1.6"/>
+      <line x1="108" y1="172" x2="192" y2="78" stroke="var(--blue)" stroke-width="1" opacity=".6"/>
+      <text x="150" y="130" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="currentColor">diagonal</text>
+      <circle cx="150" cy="125" r="3" fill="var(--blue)"/>
+      <text x="150" y="238" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11" fill="currentColor">facing up</text>
+
+      <!-- rotated -->
+      <circle cx="400" cy="125" r="70" fill="color-mix(in srgb, var(--blue) 10%, transparent)" stroke="var(--blue)" stroke-width="1.3" stroke-dasharray="5 4"/>
+      <g transform="rotate(35 400 125)">
+        <rect x="358" y="78" width="84" height="94" fill="color-mix(in srgb, var(--blue) 22%, transparent)" stroke="var(--blue)" stroke-width="1.6"/>
+      </g>
+      <circle cx="400" cy="125" r="3" fill="var(--blue)"/>
+      <text x="400" y="238" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11" fill="currentColor">rotated — same circle</text>
+
+      <text x="280" y="40" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="12.5" fill="currentColor" opacity=".8">radius = ½ · √(width² + length²)</text>
+    </svg>
+    <figcaption>The bounding circle never changes as the robot turns, so keeping the robot's center a radius-length away from anything solid guarantees a fit at every heading.</figcaption>
+  </figure>
+
+  <h4>Two kinds of "blocked" — and why there are two</h4>
+<pre><code><span class="kw">public boolean</span> blocked(<span class="kw">double</span> x, <span class="kw">double</span> y) {
+    <span class="c">// walls: the robot center can't get within its radius of an edge</span>
+    <span class="kw">if</span> (size &gt; <span class="st">0</span> &amp;&amp; robotRadius &gt; <span class="st">0</span> &amp;&amp;
+            (x &lt; robotRadius || x &gt; size-robotRadius ||
+             y &lt; robotRadius || y &gt; size-robotRadius)) <span class="kw">return true</span>;
+    <span class="kw">return</span> blockedByObstacle(x, y);
+}
+
+<span class="kw">public boolean</span> blockedByObstacle(<span class="kw">double</span> x, <span class="kw">double</span> y) {
+    <span class="kw">double</span> m = clearance();                       <span class="c">// robotRadius + minClearance</span>
+    <span class="kw">for</span> (Obstacle o : obstacles) <span class="kw">if</span> (o.contains(x, y, m)) <span class="kw">return true</span>;
+    <span class="kw">return false</span>;
+}</code></pre>
+
+  <p>There are two questions, and the difference between them is the key to how wall-ball intaking works:</p>
+  <ul class="clean">
+    <li><strong><span class="k">blocked</span></strong> = "the robot center physically cannot be here." This includes the obstacles <em>and</em> the strip around the field edge that the center can't reach because the robot's body would be stuck in the wall. This is the strict, everyday check used for normal driving.</li>
+    <li><strong><span class="k">blockedByObstacle</span></strong> = "there's a real obstacle here" — but it <em>ignores the walls</em>.</li>
+  </ul>
+
+  <div class="why">
+    <span class="tag">Why ignore the walls sometimes?</span>
+    <p>Because a ball can sit right up against a wall — in the strip the robot's center can't reach. To grab it, the robot deliberately noses its front into that strip. During that one deliberate move, we don't want the wall counting as an obstacle (of course the front is near the wall — that's the point). So the intake move uses <span class="k">blockedByObstacle</span> (ignore walls, still respect real obstacles), while everything else uses <span class="k">blocked</span> (respect walls too). Same field, two lenses.</p>
+  </div>
+
+  <h4><span class="k">inWallStrip</span> — is a ball in the hard-to-reach edge?</h4>
+<pre><code><span class="kw">public boolean</span> inWallStrip(<span class="kw">double</span> x, <span class="kw">double</span> y) {
+    <span class="kw">if</span> (size &lt;= <span class="st">0</span> || robotRadius &lt;= <span class="st">0</span>) <span class="kw">return false</span>;
+    <span class="kw">boolean</span> onField  = x &gt;= <span class="st">0</span> &amp;&amp; x &lt;= size &amp;&amp; y &gt;= <span class="st">0</span> &amp;&amp; y &lt;= size;
+    <span class="kw">boolean</span> nearWall = x &lt; robotRadius || x &gt; size-robotRadius
+                    || y &lt; robotRadius || y &gt; size-robotRadius;
+    <span class="kw">return</span> onField &amp;&amp; nearWall &amp;&amp; !blockedByObstacle(x, y);
+}</code></pre>
+
+  <p>This returns true for a point that is on the field, close enough to a wall that the center can't reach it, but not sitting inside a real obstacle. In other words: "a ball here needs the special wall-intake approach." The planner calls this to decide whether an ordinary drive-through will work or whether it has to set up a nose-in maneuver.</p>
+
+  <h4>Checking a whole line, not just a point</h4>
+<pre><code><span class="kw">public boolean</span> segmentClear(<span class="kw">double</span> x1,<span class="kw">double</span> y1,<span class="kw">double</span> x2,<span class="kw">double</span> y2, <span class="kw">boolean</span> wallAware){
+    <span class="kw">double</span> dist = Math.hypot(x2-x1, y2-y1);
+    <span class="kw">int</span> samples = Math.max(<span class="st">2</span>, (<span class="kw">int</span>) dist);          <span class="c">// ~1 check per inch</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="st">0</span>; i &lt;= samples; i++) {
+        <span class="kw">double</span> t = i / (<span class="kw">double</span>) samples;
+        <span class="kw">double</span> px = x1 + (x2-x1)*t, py = y1 + (y2-y1)*t;
+        <span class="kw">if</span> (wallAware ? blocked(px,py) : blockedByObstacle(px,py)) <span class="kw">return false</span>;
+    }
+    <span class="kw">return true</span>;
+}</code></pre>
+
+  <p>"Can the robot drive straight from A to B?" We can't check infinitely many points, so we <em>sample</em>: walk from A to B in roughly one-inch steps and check each spot. <span class="k">t</span> slides from 0 to 1, and <span class="k">A + (B−A)·t</span> is the point that fraction of the way along — that's linear interpolation, a pattern you'll see again in the smoothing and the visualizer. The <span class="k">wallAware</span> flag picks which of the two "blocked" lenses to use, so the same routine serves both normal driving and the deliberate intake dip.</p>
+
+  <div class="why">
+    <span class="tag">The one risk of sampling</span>
+    <p>Sampling every inch could, in theory, "step over" an obstacle thinner than an inch. None of your field obstacles are that thin, so it's safe here — but it's the reason the check is fast. It's a deliberate trade of perfect precision for speed, which matters when the planner runs this thousands of times per path.</p>
+  </div>
+
+  <hr>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 3: DATA -->
+  <!-- ============================================================ -->
+  <h2 id="seg"><span class="num">04</span>Layer 3 — Seg &amp; GeoResult: the plain-data answer</h2>
+  <p>These two classes hold no logic at all. They're just containers — the shape of the planner's answer. Keeping the answer as plain numbers (no Pedro types) is what lets the visualizer and the robot share it.</p>
+
+  <div class="filecard">
+    <span class="fname">Seg.java</span>
+    <span class="pill core">PURE CORE</span>
+    <span class="role">One drivable piece of a path: a curve or a straight line, with a heading at each end.</span>
+    <span class="path">PathCore/…/PathGen/core/Seg.java</span>
+  </div>
+
+<pre><code><span class="kw">public final double</span> x1, y1, h1;          <span class="c">// start point + heading (radians)</span>
+<span class="kw">public final double</span> x2, y2, h2;          <span class="c">// end point + heading</span>
+<span class="kw">public final boolean</span> curve;              <span class="c">// true = Bezier curve, false = straight</span>
+<span class="kw">public final double</span> c1x, c1y, c2x, c2y;  <span class="c">// curve control points (only if curve)</span></code></pre>
+
+  <p>A full path is a list of <span class="k">Seg</span>s laid end to end. Each one is either a straight line (start point, end point) or a <em>cubic Bézier</em> curve. A Bézier is a smooth curve defined by four points: the two endpoints plus two "control points" that pull the curve toward them like magnets without the curve ever actually touching them. That's how the planner rounds off sharp corners. Each segment also carries the heading the robot should hold at its start and end.</p>
+
+  <p>Notice <span class="k">final</span> on every field: once a <span class="k">Seg</span> is created it can never change. That's on purpose — an answer that can't be accidentally modified after the fact is one less source of bugs. The two factory methods <span class="k">Seg.straight(...)</span> and <span class="k">Seg.curved(...)</span> just make it obvious which kind you're creating.</p>
+
+  <div class="filecard">
+    <span class="fname">GeoResult.java</span>
+    <span class="pill core">PURE CORE</span>
+    <span class="role">The whole answer: the segments, the raw route, notes — and whether it succeeded.</span>
+    <span class="path">PathCore/…/PathGen/core/GeoResult.java</span>
+  </div>
+
+<pre><code><span class="kw">public enum</span> Status { OK, ADJUSTED, FAILED }
+
+<span class="kw">public final</span> Status status;
+<span class="kw">public final</span> List&lt;Seg&gt; segs;         <span class="c">// the drivable pieces, in order</span>
+<span class="kw">public final</span> List&lt;<span class="kw">double</span>[]&gt; route;   <span class="c">// the raw corner points (for drawing)</span>
+<span class="kw">public final</span> List&lt;String&gt; notes;     <span class="c">// what got adjusted, or why it failed</span></code></pre>
+
+  <div class="why">
+    <span class="tag">The rule that keeps auto from ever crashing</span>
+    <p>Look at the three statuses. The planner <strong>never throws an error</strong> — it always <em>returns</em> one of these. <span class="k">OK</span> means "planned exactly what you asked." <span class="k">ADJUSTED</span> means "I had to nudge something, but here's a usable path — read <span class="k">notes</span> to see what I changed." <span class="k">FAILED</span> means "I couldn't do it; <span class="k">segs</span> is empty, use a fallback." Because a bad plan comes back as a <em>value</em> instead of a crash, your OpMode can look at it, shrug, and try again next loop instead of the whole autonomous dying. In a 30-second match, "try again" beats "crash" every time.</p>
+  </div>
+
+  <p><span class="k">GeoResult</span> is the pure-core answer. Its twin, <span class="k">PathResult</span> (Layer 5), is the same idea but holding a real Pedro path instead of raw segments — the bridge converts one into the other.</p>
+
+  <hr>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 4: PLANENGINE -->
+  <!-- ============================================================ -->
+  <h2 id="planengine"><span class="num">05</span>Layer 4 — PlanEngine: the brain</h2>
+  <div class="filecard">
+    <span class="fname">PlanEngine.java</span>
+    <span class="pill core">PURE CORE</span>
+    <span class="role">Turns a list of points into a smooth, collision-free, drivable path. The heart of everything.</span>
+    <span class="path">PathCore/…/PathGen/core/PlanEngine.java</span>
+  </div>
+
+  <p>This is the big one — about 430 lines. But it's built from small, understandable pieces, and it has exactly three public "front doors":</p>
+  <ul class="clean">
+    <li><strong><span class="k">plan(waypoints)</span></strong> — drive forward through every point, front leading. The simplest mode.</li>
+    <li><strong><span class="k">planReturn(from, to, heading)</span></strong> — a single leg that automatically decides whether to drive forward or reverse, whichever is faster.</li>
+    <li><strong><span class="k">planWithReturn(waypoints)</span></strong> — the one your auto uses: one continuous path through all the balls to the goal, handling wall-balls and auto-reversing the last leg. Built out of the other two ideas.</li>
+  </ul>
+
+  <p>A few tunable knobs sit at the top:</p>
+<pre><code><span class="kw">public double</span> Vx = <span class="st">76</span>;         <span class="c">// forward/back speed, in/s (the fast axis)</span>
+<span class="kw">public double</span> Vy = <span class="st">52</span>;         <span class="c">// strafe speed, in/s (the slow axis)</span>
+<span class="kw">public double</span> catmullTension = <span class="st">6.0</span>;   <span class="c">// how gentle the curve smoothing is</span>
+<span class="kw">public double</span> turnRate = <span class="st">4.0</span>;        <span class="c">// rough turn speed, rad/s, for cost estimates</span></code></pre>
+
+  <p>These describe how your robot actually moves. A mecanum/omni robot drives forward faster than it strafes sideways, so <span class="k">Vx</span> &gt; <span class="k">Vy</span>. The planner uses these to <em>estimate travel time</em> when it decides between two options — they don't need to be perfect, just roughly right relative to each other.</p>
+
+  <h3>The simple mode: <span class="k">plan(waypoints)</span></h3>
+  <p>Everything else is a variation on this, so understand it first. It does four things in order:</p>
+
+  <p><strong>1. Un-stick every waypoint.</strong> If a requested point sits inside an obstacle (or an unreachable spot), slide it out to the nearest clear spot:</p>
+<pre><code><span class="kw">if</span> (field.blocked(w[<span class="st">0</span>], w[<span class="st">1</span>])) {
+    <span class="kw">double</span>[] freed = nudgeOut(w[<span class="st">0</span>], w[<span class="st">1</span>]);
+    <span class="kw">if</span> (freed == <span class="kw">null</span>)
+        <span class="kw">return</span> GeoResult.failed(<span class="st">"waypoint "</span> + i + <span class="st">" is stuck inside an obstacle"</span>);
+    notes.add(<span class="st">"waypoint "</span> + i + <span class="st">" moved ..."</span>);   <span class="c">// tells you it adjusted</span>
+    pts.add(freed);
+}</code></pre>
+
+  <p><strong>2. Connect consecutive points.</strong> For each pair, if a straight line between them is clear, use it. If not, call <span class="k">routeAround</span> to find a way around the obstacle:</p>
+<pre><code><span class="kw">if</span> (field.isSegmentClear(a, b)) {
+    leg = [a, b];                        <span class="c">// straight shot works</span>
+} <span class="kw">else</span> {
+    leg = routeAround(a, b);             <span class="c">// go around</span>
+    <span class="kw">if</span> (leg == <span class="kw">null</span>) <span class="kw">return</span> GeoResult.failed(...);
+}</code></pre>
+
+  <p><strong>3. Assign headings.</strong> <span class="k">tangentHeadings</span> makes each point face the next one (front leads = forward driving).</p>
+  <p><strong>4. Smooth it.</strong> <span class="k">buildSegs</span> rounds the sharp corners into curves. Then it returns <span class="k">OK</span> (nothing adjusted) or <span class="k">ADJUSTED</span> (with notes).</p>
+
+  <p>The whole method is wrapped in a <span class="k">try/catch</span> that turns any unexpected error into a <span class="k">FAILED</span> result — the "never crash" promise, enforced.</p>
+
+  <!-- ROUTEAROUND -->
+  <h3 id="route">Going around things: visibility graph + Dijkstra</h3>
+  <p>When a straight line is blocked, <span class="k">routeAround</span> finds the shortest way around. This is the single cleverest piece of the planner, and it's a classic two-step algorithm.</p>
+
+  <p><strong>Step 1 — build a "visibility graph."</strong> Collect a set of nodes: the start, the goal, and every obstacle's nav points (those stepping-stones from Layer 1). Two nodes are "connected" if the robot can drive a clear straight line between them. Picture a web of legal straight-line hops between corners.</p>
+
+  <p><strong>Step 2 — Dijkstra's algorithm</strong> finds the shortest chain of hops from start to goal:</p>
+<pre><code><span class="kw">for</span> (<span class="kw">int</span> it = <span class="st">0</span>; it &lt; n; it++) {
+    <span class="c">// pick the un-visited node we can currently reach most cheaply</span>
+    <span class="kw">int</span> u = <span class="c">/* node with smallest dist[] */</span>;
+    done[u] = <span class="kw">true</span>;
+    <span class="kw">if</span> (u == <span class="st">1</span>) <span class="kw">break</span>;                 <span class="c">// reached the goal (node 1) — stop</span>
+    <span class="kw">for</span> (<span class="kw">int</span> v = <span class="st">0</span>; v &lt; n; v++) {       <span class="c">// try improving every neighbor</span>
+        <span class="kw">if</span> (!field.isSegmentClear(a, b)) <span class="kw">continue</span>;   <span class="c">// only real, clear hops</span>
+        <span class="kw">double</span> d = dist[u] + Math.hypot(...) / Vx;   <span class="c">// cost = time to get there</span>
+        <span class="kw">if</span> (d &lt; dist[v]) { dist[v] = d; prev[v] = u; }   <span class="c">// found a better way in</span>
+    }
+}</code></pre>
+
+  <p>Dijkstra keeps, for every node, the cheapest known cost to reach it (<span class="k">dist</span>) and which node you came from (<span class="k">prev</span>). It repeatedly locks in the cheapest un-finished node and uses it to improve its neighbors. When the goal is locked in, walking <span class="k">prev</span> backwards from the goal spells out the shortest route. Cost is measured as <em>time</em> (<span class="k">distance / Vx</span>), not raw distance — a small detail that keeps it consistent with the speed-aware decisions elsewhere.</p>
+
+  <div class="why">
+    <span class="tag">Why nav points that sit "just outside plus 2 or 3"?</span>
+    <p>This ties back to Layer 1. If a stepping-stone were exactly on the inflated edge, the clear-line check between it and its neighbor might fail on rounding. The extra couple inches guarantee the corners of the web actually connect, so Dijkstra can find a route instead of reporting "no way through."</p>
+  </div>
+
+  <h4><span class="k">nudgeOut</span> — freeing a stuck point</h4>
+<pre><code><span class="kw">for</span> (<span class="kw">double</span> rad = <span class="st">2</span>; rad &lt;= <span class="st">48</span>; rad += <span class="st">2</span>)        <span class="c">// spiral outward…</span>
+    <span class="kw">for</span> (<span class="kw">int</span> a = <span class="st">0</span>; a &lt; <span class="st">16</span>; a++) {                 <span class="c">// …in 16 directions</span>
+        <span class="kw">double</span> ang = <span class="st">2</span>*Math.PI*a/<span class="st">16</span>;
+        <span class="kw">double</span> nx = x + rad*Math.cos(ang), ny = y + rad*Math.sin(ang);
+        <span class="kw">if</span> (!field.blocked(nx, ny)) <span class="kw">return new double</span>[]{ nx, ny };
+    }
+<span class="kw">return null</span>;   <span class="c">// truly boxed in (48 inches of solid all around) — give up</span></code></pre>
+
+  <p>If a point is stuck inside an obstacle, this searches outward in growing rings (2, 4, 6… inches) checking 16 directions at each radius, and returns the first clear spot it finds — which is the <em>nearest</em> clear spot, because it grows the radius slowly. If it gets 48 inches out and still finds nothing, it returns <span class="k">null</span> and the caller reports FAILED. Because "clear" uses the bounding circle, the freed spot is valid at any heading.</p>
+
+  <!-- SMOOTHING -->
+  <h3 id="smoothing">Smoothing corners into curves</h3>
+  <p>After routing, the path is a polyline — straight segments with sharp corners. A robot can't drive a sharp corner smoothly, so <span class="k">buildSegs</span> replaces each corner with a gentle curve, <em>but only if that curve stays clear of obstacles.</em></p>
+
+<pre><code><span class="kw">double</span>[] cp = clearControlPoints(p0, p1, p2, p3);
+<span class="kw">if</span> (cp != <span class="kw">null</span>)  segs.add(Seg.curved(...));    <span class="c">// smooth curve fits</span>
+<span class="kw">else</span>            segs.add(Seg.straight(...));  <span class="c">// no room — stay straight</span></code></pre>
+
+  <p>The curve is a Catmull-Rom style spline: each corner's control points are computed from its <em>neighbors</em> (<span class="k">p0</span> and <span class="k">p3</span>), so the curve naturally flows in the direction the path is already going. The <span class="k">catmullTension</span> knob controls how far the control points reach — smaller means a rounder, more relaxed curve.</p>
+
+<pre><code><span class="kw">double</span>[] tensions = { catmullTension, <span class="st">10</span>, <span class="st">18</span>, <span class="st">30</span>, <span class="st">60</span> };
+<span class="kw">for</span> (<span class="kw">double</span> k : tensions) {
+    <span class="c">// build control points at this tension…</span>
+    <span class="kw">if</span> (curveIsClear(...)) <span class="kw">return</span> controlPoints;   <span class="c">// first clear one wins</span>
+}
+<span class="kw">return null</span>;   <span class="c">// even the tightest curve clips something → caller uses a straight line</span></code></pre>
+
+  <div class="why">
+    <span class="tag">The clever fallback ladder</span>
+    <p>It tries the roundest curve first. If that curve would clip an obstacle, it tries progressively <em>tighter</em> curves (tension 10, 18, 30, 60) that hug the corner more closely. The first one that's clear wins. If even the tightest is blocked, it gives up on curving and uses a plain straight line. So you get the smoothest ride the obstacles allow, and never a curve that cuts a corner into a wall. <span class="k">curveIsClear</span> checks by sampling 20 points along the Bézier — the same "sample and check" idea as <span class="k">segmentClear</span>.</p>
+  </div>
+
+  <!-- SPEED MODEL -->
+  <h3 id="speed">The speed model: why reverse can be faster</h3>
+  <p>To decide between forward and reverse, the planner needs to estimate how long each would take. That's what the speed model is for.</p>
+
+<pre><code><span class="kw">private double</span> effSpeed(<span class="kw">double</span> theta) {           <span class="c">// theta = angle between travel &amp; the robot's axis</span>
+    <span class="kw">double</span> c = Math.cos(theta)/Vx, s = Math.sin(theta)/Vy;
+    <span class="kw">return</span> <span class="st">1.0</span> / Math.sqrt(c*c + s*s);           <span class="c">// full Vx along axis, down to Vy sideways</span>
+}</code></pre>
+
+  <p>Your robot moves fastest straight forward/back (<span class="k">Vx</span>) and slowest sideways (<span class="k">Vy</span>). For any in-between direction, the true speed is somewhere between — and this formula (the equation of an ellipse) gives it. When travel lines up with the robot's facing, <span class="k">theta = 0</span> and you get full <span class="k">Vx</span>; when travel is sideways, <span class="k">theta = 90°</span> and you get <span class="k">Vy</span>.</p>
+
+<pre><code><span class="kw">private static double</span> axisAngle(<span class="kw">double</span> a) {
+    <span class="kw">double</span> t = Math.abs(wrap(a));
+    <span class="kw">if</span> (t &gt; Math.PI/<span class="st">2</span>) t = Math.PI - t;   <span class="c">// 0..90°: forward and reverse are equally fast</span>
+    <span class="kw">return</span> t;
+}</code></pre>
+
+  <p>This folds any angle into the 0–90° range, which encodes a physical truth: driving forward along an axis and driving backward along it are equally fast. That's the mathematical reason the robot is <em>allowed</em> to consider reversing at all. (<span class="k">wrap</span> just keeps angles in the −180°…180° range so the arithmetic behaves.)</p>
+
+  <!-- PLANRETURN -->
+  <h3 id="planreturn">Forward vs. reverse: <span class="k">planReturn</span></h3>
+  <p>Imagine the robot drives up to a ball facing north, grabs it, and now has to go back to a goal that's <em>south</em>. It could spin 180° and drive forward — or just drive backward without turning at all. Often the second is much faster. <span class="k">planReturn</span> computes both costs and picks the winner.</p>
+
+<pre><code><span class="c">// FORWARD: turn to face the path, then drive the fast axis the whole way</span>
+<span class="kw">double</span> turn = Math.abs(wrap(firstTangent - incomingHeading));
+<span class="kw">double</span> fwdCost = turn/turnRate + len/Vx;
+
+<span class="c">// REVERSE: keep the current heading; speed drops where travel isn't along it</span>
+<span class="kw">double</span> revCost = <span class="st">0</span>;
+<span class="kw">for</span> (each piece of the route)
+    revCost += segLength / effSpeed(axisAngle(travelDir - incomingHeading));
+
+<span class="kw">boolean</span> reverse = revCost &lt; fwdCost;   <span class="c">// cheaper wins</span></code></pre>
+
+  <p>Forward's cost is "time to spin to face the path" plus "time to drive it at full speed." Reverse's cost skips the spin entirely (it holds the heading the robot already has) but may travel partly sideways, so it uses <span class="k">effSpeed</span> to account for the slowdown. Whichever total time is smaller wins, and <span class="k">lastReturnReversed</span> records the choice so your telemetry can show it. Either way it writes a note explaining the decision and the two estimates — so when you read the driver station you can see <em>why</em> it chose what it did.</p>
+
+  <!-- PLANWITHRETURN -->
+  <h3 id="planwithreturn">The main event: <span class="k">planWithReturn</span></h3>
+  <p>This is what your auto actually calls. It produces <strong>one continuous path</strong>: start → ball 1 → ball 2 → ball 3 → goal, flowing through the balls without stopping, and auto-reversing the final leg into the goal if that's faster. It does its job in four phases.</p>
+
+  <p><strong>Phase 1 — turn waypoints into "stops."</strong> A normal ball is one stop. But a ball in the wall strip can't be driven straight through — so it's expanded into <em>three</em> stops: a staging point outside the strip, the intake center (nose on the ball, at a forced heading), then back out to staging.</p>
+
+<pre><code><span class="kw">if</span> (i &gt; <span class="st">0</span> &amp;&amp; i &lt; last &amp;&amp; field.inWallStrip(w[<span class="st">0</span>], w[<span class="st">1</span>])) {
+    <span class="kw">double</span>[] ia = chooseIntake(w, prev);          <span class="c">// {stageX,stageY, centerX,centerY, heading, strat}</span>
+    <span class="kw">if</span> (ia != <span class="kw">null</span>) {
+        sp.add(staging);   sh.add(NaN);   sd.add(<span class="kw">false</span>);   <span class="c">// drive to staging (normal)</span>
+        sp.add(center);    sh.add(heading);sd.add(<span class="kw">true</span>);    <span class="c">// dip in — straight, ignore wall</span>
+        sp.add(staging);   sh.add(NaN);   sd.add(<span class="kw">true</span>);    <span class="c">// dip back out</span>
+        <span class="kw">continue</span>;
+    }
+}</code></pre>
+
+  <p>The three parallel lists carry, for each stop: its position (<span class="k">sp</span>), a forced heading or <span class="k">NaN</span> meaning "just face where you're going" (<span class="k">sh</span>), and whether this is a "dip" leg (<span class="k">sd</span>) that should ignore walls and go straight in. <span class="k">NaN</span> — "not a number" — is used here as a clean flag for "no forced heading."</p>
+
+  <p><strong>Phase 2 — route between the stops</strong> into one flat list of points, remembering where the final leg to the goal begins. Dip legs go straight (ignoring walls); everything else uses the normal straight-or-<span class="k">routeAround</span> logic.</p>
+
+  <p><strong>Phase 3 — assign headings.</strong> Start with tangents (face the next point), then override any stop that demanded a forced heading (the intake dips).</p>
+
+  <p><strong>Phase 4 — decide the final leg's direction:</strong></p>
+<pre><code><span class="kw">boolean</span> directReturn = (n-<span class="st">1</span> - finalLegStart) == <span class="st">1</span>;   <span class="c">// last leg is a single straight shot?</span>
+<span class="kw">boolean</span> reverse = directReturn &amp;&amp; revCost &lt; fwdCost;
+<span class="kw">if</span> (reverse) <span class="c">/* hold the heading instead of spinning */</span>;</code></pre>
+
+  <div class="why">
+    <span class="tag">Why only reverse a "direct" final leg</span>
+    <p>Reversing only makes sense when the last leg is a clean straight shot home — a there-and-back where spinning would be wasted motion. If the path to the goal had to curve around an obstacle (multiple points), reversing the whole arc gets confusing and rarely helps, so the code requires <span class="k">directReturn</span> before it'll even consider it. It's the same forward-vs-reverse cost comparison as <span class="k">planReturn</span>, just applied to the tail of one big path.</p>
+  </div>
+
+  <!-- WALL INTAKE -->
+  <h3 id="intake">Wall-ball intaking: <span class="k">chooseIntake</span></h3>
+  <p>When a ball sits against a wall, <span class="k">chooseIntake</span> figures out how to grab it. It considers two strategies and picks the cheaper one.</p>
+
+  <ul class="clean">
+    <li><strong>Head-on:</strong> point the front straight at the wall and drive in until the front touches the ball. The center stops half the robot's <em>length</em> short of the ball.</li>
+    <li><strong>Wall-ride:</strong> put a side against the wall and drive <em>along</em> the wall, so the front sweeps into the ball from the side.</li>
+  </ul>
+
+  <p>First it works out which wall the ball is nearest and builds two directions: <span class="k">n</span>, the inward normal (pointing away from the wall, into the field), and <span class="k">ax</span>, the along-wall axis. Then it places the intake geometry off those two directions:</p>
+
+<pre><code><span class="c">// head-on: face the wall, front on the ball, center L/2 back from it</span>
+<span class="kw">double</span> hoCx = bx + nx*(L/<span class="st">2</span>),  hoCy = by + ny*(L/<span class="st">2</span>);
+<span class="kw">double</span> hoHd = Math.atan2(-ny, -nx);                 <span class="c">// heading points AT the wall</span>
+<span class="kw">double</span> hoSx = bx + nx*stageOff, hoSy = by + ny*stageOff;   <span class="c">// staging, safely out</span></code></pre>
+
+  <figure>
+    <svg viewBox="0 0 560 250" role="img" aria-label="A ball against the bottom wall. The robot stages out in the field, then dips straight in so its front touches the ball, with the robot center half a robot-length above the ball.">
+      <!-- wall -->
+      <rect x="60" y="196" width="440" height="14" fill="color-mix(in srgb, var(--red) 22%, transparent)"/>
+      <line x1="60" y1="196" x2="500" y2="196" stroke="var(--red)" stroke-width="2"/>
+      <text x="500" y="224" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="10.5" fill="currentColor" opacity=".7">wall (y = 0)</text>
+      <!-- ball -->
+      <circle cx="280" cy="190" r="7" fill="var(--orange)"/>
+      <text x="280" y="184" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="currentColor">ball</text>
+      <!-- intake center -->
+      <rect x="252" y="120" width="56" height="60" fill="color-mix(in srgb, var(--blue) 18%, transparent)" stroke="var(--blue)" stroke-width="1.5"/>
+      <circle cx="280" cy="150" r="3" fill="var(--blue)"/>
+      <line x1="280" y1="150" x2="280" y2="182" stroke="var(--blue)" stroke-width="2" marker-end="url(#ah)"/>
+      <text x="318" y="152" font-family="'IBM Plex Sans',sans-serif" font-size="11" fill="currentColor">front faces the wall</text>
+      <text x="318" y="168" font-family="'IBM Plex Mono',monospace" font-size="10" fill="currentColor" opacity=".7">center = ball + L/2</text>
+      <!-- staging -->
+      <circle cx="280" cy="70" r="5" fill="none" stroke="var(--green)" stroke-width="1.8"/>
+      <text x="318" y="74" font-family="'IBM Plex Sans',sans-serif" font-size="11" fill="var(--green)">staging (out of the strip)</text>
+      <line x1="280" y1="76" x2="280" y2="116" stroke="var(--green)" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+      <text x="150" y="100" font-family="'IBM Plex Mono',monospace" font-size="10" fill="currentColor" opacity=".7">dip straight in,</text>
+      <text x="150" y="114" font-family="'IBM Plex Mono',monospace" font-size="10" fill="currentColor" opacity=".7">then back out</text>
+    </svg>
+    <figcaption>Head-on intake of a wall ball. The robot drives to a staging point in open field, dips straight down until its front is on the ball (center stops L/2 above it), then backs out — all as part of the one continuous path.</figcaption>
+  </figure>
+
+  <p><span class="k">Math.atan2(y, x)</span> turns a direction into a heading angle — it's the reverse of "cos/sin turn an angle into a direction." Here <span class="k">atan2(-ny, -nx)</span> gives the heading that points <em>at</em> the wall (opposite the inward normal), so the front leads into the ball.</p>
+
+  <p>Then it costs both strategies and validates them:</p>
+<pre><code><span class="kw">double</span> hoCost = dist(from → staging) + <span class="st">2</span>*dist(staging → center);   <span class="c">// in and back out</span>
+<span class="kw">boolean</span> useHo = (both valid) ? hoCost &lt;= wrCost : (whichever is valid);</code></pre>
+
+  <p>The cost is the drive to staging plus the in-and-out dip (hence the ×2). <span class="k">intakeValid</span> makes sure the staging point is reachable, the dip line is clear of real obstacles, and the center is actually on the field. If neither strategy is valid, it returns <span class="k">null</span> and the caller falls back to nudging the ball inward instead. Whichever is cheaper and legal wins.</p>
+
+  <div class="note why">
+    <span class="tag">Honest status</span>
+    <p>Head-on is fully verified: a ball at the bottom wall produces a center exactly half a robot-length above it, front pointed down — correct. Wall-ride is an approximate first version and rarely wins the cost comparison as written, so in practice you'll almost always see head-on. If real matches show certain balls need the side-approach, that's the piece to refine.</p>
+  </div>
+
+  <hr>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 5: PEDRO BRIDGE -->
+  <!-- ============================================================ -->
+  <h2 id="pathresult"><span class="num">06</span>Layer 5 — The Pedro bridge</h2>
+  <p>The core speaks in plain <span class="k">Seg</span>s. The robot speaks Pedro Pathing. These files are the translator — and this is the boundary between "pure logic" and "real robot."</p>
+
+  <div class="filecard">
+    <span class="fname">PathResult.java</span>
+    <span class="pill pedro">PEDRO BRIDGE</span>
+    <span class="role">Same idea as GeoResult, but holding a real Pedro PathChain.</span>
+    <span class="path">TeamCode/…/PathGen/Utilities/PathResult.java</span>
+  </div>
+
+  <p>Identical shape to <span class="k">GeoResult</span> — <span class="k">OK / ADJUSTED / FAILED</span>, never thrown — except <span class="k">path</span> is a Pedro <span class="k">PathChain</span> instead of raw segments. <span class="k">usable()</span> returns true when the path isn't null. This is the object your OpMode inspects before driving.</p>
+
+  <div class="filecard">
+    <span class="fname">PathPlanner.java</span>
+    <span class="pill pedro">PEDRO BRIDGE</span>
+    <span class="role">Runs the pure engine, then converts its segments into a Pedro PathChain.</span>
+    <span class="path">TeamCode/…/PathGen/Utilities/PathPlanner.java</span>
+  </div>
+
+  <p>This is a thin wrapper. It exposes the same three front doors as <span class="k">PlanEngine</span> (<span class="k">plan</span>, <span class="k">planReturn</span>, <span class="k">planWithReturn</span>), and each does the same two steps: run the pure engine, then hand the result to <span class="k">toResult</span> to translate. The translation is the only Pedro-specific code in the whole path system:</p>
+
+<pre><code><span class="kw">for</span> (Seg s : g.segs) {
+    <span class="kw">if</span> (s.curve)
+        builder.addPath(<span class="kw">new</span> BezierCurve(p1, ctrl1, ctrl2, p2));   <span class="c">// our curve → Pedro curve</span>
+    <span class="kw">else</span>
+        builder.addPath(<span class="kw">new</span> BezierLine(p1, p2));                  <span class="c">// our line  → Pedro line</span>
+    builder.setLinearHeadingInterpolation(s.h1, s.h2);            <span class="c">// turn smoothly across the seg</span>
+    builder.setTValueConstraint(endTValue);                       <span class="c">// how close counts as "done"</span>
+}</code></pre>
+
+  <p>Each of our <span class="k">Seg</span>s becomes one Pedro path piece; a curve maps to a <span class="k">BezierCurve</span>, a line to a <span class="k">BezierLine</span>. <span class="k">setLinearHeadingInterpolation</span> tells Pedro to rotate evenly from the start heading to the end heading across that piece.</p>
+
+  <div class="why">
+    <span class="tag">The <span class="k">endTValue</span> knob — your fix for "stuck at the end"</span>
+    <p><span class="k">setTValueConstraint(0.94)</span> is the antidote to the robot freezing just short of the goal and never firing. Pedro measures progress along a path from 0 (start) to 1 (end). Its default requires ~0.99 — so tight the robot often settles at 0.98 and Pedro never says "done," so the next command (firing) never runs. Lowering it to 0.94 means "94% of the way there counts as arrived." Because the turret aims for you, being a couple inches short doesn't hurt scoring — but it does let the sequence advance. Raise it toward 0.99 for tighter stops, lower for snappier ones.</p>
+  </div>
+
+  <div class="warn why">
+    <span class="tag">The deeper fix that lives in Constants.java</span>
+    <p>There's a second half to this. Pedro also has a "stuck escape" that force-completes a path when the robot stops moving — but it's capped so it only triggers between 10% and <strong>80%</strong> of the path. A robot stalled at 96% is past the cap, so the escape never fires. The real cure is raising <span class="k">stuckTValueHigh</span> to <span class="k">0.99</span> in your <span class="k">FollowerConstants</span> (in <span class="k">Constants.java</span>). That file is too deeply nested for me to edit from here — it's the one change still on your plate.</p>
+  </div>
+
+  <div class="filecard">
+    <span class="fname">SafeDrive.java</span>
+    <span class="pill pedro">PEDRO BRIDGE · UNUSED</span>
+    <span class="role">An older "complete on arrival" follower — kept in the tree but not called.</span>
+    <span class="path">TeamCode/…/PathGen/Utilities/SafeDrive.java</span>
+  </div>
+
+  <p>This was an earlier attempt at the stuck-at-the-end problem: a follow command that finishes when the robot gets <em>near</em> the target (or stalls), instead of trusting Pedro's tolerance. It works, but you preferred fixing Pedro's own <span class="k">tValue</span> setting instead — cleaner, since it uses the built-in mechanism rather than second-guessing it. The file's still there in case you ever want the arrival-based backstop, but the auto doesn't use it. Nothing wrong with leaving a working spare in the drawer; just know it's not in the live path.</p>
+
+  <hr>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 6: OPMODE -->
+  <!-- ============================================================ -->
+  <h2 id="auto"><span class="num">07</span>Layer 6 — RandomPointAuto: the OpMode</h2>
+  <div class="filecard">
+    <span class="fname">RandomPointAuto.java</span>
+    <span class="pill op">OPMODE</span>
+    <span class="role">The actual autonomous. Wires up hardware, builds the field, loops forever making and driving paths.</span>
+    <span class="path">TeamCode/…/PedroAuto/RandomPointAuto.java</span>
+  </div>
+
+  <p>This is a test harness: it drives to random points forever so you can watch the planner behave on a real robot. It's where all the layers below finally get used.</p>
+
+  <h4>The start pose, computed from the robot's size</h4>
+<pre><code><span class="kw">private final</span> Pose startPose =
+        <span class="kw">new</span> Pose(<span class="st">144</span> - ROBOT_WIDTH/<span class="st">2</span>, ROBOT_LENGTH/<span class="st">2</span>, Math.toRadians(<span class="st">90</span>));</code></pre>
+
+  <div class="why">
+    <span class="tag">Why the start pose is calculated, not typed in</span>
+    <p>The robot starts jammed in the bottom-right corner, facing up. Facing up, its <em>width</em> runs along x (against the right wall at x=144) and its <em>length</em> runs along y (against the bottom wall at y=0). So the robot's <em>center</em> sits half a width in from the right and half a length up from the bottom: <span class="k">(144 − W/2, L/2)</span> = about (136.25, 8.75). Typing a guessed number here was the original cause of the robot slamming into walls — the code thought it started somewhere it didn't, so every path was offset. Deriving it from the dimensions means it stays correct even if you change the robot size. <strong>Whatever you type here must match where you physically place the robot</strong>, or the whole run is shifted by the difference.</p>
+  </div>
+
+  <h4>Setup, once, before the match</h4>
+<pre><code>Scheduler.reset();
+follower = Constants.createFollower(hardwareMap);
+follower.setStartingPose(startPose);
+pinpoint.recalibrateIMU(); sleep(<span class="st">1000</span>);        <span class="c">// let the gyro settle</span>
+
+field = <span class="kw">new</span> Field(ROBOT_WIDTH, ROBOT_LENGTH)
+        .add(<span class="kw">new</span> RectObstacle(...))
+        .add(<span class="kw">new</span> TriObstacle(...))            <span class="c">// the field's shapes, in inches</span>
+        ...;
+field.minClearance(<span class="st">3</span>);                        <span class="c">// 3 inches of breathing room on top of the body</span>
+planner = <span class="kw">new</span> PathPlanner(field);</code></pre>
+
+  <p>The obstacles you add here are the whole "map" the planner sees. Note the chained <span class="k">.add(...)</span> calls — that works because each returns the field itself (look back at <span class="k">Field.add</span>). <span class="k">minClearance(3)</span> adds 3 inches to the bounding-circle radius, so the planned path keeps a comfortable margin, not a paint-scraping one.</p>
+
+  <h4>The main loop</h4>
+<pre><code><span class="kw">while</span> (opModeIsActive()) {
+    follower.update();              <span class="c">// Pedro drives the current path one step</span>
+    Scheduler.execute();           <span class="c">// run any scheduled commands (fire, intake, …)</span>
+    <span class="kw">if</span> (!busy &amp;&amp; scheduleNewPath()) busy = <span class="kw">true</span>;   <span class="c">// idle? make a new path</span>
+    <span class="c">// … telemetry …</span>
+}</code></pre>
+
+  <p>This is the heartbeat. Every cycle it nudges Pedro forward, runs the command scheduler, and — <em>only when it's not already driving</em> (<span class="k">!busy</span>) — asks for a fresh path. The <span class="k">busy</span> flag is what stops it from piling ten paths on top of each other; it flips back to false at the very end of each path's command sequence.</p>
+
+  <h4>Building and scheduling one path</h4>
+<pre><code>b1 = randomValidPoint(cur, BALL_SPACING);   <span class="c">// three random "balls"</span>
+b2 = randomValidPoint(b1,  BALL_SPACING);
+b3 = randomValidPoint(b2,  BALL_SPACING);
+waypoints = [cur, b1, b2, b3, END];
+
+PathResult path = planner.planWithReturn(follower, waypoints);
+<span class="kw">if</span> (!path.usable()) <span class="kw">return false</span>;         <span class="c">// couldn't plan → try again next loop</span>
+
+steps = sequential(
+    follow(follower, path.path, <span class="kw">true</span>),   <span class="c">// drive the whole path</span>
+    intake.transferOn(),                <span class="c">// at the goal: fire</span>
+    waitMs(FIRE_MS),                    <span class="c">// hold 1 second</span>
+    intake.transferOff(),               <span class="c">// stop firing</span>
+    intake.intakeOn(),                  <span class="c">// resume intaking for the next run</span>
+    () -&gt; busy = <span class="kw">false</span>                   <span class="c">// allow a new path to be made</span>
+);
+schedule(steps);</code></pre>
+
+  <p>This reads like a to-do list because that's exactly what Ivy's <span class="k">sequential</span> makes: run the follow, then fire, then wait a second, then reset for the next lap. The final step flips <span class="k">busy</span> back to false, which is the loop's cue to plan again. If planning failed, it returns without setting <span class="k">busy</span>, so the loop simply retries next cycle with fresh points — the "never crash, just retry" philosophy in action.</p>
+
+  <h4>Generating a valid random point</h4>
+<pre><code><span class="kw">for</span> (<span class="kw">int</span> i = <span class="st">0</span>; i &lt; <span class="st">300</span>; i++) {
+    <span class="kw">double</span> x = lo + rng.nextDouble()*(hi-lo);
+    <span class="kw">double</span> y = lo + rng.nextDouble()*(hi-lo);
+    <span class="kw">if</span> (field.blockedByObstacle(x, y)) <span class="kw">continue</span>;   <span class="c">// reject only real obstacles — walls are OK!</span>
+    best = {x, y};
+    <span class="kw">if</span> (dist(best, from) &gt;= minAway) <span class="kw">return</span> best;   <span class="c">// far enough from the last one</span>
+}</code></pre>
+
+  <div class="why">
+    <span class="tag">Why it checks <span class="k">blockedByObstacle</span>, not <span class="k">blocked</span></span>
+    <p>This is the change you specifically asked for. It rejects points inside real obstacles, but <em>allows</em> points in the wall strip — because a ball can legitimately be against a wall, and the planner now knows how to grab those with the head-on/wall-ride intake. If it used <span class="k">blocked</span> instead, it would refuse to ever place a ball near a wall, which isn't how the real field works. It tries up to 300 times to find a point that's also at least <span class="k">minAway</span> from the previous one (so the three balls spread out); if it can't, it returns the last clear point it found rather than looping forever.</p>
+  </div>
+
+  <hr>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 7: VISUALIZER -->
+  <!-- ============================================================ -->
+  <h2 id="viz"><span class="num">08</span>Layer 7 — PathVizApp: the desktop visualizer</h2>
+  <div class="filecard">
+    <span class="fname">PathVizApp.java</span>
+    <span class="pill viz">DESKTOP TOOL</span>
+    <span class="role">A laptop app that runs the real planner so you can see paths without a robot.</span>
+    <span class="path">PathViz/…/pathviz/PathVizApp.java</span>
+  </div>
+
+  <p>This is the payoff for keeping the core pure. It's a Java Swing window (Swing is Java's built-in desktop UI toolkit — no install needed). You drop obstacles and waypoints with the mouse, and it draws the planned path live. Crucially, it builds a <em>real</em> <span class="k">Field</span>, adds <em>real</em> obstacles, and calls the <em>real</em> <span class="k">PlanEngine</span> — the same classes the robot compiles:</p>
+
+<pre><code><span class="kw">void</span> recompute() {
+    Field f = <span class="kw">new</span> Field(robotW, robotL).minClearance(minClear);
+    <span class="kw">for</span> (Shape s : shapes) f.add(s.toObstacle());   <span class="c">// UI shapes → real Obstacles</span>
+    PlanEngine eng = <span class="kw">new</span> PlanEngine(f);
+    lastResult = eng.plan(wp);                     <span class="c">// the SAME engine the robot runs</span>
+    buildTrace(); repaint();
+}</code></pre>
+
+  <div class="why">
+    <span class="tag">There is no second copy of the logic</span>
+    <p>This is the whole reason the architecture is shaped the way it is. The visualizer can't drift out of sync with the robot, because it isn't a reimplementation — it literally imports and runs <span class="k">org…PathGen.core.PlanEngine</span>. Change the planner, rebuild, and the visualizer shows the new behavior. If it looks right on your laptop, it'll drive that way on the robot (physics aside).</p>
+  </div>
+
+  <p>The rest of the file is drawing and interaction, and it splits into a few clear jobs:</p>
+  <ul class="clean">
+    <li><strong>The coordinate transform</strong> (<span class="k">px</span>, <span class="k">py</span>, <span class="k">ix</span>, <span class="k">iy</span>): converts inches ↔ screen pixels. Note <span class="k">py</span> flips y (<span class="k">side − y·scale</span>) because screens count y <em>downward</em> while the field counts it <em>upward</em>. That one flip is what makes "up" on the field look like "up" on screen.</li>
+    <li><strong>The UI <span class="k">Shape</span> classes</strong> (CircleShape, RectShape, TriShape): the draggable editor versions of your obstacles. Each has a <span class="k">toObstacle()</span> that produces the real core obstacle. They're separate from the core shapes because they carry editor-only stuff like drag handles.</li>
+    <li><strong>Playback</strong> (<span class="k">buildTrace</span>, <span class="k">poseAt</span>, <span class="k">tick</span>): samples the path into points and animates a robot rectangle gliding along it at <span class="k">Vx</span>, so you can watch the motion, not just the line.</li>
+    <li><strong>The sidebar</strong>: sliders and checkboxes for robot size, clearance, and overlays (the inflated keep-out zones, nav points, the visibility graph). Turning on "visibility graph" literally draws the web of clear straight-line hops that Dijkstra searches — a great way to <em>see</em> the routing think.</li>
+  </ul>
+
+  <p>You run it with <span class="k">./gradlew :PathViz:run</span> or the green Run arrow on the file in Android Studio. It's the fastest way to sanity-check a planner change before ever touching the robot.</p>
+
+  <hr>
+
+  <!-- ============================================================ -->
+  <!-- THINGS IT PLUGS INTO -->
+  <!-- ============================================================ -->
+  <h2 id="plugsinto"><span class="num">09</span>The pieces it plugs into (not ours)</h2>
+  <p>A few names in the OpMode belong to code you already had. The path system just calls them:</p>
+  <ul class="clean">
+    <li><strong><span class="k">Intake</span></strong> — <span class="k">intakeOn()</span>, <span class="k">transferOn()</span>, <span class="k">transferOff()</span>. The front collector and the kicker that feeds the shooter.</li>
+    <li><strong><span class="k">Shooter</span></strong> — <span class="k">startVelPID(...)</span> holds the flywheel at a target speed; <span class="k">startTurretTracking(follower)</span> keeps the turret aimed at the goal as the robot moves.</li>
+    <li><strong><span class="k">Constants</span></strong> — Pedro's tuning (including <span class="k">createFollower</span> and the <span class="k">FollowerConstants</span> where <span class="k">stuckTValueHigh</span> lives).</li>
+    <li><strong><span class="k">GoBildaPinpointDriver</span></strong> — the odometry pod computer that tells Pedro where the robot is.</li>
+  </ul>
+  <p>These aren't part of the path generator and the walkthrough leaves their internals alone — but knowing which calls are "yours already" versus "the planner" helps when you read the OpMode.</p>
+
+  <hr>
+
+  <!-- ============================================================ -->
+  <!-- END TO END -->
+  <!-- ============================================================ -->
+  <h2 id="trace"><span class="num">10</span>One path, from click to wheels</h2>
+  <p>Here's the whole system in a single trip, tying every layer together:</p>
+
+  <ol class="clean">
+    <li>The loop sees <span class="k">busy == false</span> and calls <span class="k">scheduleNewPath()</span>. <span class="span-mono"></span></li>
+    <li><span class="k">randomValidPoint</span> asks <span class="k">Field.blockedByObstacle</span> three times to pick three balls that aren't inside real obstacles (walls allowed).</li>
+    <li>The OpMode calls <span class="k">planner.planWithReturn(follower, [start, b1, b2, b3, goal])</span>.</li>
+    <li>The bridge runs the pure <span class="k">PlanEngine.planWithReturn</span>. For any wall-ball, <span class="k">chooseIntake</span> builds a staging→center→staging dip. Between stops, <span class="k">routeAround</span> runs Dijkstra over the visibility graph (built from <span class="k">Field</span>'s obstacle nav points) when a straight line is blocked.</li>
+    <li><span class="k">tangentHeadings</span> points each stop at the next; forced intake headings override where needed; the final leg's forward-vs-reverse is decided by the <span class="k">effSpeed</span> cost model.</li>
+    <li><span class="k">buildSegs</span> rounds the corners into Béziers that <span class="k">curveIsClear</span> confirms are safe, and returns a <span class="k">GeoResult</span> full of <span class="k">Seg</span>s.</li>
+    <li>The bridge's <span class="k">toResult</span> converts each <span class="k">Seg</span> into a Pedro <span class="k">BezierCurve</span>/<span class="k">BezierLine</span>, stamps <span class="k">setTValueConstraint(0.94)</span> on each, and wraps it in a <span class="k">PathResult</span>.</li>
+    <li>The OpMode schedules: follow the path → fire → wait → resume intake → clear <span class="k">busy</span>.</li>
+    <li><span class="k">follower.update()</span> drives it out on the wheels; when it reaches ~94% of the end, the follow completes, the shooter fires, and the loop plans the next one.</li>
+  </ol>
+
+  <p>Every layer did one job and handed a clean result to the next. That's the design working as intended.</p>
+
+  <hr>
+
+  <!-- ============================================================ -->
+  <!-- TUNING -->
+  <!-- ============================================================ -->
+  <h2 id="tuning"><span class="num">11</span>Where to change things</h2>
+  <p>The knobs you're most likely to touch, and where they live:</p>
+
+  <div class="tablewrap">
+  <table class="tune">
+    <thead><tr><th>Knob</th><th>File</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>ROBOT_WIDTH / LENGTH</td><td>RandomPointAuto</td><td>Robot size → drives the bounding radius and the start pose. Must match the real robot.</td></tr>
+      <tr><td>obstacles + minClearance</td><td>RandomPointAuto</td><td>The map the planner sees, and how much margin to keep around it.</td></tr>
+      <tr><td>END</td><td>RandomPointAuto</td><td>The fixed scoring spot every path returns to.</td></tr>
+      <tr><td>endTValue</td><td>PathPlanner</td><td>How close (0–1) counts as "arrived." 0.94 now; raise for tighter stops.</td></tr>
+      <tr><td>stuckTValueHigh</td><td>Constants (yours)</td><td>Set to 0.99 so Pedro's stuck-escape can fire near the end. Still to do.</td></tr>
+      <tr><td>Vx / Vy</td><td>PlanEngine / PathPlanner</td><td>Your robot's forward vs. strafe speeds — feed the forward/reverse decision.</td></tr>
+      <tr><td>catmullTension</td><td>PlanEngine / PathPlanner</td><td>Lower = rounder curves; higher = tighter to the corners.</td></tr>
+      <tr><td>FIRE_MS</td><td>RandomPointAuto</td><td>How long to hold the transfer on to fire at the goal.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="why">
+    <span class="tag">The mental model to keep</span>
+    <p>If you remember one thing: <strong>logic lives in the pure core, robot-specific translation lives in the bridge, and the OpMode just wires it together.</strong> When something's wrong, that tells you where to look. A weird <em>path shape</em> → PlanEngine or Field. A path that's <em>right on the laptop but wrong on the robot</em> → the bridge, the start pose, or Pedro tuning. The visualizer is your first stop either way, because it runs the exact same brain.</p>
+  </div>
+
+  <p style="margin-top:2.4em;color:var(--ink-faint);font-size:.9rem">Built for FTC 23849 · DECODE. Every code excerpt here is from the files in your project as they stand now.</p>
+</main>
+</div>
+
+<script>
+  (function(){
+    var btn = document.getElementById('themeBtn');
+    var root = document.documentElement;
+    btn.addEventListener('click', function(){
+      var cur = root.getAttribute('data-theme');
+      if(!cur){
+        // figure out what we're currently showing, then flip to the opposite
+        var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        cur = dark ? 'dark' : 'light';
+      }
+      root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    });
+    // smooth-scroll for the TOC
+    document.querySelectorAll('nav a[href^="#"]').forEach(function(a){
+      a.addEventListener('click', function(e){
+        var t = document.querySelector(a.getAttribute('href'));
+        if(t){ e.preventDefault(); t.scrollIntoView({behavior:'smooth', block:'start'}); }
+      });
+    });
+  })();
+</script>

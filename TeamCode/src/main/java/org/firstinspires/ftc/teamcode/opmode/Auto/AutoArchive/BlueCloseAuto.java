@@ -9,6 +9,7 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.ProfileAccelConstraint;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
+import com.acmerobotics.roadrunner.Trajectory;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
@@ -139,6 +140,7 @@ public class BlueCloseAuto extends LinearOpMode {
         sleep(4);
 
         //score preload
+
         TrajectoryActionBuilder scorePreloads = drive.actionBuilder(startPose)
                 .strafeToLinearHeading(new Vector2d(-12, -15), Math.toRadians(270), new TranslationalVelConstraint(minVelDrive), new ProfileAccelConstraint(minAccelDrive, maxAccelDrive));
 
