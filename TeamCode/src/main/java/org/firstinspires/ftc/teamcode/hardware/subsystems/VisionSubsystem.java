@@ -82,14 +82,14 @@ public class VisionSubsystem {
             ;
         } else {
             moveAwayFar = 0;
-            moveAwayTurretFar = -0.4;
+            moveAwayTurretFar = 0.2;
             secFar = 0;
-            turretSecFar = -0.4;
+            turretSecFar = 0.;
             rotationalSec = 0;
             moveAwayClose = 0;
-            moveAwayTurretClose = -0.4;
+            moveAwayTurretClose = 0.2;
             secClose = 0;
-            turretSecClose = -0.4;
+            turretSecClose = 0.2;
         }
     }
 
