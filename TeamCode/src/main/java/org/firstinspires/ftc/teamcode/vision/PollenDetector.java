@@ -1,11 +1,18 @@
 package org.firstinspires.ftc.teamcode.vision;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 
+import com.acmerobotics.dashboard.config.Config;
+
+import org.firstinspires.ftc.robotcore.external.function.Consumer;
+import org.firstinspires.ftc.robotcore.external.function.Continuation;
+import org.firstinspires.ftc.robotcore.external.stream.CameraStreamSource;
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibration;
 import org.firstinspires.ftc.vision.VisionProcessor;
+import org.opencv.android.Utils;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -22,20 +29,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * undistort -> mask -> vote for centres -> cut fused balls apart -> measure.
- *
- * Range comes from angular size: contour points become rays through the
- * calibrated camera, and a ball of radius R subtends asin(R / Z). Working in
- * ray space is what makes it correct off-axis -- a sphere at 45 degrees
- * projects as an ellipse but still subtends the same angle.
- *
- * Frames arrive from VisionPortal as RGB, not BGR.
- */
-public class PollenDetector implements VisionProcessor {
+@Config
+public class PollenDetector implements VisionProcessor, CameraStreamSource {
 
-    // --- calibration (960 x 1280) ----------------------------------------
     private static final double[][] CAL_MATRIX = {
             {477.86395397, 0.0, 457.19465378},
             {0.0, 479.21955878, 641.11989783},
@@ -48,26 +46,25 @@ public class PollenDetector implements VisionProcessor {
 
     public static boolean UNDISTORT = true;
 
-    // --- ball -------------------------------------------------------------
     public static double BALL_RADIUS_CM = 3.55;
     public static double EDGE_TRIM_FRACTION = 0.15;
 
-    // --- camera mounting --------------------------------------------------
     public static double CAMERA_YAW = 0;
     public static double CAMERA_PITCH = 0;
     public static double CAMERA_X_OFFSET = 0;
     public static double CAMERA_Y_OFFSET = 0;
 
-    // --- mask -------------------------------------------------------------
-    public static Scalar LOWER_YELLOW = new Scalar(18, 88, 184);
-    public static Scalar UPPER_YELLOW = new Scalar(30, 255, 255);
-    public static Scalar LOWER_YELLOW_2 = new Scalar(18, 182, 161);
-    public static Scalar UPPER_YELLOW_2 = new Scalar(30, 255, 193);
+    public static int H_MIN = 18, H_MAX = 30;
+    public static int S_MIN = 88, S_MAX = 255;
+    public static int V_MIN = 184, V_MAX = 255;
+
+    public static int H2_MIN = 18, H2_MAX = 30;
+    public static int S2_MIN = 182, S2_MAX = 255;
+    public static int V2_MIN = 161, V2_MAX = 193;
 
     public static int MIN_BLOB_AREA = 40;
     public static int RAW_OPEN_ITERATIONS = 10;
 
-    // --- centres ----------------------------------------------------------
     public static int PEAK_RADIUS_PX = 6;
     public static double MIN_PEAK_DEPTH = 5.0;
     public static double MERGE_FRACTION = 1.0;
@@ -76,24 +73,19 @@ public class PollenDetector implements VisionProcessor {
     public static double VOTE_BLUR_FRACTION = 0.15;
     public static double VOTE_FLOOR_FRACTION = 0.15;
 
-    // --- cutting ----------------------------------------------------------
     public static double CONNECT_DISTANCE_FACTOR = 2.2;
     public static double CROSSBAR_SCALE = 1.0;
     public static int CUT_THICKNESS = 3;
 
-    /**
-     * Detection runs on a downscaled copy; the contour walk in the voting stage
-     * will not hold frame rate at full resolution on a Control Hub. Results are
-     * scaled back to full-frame coordinates. 0 disables.
-     */
     public static int PROCESS_WIDTH = 320;
 
     private Mat closeKernel;
     private Mat openKernel;
     private Mat erodeKernel;
     private Mat compareDisc;
+    private int compareDiscRadius = -1;
 
-    private Mat cameraMatrix;           // for the frame as processed
+    private Mat cameraMatrix;
     private Mat distortion;
     private Mat mapX;
     private Mat mapY;
@@ -104,15 +96,33 @@ public class PollenDetector implements VisionProcessor {
 
     private volatile List<Ball> latestBalls = new ArrayList<>();
 
+    private volatile int viewMode = 0;
+    private final AtomicReference<Bitmap> lastFrame =
+            new AtomicReference<>(Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565));
+
+    private static final String[] MODE_NAMES = {
+            "0 camera", "1 mask", "2 centers", "3 connections", "4 cuts", "5 regions", "6 final"
+    };
+    private static final Scalar RED = new Scalar(255, 0, 0);
+    private static final Scalar GREEN = new Scalar(0, 255, 0);
+    private static final Scalar CYAN = new Scalar(0, 255, 255);
+    private static final Scalar MAGENTA = new Scalar(255, 0, 255);
+    private static final Scalar YELLOW = new Scalar(255, 255, 0);
+    private static final Scalar[] PALETTE = {
+            new Scalar(255, 80, 80), new Scalar(80, 255, 80), new Scalar(80, 120, 255),
+            new Scalar(255, 255, 80), new Scalar(255, 80, 255), new Scalar(80, 255, 255),
+            new Scalar(255, 160, 40), new Scalar(170, 110, 255)
+    };
+
     public static class Ball {
-        public final double x;          // full-frame pixels
+        public final double x;
         public final double y;
         public final double radius;
-        public final double xCm;        // camera frame
+        public final double xCm;
         public final double yCm;
         public final double zCm;
         public final double rangeCm;
-        public final double xRobot;     // after yaw / pitch / offsets
+        public final double xRobot;
         public final double yRobot;
         public final double zRobot;
         public final boolean hasRange;
@@ -159,17 +169,34 @@ public class PollenDetector implements VisionProcessor {
         closeKernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(5, 5));
         openKernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(5, 5));
         erodeKernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(3, 3));
-        compareDisc = Imgproc.getStructuringElement(
-                Imgproc.MORPH_ELLIPSE, new Size(2 * PEAK_RADIUS_PX + 1, 2 * PEAK_RADIUS_PX + 1));
+        updateCompareDisc();
     }
 
-    /** Latest detections, in full-frame pixel coordinates. */
+    private void updateCompareDisc() {
+        int radius = Math.max(1, PEAK_RADIUS_PX);
+        if (compareDisc != null && radius == compareDiscRadius) return;
+        if (compareDisc != null) compareDisc.release();
+        compareDisc = Imgproc.getStructuringElement(
+                Imgproc.MORPH_ELLIPSE, new Size(2 * radius + 1, 2 * radius + 1));
+        compareDiscRadius = radius;
+    }
+
     public List<Ball> getBalls() {
         return latestBalls;
     }
 
+    public void setViewMode(int mode) {
+        viewMode = Math.max(0, Math.min(MODE_NAMES.length - 1, mode));
+    }
+
+    @Override
+    public void getFrameBitmap(Continuation<? extends Consumer<Bitmap>> continuation) {
+        continuation.dispatch(consumer -> consumer.accept(lastFrame.get()));
+    }
+
     @Override
     public Object processFrame(Mat frame, long captureTimeNanos) {
+        int mode = viewMode;
         Mat working = new Mat();
         double scale = 1.0;
 
@@ -192,8 +219,13 @@ public class PollenDetector implements VisionProcessor {
         buildMasks(undistorted, processed, raw);
 
         List<Center> centers = findCenters(processed);
-        Mat cut = splitMaskWithLines(raw, centers);
-        latestBalls = measureRegions(cut, 1.0 / scale);
+        List<Point[]> links = new ArrayList<>();
+        List<Point[]> cuts = new ArrayList<>();
+        Mat cut = splitMaskWithLines(raw, centers, links, cuts);
+        List<Ball> balls = measureRegions(cut, 1.0 / scale);
+        latestBalls = balls;
+
+        publishView(mode, frame, undistorted, processed, raw, cut, centers, links, cuts, balls, 1.0 / scale);
 
         processed.release();
         raw.release();
@@ -202,14 +234,11 @@ public class PollenDetector implements VisionProcessor {
         return null;
     }
 
-    // --- step 1: undistort ------------------------------------------------
-
     private Mat undistortFrame(Mat frame) {
         int width = frame.cols();
         int height = frame.rows();
         Size size = new Size(width, height);
 
-        // fx, fy, cx, cy are all in pixels, so rescale to this frame.
         Mat scaled = new Mat(3, 3, CvType.CV_64F);
         double scaleX = (double) width / CAL_WIDTH;
         double scaleY = (double) height / CAL_HEIGHT;
@@ -230,7 +259,6 @@ public class PollenDetector implements VisionProcessor {
         if (mapX == null || mapSize == null
                 || mapSize.width != width || mapSize.height != height) {
             releaseMaps();
-            // alpha=0 crops to valid pixels, so no black wedges reach the threshold.
             Mat newMatrix = Calib3d.getOptimalNewCameraMatrix(scaled, coefficients, size, 0, size);
             mapX = new Mat();
             mapY = new Mat();
@@ -239,9 +267,6 @@ public class PollenDetector implements VisionProcessor {
             mapSize = size;
 
             releaseIntrinsics();
-            // The frame comes out undistorted, so points from it normalise with
-            // the new matrix and zero distortion -- the original D would bend
-            // them a second time.
             cameraMatrix = newMatrix;
             distortion = Mat.zeros(1, 5, CvType.CV_64F);
         }
@@ -269,12 +294,6 @@ public class PollenDetector implements VisionProcessor {
         distortion = null;
     }
 
-    // --- step 2: mask -----------------------------------------------------
-
-    /**
-     * The processed mask drives centre finding; the opened raw mask is what
-     * gets cut, since its necks are already thinned.
-     */
     private void buildMasks(Mat rgbFrame, Mat processedOut, Mat rawOut) {
         Mat blurred = new Mat();
         Imgproc.GaussianBlur(rgbFrame, blurred, new Size(5, 5), 0);
@@ -284,10 +303,10 @@ public class PollenDetector implements VisionProcessor {
         blurred.release();
 
         Mat mask = new Mat();
-        Core.inRange(hsv, LOWER_YELLOW, UPPER_YELLOW, mask);
+        Core.inRange(hsv, new Scalar(H_MIN, S_MIN, V_MIN), new Scalar(H_MAX, S_MAX, V_MAX), mask);
 
         Mat second = new Mat();
-        Core.inRange(hsv, LOWER_YELLOW_2, UPPER_YELLOW_2, second);
+        Core.inRange(hsv, new Scalar(H2_MIN, S2_MIN, V2_MIN), new Scalar(H2_MAX, S2_MAX, V2_MAX), second);
         Core.bitwise_or(mask, second, mask);
         second.release();
         hsv.release();
@@ -331,12 +350,6 @@ public class PollenDetector implements VisionProcessor {
         centroids.release();
     }
 
-    // --- step 3: find centres by voting -----------------------------------
-
-    /**
-     * Median inscribed radius of blobs round enough to be a lone ball. Fused
-     * clusters are excluded, so the estimate comes from balls measuring right.
-     */
     private double estimateVoteRadius(Mat mask) {
         Mat labels = new Mat();
         Mat stats = new Mat();
@@ -386,12 +399,6 @@ public class PollenDetector implements VisionProcessor {
         return radii.get(radii.size() / 2);
     }
 
-    /**
-     * Each contour point steps one radius inward along its own normal and votes
-     * there. A ball's outer arc votes for that ball's centre even when its
-     * inner side is fused away, which the distance transform cannot do -- it
-     * reads a ring of fused balls as a thick band with maxima on the rim.
-     */
     private Mat voteForCenters(Mat mask, double baseRadius) {
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
@@ -421,7 +428,6 @@ public class PollenDetector implements VisionProcessor {
                 double normalX = tangentY / length;
                 double normalY = -tangentX / length;
 
-                // Balls lower in the frame are nearer, so they are bigger.
                 double scaleFactor = 0.6 + 0.4 * (points[index].y / height);
                 double localRadius = baseRadius * scaleFactor;
 
@@ -444,6 +450,8 @@ public class PollenDetector implements VisionProcessor {
     private List<Center> findCenters(Mat mask) {
         double radius = estimateVoteRadius(mask);
         if (radius < 0) return new ArrayList<>();
+
+        updateCompareDisc();
 
         Mat accumulator = voteForCenters(mask, radius);
         Core.MinMaxLocResult strongest = Core.minMaxLoc(accumulator);
@@ -513,8 +521,6 @@ public class PollenDetector implements VisionProcessor {
         return kept;
     }
 
-    // --- step 4: cut fused balls apart ------------------------------------
-
     private boolean isLineClear(byte[] mask, int width, int height,
                                 int x1, int y1, int x2, int y2) {
         double length = Math.hypot(x2 - x1, y2 - y1);
@@ -530,11 +536,8 @@ public class PollenDetector implements VisionProcessor {
         return true;
     }
 
-    /**
-     * Cut a crossbar between any two centres whose connecting line stays inside
-     * the mask -- that is, balls actually fused to each other.
-     */
-    private Mat splitMaskWithLines(Mat rawMask, List<Center> centers) {
+    private Mat splitMaskWithLines(Mat rawMask, List<Center> centers,
+                                   List<Point[]> links, List<Point[]> cuts) {
         Mat split = rawMask.clone();
 
         int width = rawMask.cols();
@@ -567,12 +570,13 @@ public class PollenDetector implements VisionProcessor {
                 Point point1 = new Point(midX + bar * perpX, midY + bar * perpY);
                 Point point2 = new Point(midX - bar * perpX, midY - bar * perpY);
                 Imgproc.line(split, point1, point2, new Scalar(0), CUT_THICKNESS);
+
+                links.add(new Point[]{new Point(first.x, first.y), new Point(second.x, second.y)});
+                cuts.add(new Point[]{point1, point2});
             }
         }
         return split;
     }
-
-    // --- step 5: measure --------------------------------------------------
 
     private List<Ball> measureRegions(Mat cutMask, double inverseScale) {
         Mat labels = new Mat();
@@ -616,19 +620,9 @@ public class PollenDetector implements VisionProcessor {
         return balls;
     }
 
-    /**
-     * Distance from the ball's angular size. Contour points become rays through
-     * the calibrated camera, and the angle each makes with the ray to the
-     * ball's centre is the half-angle of the tangent cone; a ball of radius R
-     * subtends asin(R / Z), so Z = R / sin(a).
-     *
-     * Returns {xCm, yCm, zCm, rangeCm, xRobot, yRobot, zRobot} or null.
-     */
     private double[] ballPosition(Point[] contour, Point center, double radius) {
         if (cameraMatrix == null || contour.length < 5) return null;
 
-        // Keep only points on the ball's own silhouette; the rest are cut edges
-        // or a neighbour's leftover.
         List<Point> kept = new ArrayList<>();
         for (Point point : contour) {
             double offset = Math.hypot(point.x - center.x, point.y - center.y);
@@ -696,7 +690,110 @@ public class PollenDetector implements VisionProcessor {
         return best;
     }
 
-    // --- overlay ----------------------------------------------------------
+    private void publishView(int mode, Mat frame, Mat image, Mat processed, Mat raw, Mat cut,
+                             List<Center> centers, List<Point[]> links, List<Point[]> cuts,
+                             List<Ball> balls, double k) {
+        Mat view = new Mat();
+
+        if (mode <= 0) {
+            frame.copyTo(view);
+        } else {
+            Mat small = new Mat();
+            int interpolation = Imgproc.INTER_NEAREST;
+            switch (mode) {
+                case 1:
+                    Imgproc.cvtColor(processed, small, Imgproc.COLOR_GRAY2RGB);
+                    break;
+                case 2:
+                    Imgproc.cvtColor(processed, small, Imgproc.COLOR_GRAY2RGB);
+                    Core.multiply(small, new Scalar(0.5, 0.5, 0.5), small);
+                    break;
+                case 3:
+                case 4:
+                    Imgproc.cvtColor(raw, small, Imgproc.COLOR_GRAY2RGB);
+                    Core.multiply(small, new Scalar(0.5, 0.5, 0.5), small);
+                    break;
+                case 5:
+                    colorRegions(cut, small);
+                    break;
+                default:
+                    image.copyTo(small);
+                    interpolation = Imgproc.INTER_LINEAR;
+                    break;
+            }
+            Imgproc.resize(small, view, frame.size(), 0, 0, interpolation);
+            small.release();
+
+            int thick = Math.max(1, (int) Math.round(k));
+
+            if (mode >= 2 && mode <= 4) {
+                for (Center center : centers) {
+                    Point p = new Point(center.x * k, center.y * k);
+                    Imgproc.circle(view, p, (int) Math.round(center.radius * k), CYAN, thick);
+                    Imgproc.circle(view, p, 3 * thick, RED, -1);
+                }
+            }
+
+            if (mode == 3) {
+                for (Point[] link : links) {
+                    Imgproc.line(view, scaled(link[0], k), scaled(link[1], k), GREEN, 2 * thick);
+                }
+            }
+
+            if (mode == 4) {
+                int cutThickness = Math.max(1, (int) Math.round(CUT_THICKNESS * k));
+                for (Point[] line : cuts) {
+                    Imgproc.line(view, scaled(line[0], k), scaled(line[1], k), MAGENTA, cutThickness);
+                }
+            }
+
+            if (mode == 6) {
+                int index = 1;
+                for (Ball ball : balls) {
+                    Point p = new Point(ball.x, ball.y);
+                    Imgproc.circle(view, p, (int) Math.round(ball.radius), GREEN, 2);
+                    Imgproc.circle(view, p, 3, RED, -1);
+                    String text = String.valueOf(index);
+                    if (ball.hasRange) text += " " + Math.round(ball.rangeCm) + "cm";
+                    Imgproc.putText(view, text, new Point(ball.x + ball.radius + 4, ball.y),
+                            Imgproc.FONT_HERSHEY_SIMPLEX, 0.6, GREEN, 2);
+                    index++;
+                }
+            }
+
+            String header = MODE_NAMES[mode];
+            if (mode >= 2 && mode <= 4) header += "  centers=" + centers.size();
+            if (mode == 3 || mode == 4) header += "  links=" + links.size();
+            if (mode >= 5) header += "  balls=" + balls.size();
+            Imgproc.putText(view, header, new Point(10, 28),
+                    Imgproc.FONT_HERSHEY_SIMPLEX, 0.7, YELLOW, 2);
+        }
+
+        Bitmap bitmap = Bitmap.createBitmap(view.cols(), view.rows(), Bitmap.Config.RGB_565);
+        Utils.matToBitmap(view, bitmap);
+        lastFrame.set(bitmap);
+        view.release();
+    }
+
+    private Point scaled(Point p, double k) {
+        return new Point(p.x * k, p.y * k);
+    }
+
+    private void colorRegions(Mat mask, Mat out) {
+        Mat labels = new Mat();
+        int count = Imgproc.connectedComponents(mask, labels, 8, CvType.CV_32S);
+
+        out.create(mask.size(), CvType.CV_8UC3);
+        out.setTo(new Scalar(0, 0, 0));
+
+        Mat component = new Mat();
+        for (int label = 1; label < count; label++) {
+            Core.compare(labels, new Scalar(label), component, Core.CMP_EQ);
+            out.setTo(PALETTE[(label - 1) % PALETTE.length], component);
+        }
+        component.release();
+        labels.release();
+    }
 
     @Override
     public void onDrawFrame(Canvas canvas, int onscreenWidth, int onscreenHeight,

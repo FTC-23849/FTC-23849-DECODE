@@ -2,6 +2,9 @@ package org.firstinspires.ftc.teamcode.vision;
 
 import android.util.Size;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -14,15 +17,7 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Test harness for PollenDetector.
- *
- * Controls, once running:
- *   dpad up / down    exposure
- *   dpad left / right gain
- *   A                 cycle telemetry detail
- *   B                 toggle the live view (off is noticeably faster)
- */
+@Config
 @TeleOp(name = "Pollen Detector Test", group = "Vision")
 public class PollenDetectorTest extends LinearOpMode {
 
@@ -32,20 +27,21 @@ public class PollenDetectorTest extends LinearOpMode {
     private static final int CAMERA_WIDTH = 640;
     private static final int CAMERA_HEIGHT = 480;
 
-    /**
-     * Manual exposure keeps the HSV thresholds stable. Auto exposure under
-     * arena lighting will move the mask more than any detector parameter.
-     */
-    private static final boolean LOCK_EXPOSURE = true;
-    private static final long START_EXPOSURE_MS = 6;
-    private static final int START_GAIN = 250;
+    private static final int DASHBOARD_FPS = 30;
+
+    public static boolean LOCK_EXPOSURE = true;
+    public static long EXPOSURE_MS = 6;
+    public static int GAIN = 250;
+
+    public static int A_MODE = 0;
 
     private PollenDetector detector;
     private VisionPortal portal;
+    private FtcDashboard dashboard;
 
-    private long exposureMs = START_EXPOSURE_MS;
-    private int gain = START_GAIN;
-    private int detailMode = 0;             // 0 summary, 1 closest, 2 every ball
+    private long appliedExposure = -1;
+    private int appliedGain = -1;
+    private int detailMode = 0;
     private boolean liveView = true;
 
     private boolean lastUp, lastDown, lastLeft, lastRight, lastA, lastB;
@@ -71,6 +67,11 @@ public class PollenDetectorTest extends LinearOpMode {
         }
         portal = builder.build();
 
+        dashboard = FtcDashboard.getInstance();
+        detector.setViewMode(A_MODE);
+        dashboard.startCameraStream(detector, DASHBOARD_FPS);
+        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+
         telemetry.addLine("Waiting for camera...");
         telemetry.update();
         while (!isStopRequested()
@@ -78,11 +79,12 @@ public class PollenDetectorTest extends LinearOpMode {
             sleep(20);
         }
 
-        if (LOCK_EXPOSURE && !isStopRequested()) {
-            applyExposure();
+        if (!isStopRequested()) {
+            syncExposure();
         }
 
         telemetry.addLine("Ready. Press start.");
+        telemetry.addLine("Feed: http://192.168.43.1:8080/dash");
         telemetry.addLine("dpad up/down = exposure, left/right = gain");
         telemetry.addLine("A = telemetry detail, B = live view");
         telemetry.update();
@@ -92,13 +94,17 @@ public class PollenDetectorTest extends LinearOpMode {
 
         while (opModeIsActive()) {
             handleControls();
+            syncExposure();
+            detector.setViewMode(A_MODE);
             updateFps();
 
             List<PollenDetector.Ball> balls = detector.getBalls();
 
             telemetry.addData("fps", "%.1f", fps);
             telemetry.addData("balls", balls.size());
-            telemetry.addData("exposure / gain", "%d ms / %d", exposureMs, gain);
+            telemetry.addData("exposure / gain", "%d ms / %d", EXPOSURE_MS, GAIN);
+            telemetry.addData("live view", liveView ? "on" : "off");
+            telemetry.addData("A_MODE", A_MODE);
 
             PollenDetector.Ball closest = closestBall(balls);
             if (closest == null) {
@@ -127,7 +133,7 @@ public class PollenDetectorTest extends LinearOpMode {
                         telemetry.addData(String.valueOf(index), "no range  r=%.0f", ball.radius);
                     }
                     index++;
-                    if (index > 8) break;     // more than this is unreadable
+                    if (index > 8) break;
                 }
             }
 
@@ -135,10 +141,10 @@ public class PollenDetectorTest extends LinearOpMode {
             sleep(20);
         }
 
+        dashboard.stopCameraStream();
         portal.close();
     }
 
-    /** Straight-line distance is rangeCm; this is the angle to turn. */
     private double bearingDegrees(PollenDetector.Ball ball) {
         return Math.toDegrees(Math.atan2(ball.xCm, ball.zCm));
     }
@@ -160,24 +166,10 @@ public class PollenDetectorTest extends LinearOpMode {
         boolean a = gamepad1.a;
         boolean b = gamepad1.b;
 
-        boolean exposureChanged = false;
-        if (up && !lastUp) {
-            exposureMs++;
-            exposureChanged = true;
-        }
-        if (down && !lastDown && exposureMs > 1) {
-            exposureMs--;
-            exposureChanged = true;
-        }
-        if (right && !lastRight) {
-            gain += 10;
-            exposureChanged = true;
-        }
-        if (left && !lastLeft && gain >= 10) {
-            gain -= 10;
-            exposureChanged = true;
-        }
-        if (exposureChanged) applyExposure();
+        if (up && !lastUp) EXPOSURE_MS++;
+        if (down && !lastDown && EXPOSURE_MS > 1) EXPOSURE_MS--;
+        if (right && !lastRight) GAIN += 10;
+        if (left && !lastLeft && GAIN >= 10) GAIN -= 10;
 
         if (a && !lastA) detailMode = (detailMode + 1) % 3;
 
@@ -198,6 +190,14 @@ public class PollenDetectorTest extends LinearOpMode {
         lastB = b;
     }
 
+    private void syncExposure() {
+        if (!LOCK_EXPOSURE) return;
+        if (EXPOSURE_MS == appliedExposure && GAIN == appliedGain) return;
+        applyExposure();
+        appliedExposure = EXPOSURE_MS;
+        appliedGain = GAIN;
+    }
+
     private void applyExposure() {
         try {
             ExposureControl exposure = portal.getCameraControl(ExposureControl.class);
@@ -206,11 +206,11 @@ public class PollenDetectorTest extends LinearOpMode {
                     exposure.setMode(ExposureControl.Mode.Manual);
                     sleep(50);
                 }
-                exposure.setExposure(exposureMs, TimeUnit.MILLISECONDS);
+                exposure.setExposure(EXPOSURE_MS, TimeUnit.MILLISECONDS);
             }
             GainControl gainControl = portal.getCameraControl(GainControl.class);
             if (gainControl != null) {
-                gainControl.setGain(gain);
+                gainControl.setGain(GAIN);
             }
         } catch (Exception error) {
             telemetry.addLine("exposure control failed: " + error.getMessage());
